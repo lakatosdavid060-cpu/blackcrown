@@ -106,14 +106,14 @@ body::before {
     border-radius:15px;
     box-shadow:0 0 30px rgba(212,175,55,0.7);
     animation: pulseBorder 3s infinite alternate, floatWidget 6s ease-in-out infinite alternate;
-    transition: 0.3s;
+    transition: transform 0.3s, box-shadow 0.3s;
+    cursor: pointer;
+    position: relative;
 }
 .widget-box:hover {
-    transform: scale(1.03);
-    box-shadow:0 0 60px rgba(212,175,55,1);
+    transform: scale(1.05);
+    box-shadow:0 0 70px rgba(212,175,55,1);
 }
-@keyframes pulseBorder { 0% { box-shadow:0 0 15px rgba(212,175,55,0.5); } 100% { box-shadow:0 0 50px rgba(212,175,55,1); } }
-@keyframes floatWidget { 0% { transform: translateY(0); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0); } }
 
 /* ----------------- BUTTON ----------------- */
 .btn {
@@ -182,6 +182,30 @@ body::before {
 .rank-list li:hover { color:#fff; font-weight:bold; transform:scale(1.08); }
 .rank-list li:first-child { text-shadow:0 0 15px gold; }
 
+/* ----------------- ARANY POR HULLÁS ----------------- */
+.particle {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    background: rgba(212,175,55,0.8);
+    border-radius: 50%;
+    pointer-events: none;
+    animation: fall 7s linear infinite;
+}
+@keyframes fall {
+    0% { transform: translateY(-10px) translateX(0) rotate(0deg); opacity:1; }
+    100% { transform: translateY(110vh) translateX(20px) rotate(360deg); opacity:0; }
+}
+
+/* ----------------- SPARKS ----------------- */
+.spark {
+    position: absolute;
+    width: 4px; height: 4px;
+    background: gold;
+    border-radius: 50%;
+    pointer-events: none;
+    opacity: 0;
+}
 </style>
 </head>
 <body>
@@ -197,10 +221,9 @@ body::before {
   <h1 class="title">BLACK CROWN ORGANIZATION</h1>
   <p class="sub">Erő. Hűség. Hatalom.<br>A korona nem mindenkinek jár.</p>
 
-  <!-- ---------------- FLEX: WIDGET + SZABÁLYZAT ---------------- -->
   <div class="flex-container">
     <!-- Discord widget -->
-    <div class="flex-item widget-box">
+    <div class="flex-item widget-box" id="discordWidget">
       <iframe src="https://discord.com/widget?id=1462235651616411821&theme=dark"
               width="100%" height="350" frameborder="0" allowtransparency="true"></iframe>
     </div>
@@ -219,7 +242,7 @@ body::before {
   </div>
 
   <!-- Discord csatlakozás gomb -->
-  <a href="https://discord.gg/JVDSkp3UaZ" class="btn">👑 Csatlakozz a Koronához</a>
+  <a href="https://discord.gg/JVDSkp3UaZ" class="btn" target="_blank" id="joinBtn">👑 Csatlakozz a Koronához</a>
 
   <!-- Ranglista -->
   <div class="rank-list">
@@ -231,6 +254,53 @@ body::before {
     </ul>
   </div>
 </div>
+
+<!-- ---------------- ARANY POR HULLÁS ÉS SPARKS SCRIPT ---------------- -->
+<script>
+const numParticles = 50;
+for(let i=0;i<numParticles;i++){
+    const p = document.createElement('div');
+    p.classList.add('particle');
+    p.style.left = Math.random() * 100 + 'vw';
+    p.style.animationDelay = Math.random() * 7 + 's';
+    p.style.width = 3 + Math.random()*6 + 'px';
+    p.style.height = p.style.width;
+    p.style.opacity = Math.random();
+    document.body.appendChild(p);
+}
+
+/* ---------------- HANG ----------------- */
+const hoverSound = new Audio('https://www.soundjay.com/buttons/sounds/button-16.mp3'); 
+
+/* ---------------- SPARKS ----------------- */
+function createSparks(elem){
+    for(let i=0;i<10;i++){
+        const s = document.createElement('div');
+        s.classList.add('spark');
+        s.style.left = (elem.offsetLeft + Math.random()*elem.offsetWidth) + 'px';
+        s.style.top = (elem.offsetTop + Math.random()*elem.offsetHeight) + 'px';
+        document.body.appendChild(s);
+        s.style.opacity = 1;
+        let x = (Math.random()-0.5)*100;
+        let y = (Math.random()-0.5)*100;
+        let rot = Math.random()*360;
+        s.animate([
+            {transform:`translate(0px,0px) rotate(0deg)`, opacity:1},
+            {transform:`translate(${x}px,${y}px) rotate(${rot}deg)`, opacity:0}
+        ],{duration:500+Math.random()*500, easing:'ease-out', fill:'forwards'});
+        setTimeout(()=>s.remove(),700);
+    }
+}
+
+document.getElementById('joinBtn').addEventListener('mouseenter', ()=>{
+    hoverSound.play();
+    createSparks(document.getElementById('joinBtn'));
+});
+document.getElementById('discordWidget').addEventListener('mouseenter', ()=>{
+    hoverSound.play();
+    createSparks(document.getElementById('discordWidget'));
+});
+</script>
 
 </body>
 </html>
