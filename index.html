@@ -5,164 +5,141 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>BLACK CROWN ORGANIZATION</title>
 <style>
-/* ---------------- BODY ---------------- */
 body {
-    margin:0;
-    font-family: Georgia, serif;
-    background: url('https://wallpapers.com/images/hd/gothic-gold-black-crown-p2wdksst71k71ueg.jpg') no-repeat center center fixed;
-    background-size: cover;
-    color: #fff;
-    text-align: center;
-    overflow-x: hidden;
-    position: relative;
-    animation: fadeIn 2s ease forwards;
-    opacity: 0;
+  margin:0;
+  font-family: Georgia, serif;
+  background: url('https://wallpapers.com/images/hd/gothic-gold-black-crown-p2wdksst71k71ueg.jpg') no-repeat center center fixed;
+  background-size: cover;
+  color: #fff;
+  text-align: center;
+  overflow-x: hidden;
+  position: relative;
 }
-@keyframes fadeIn { to { opacity: 1; } }
 
-/* ---------------- FLOATING LIGHTS ---------------- */
+/* Mozgó fények */
 .floating-light {
-    position:absolute;
-    border-radius:50%;
-    background: rgba(212,175,55,0.2);
-    animation: float 25s linear infinite;
+  position:absolute;
+  border-radius:50%;
+  background: rgba(212,175,55,0.2);
+  animation: float 25s linear infinite;
 }
 @keyframes float {
-    0% { transform:translate(0,0) scale(1); }
-    25% { transform:translate(200px,-300px) scale(1.2); }
-    50% { transform:translate(-150px,-600px) scale(1.3); }
-    75% { transform:translate(300px,-200px) scale(1.1); }
-    100% { transform:translate(0,0) scale(1); }
+  0% { transform:translate(0,0) scale(1); }
+  25% { transform:translate(200px,-300px) scale(1.2); }
+  50% { transform:translate(-150px,-600px) scale(1.3); }
+  75% { transform:translate(300px,-200px) scale(1.1); }
+  100% { transform:translate(0,0) scale(1); }
 }
 
-/* ---------------- WATERMARK ---------------- */
+/* Animált korona watermark */
 body::before {
-    content:'👑';
-    font-size:500px;
-    color:rgba(212,175,55,0.05);
-    position:absolute;
-    top:50%;
-    left:50%;
-    transform:translate(-50%,-50%) rotate(0deg);
-    animation: rotate 60s linear infinite;
-    z-index:-1;
+  content:'👑';
+  font-size:500px;
+  color:rgba(212,175,55,0.05);
+  position:absolute;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%) rotate(0deg);
+  animation: rotate 60s linear infinite;
+  z-index:-1;
 }
 @keyframes rotate { 0% { transform:translate(-50%,-50%) rotate(0deg); } 100% { transform:translate(-50%,-50%) rotate(360deg); } }
 
-/* ---------------- CONTAINER ---------------- */
-.container { max-width:900px; margin:0 auto; padding:30px 20px; }
+.container {
+  max-width:900px;
+  margin:0 auto;
+  padding:30px 20px;
+}
 
-/* ---------------- TITLE ---------------- */
 .title {
-    color:#d4af37;
-    font-size:56px;
-    margin-top:50px;
-    letter-spacing:5px;
-    text-shadow:0 0 20px #d4af37,0 0 50px #d4af37;
-    animation: glow 3s infinite alternate;
-    position:relative;
+  color:#d4af37;
+  font-size:56px;
+  margin-top:50px;
+  letter-spacing:5px;
+  text-shadow:0 0 20px #d4af37,0 0 50px #d4af37;
+  animation: glow 3s infinite alternate;
+  position:relative;
 }
 @keyframes glow { 0% { text-shadow:0 0 20px #d4af37; } 100% { text-shadow:0 0 50px #d4af37,0 0 80px #d4af37; } }
+
 .title::before {
-    content:'👑';
-    font-size:60px;
-    color:#d4af37;
-    position:absolute;
-    top:-80px;
-    left:50%;
-    transform:translateX(-50%);
-    animation: crownFloat 3s ease-in-out infinite alternate;
+  content:'👑';
+  font-size:60px;
+  color:#d4af37;
+  position:absolute;
+  top:-80px;
+  left:50%;
+  transform:translateX(-50%);
+  animation: crownFloat 3s ease-in-out infinite alternate;
 }
 @keyframes crownFloat { 0% { transform:translateX(-50%) translateY(0); } 100% { transform:translateX(-50%) translateY(-15px); } }
-.sub { color:#cccccc; font-size:18px; margin:20px auto 40px auto; }
 
-/* ---------------- FLEX ---------------- */
-.flex-container { display:flex; justify-content:center; flex-wrap:wrap; gap:30px; margin-bottom:40px; }
-.flex-item { flex:1 1 300px; max-width:300px; }
-
-/* ---------------- WIDGET ---------------- */
-.marmin-widget {
-    height:250px;
-    margin:20px auto;
-    border:3px solid #d4af37;
-    border-radius:15px;
-    box-shadow:0 0 30px rgba(212,175,55,0.7);
-    position: relative;
-    animation: pulseBorder 3s infinite alternate, floatWidget 6s ease-in-out infinite alternate;
-    transition: transform 0.3s, box-shadow 0.3s;
-    cursor: pointer;
-    overflow: hidden;
+.sub {
+  color:#cccccc;
+  font-size:18px;
+  margin:20px auto 40px auto;
 }
-.marmin-widget:hover { transform: scale(1.05); box-shadow:0 0 70px rgba(212,175,55,1); }
 
-/* ---------------- BUTTON ---------------- */
+/* Widget box */
+.widget-box {
+  max-width:440px;
+  margin:0 auto 35px auto;
+  padding:20px;
+  border:3px solid #d4af37;
+  border-radius:15px;
+  box-shadow:0 0 30px rgba(212,175,55,0.7);
+  animation: pulseBorder 3s infinite alternate;
+}
+@keyframes pulseBorder { 0% { box-shadow:0 0 15px rgba(212,175,55,0.5); } 100% { box-shadow:0 0 50px rgba(212,175,55,1); } }
+
+/* Gomb */
 .btn {
-    display:inline-block;
-    margin-top:20px;
-    background:#d4af37;
-    color:black;
-    padding:16px 50px;
-    font-weight:bold;
-    font-size:18px;
-    border-radius:8px;
-    text-decoration:none;
-    box-shadow:0 0 15px rgba(212,175,55,0.7);
-    transition:0.3s;
-    position:relative;
-    overflow:hidden;
-    animation: btnFloat 4s ease-in-out infinite alternate;
+  display:inline-block;
+  margin-top:20px;
+  background:#d4af37;
+  color:black;
+  padding:16px 50px;
+  font-weight:bold;
+  font-size:18px;
+  border-radius:8px;
+  text-decoration:none;
+  box-shadow:0 0 15px rgba(212,175,55,0.7);
+  transition:0.3s;
+  animation: pulseBtn 2s infinite alternate;
+  position:relative;
+  overflow:hidden;
 }
-@keyframes btnFloat { 0% { transform: translateY(0); } 100% { transform: translateY(-8px); } }
-.btn:hover { background:#f5d76e; transform:scale(1.2); box-shadow:0 0 80px rgba(212,175,55,1); }
-.btn::after { content:''; position:absolute; top:50%; left:50%; width:0; height:0; background:rgba(255,255,255,0.3); border-radius:50%; transform:translate(-50%,-50%); transition:0.5s; }
-.btn:hover::after { width:200%; height:500%; }
-.btn::before { content:''; position:absolute; top:0; left:-100%; width:100%; height:100%; background:linear-gradient(120deg, transparent, rgba(255,255,255,0.6), transparent); transition:0.6s; }
-.btn:hover::before { left:100%; }
+.btn:hover {
+  background:#f5d76e;
+  transform:scale(1.15);
+  box-shadow:0 0 60px rgba(212,175,55,1);
+}
+.btn::after {
+  content:'';
+  position:absolute;
+  top:50%; left:50%;
+  width:0; height:0;
+  background:rgba(255,255,255,0.3);
+  border-radius:50%;
+  transform:translate(-50%,-50%);
+  transition:0.5s;
+}
+.btn:hover::after {
+  width:200%; height:500%;
+}
+@keyframes pulseBtn { 0% { box-shadow:0 0 15px rgba(212,175,55,0.7); } 100% { box-shadow:0 0 60px rgba(212,175,55,1); } }
 
-/* ---------------- SMALL BUTTON ---------------- */
-.btn-small {
-    display:inline-block;
-    margin-left:10px;
-    background:#d4af37;
-    color:black;
-    padding:6px 16px;
-    font-weight:bold;
-    font-size:14px;
-    border-radius:6px;
-    text-decoration:none;
-    box-shadow:0 0 10px rgba(212,175,55,0.7);
-    transition:0.3s;
-    position:relative;
-    overflow:hidden;
-}
-.btn-small:hover {
-    background:#f5d76e;
-    transform:scale(1.1);
-    box-shadow:0 0 40px rgba(212,175,55,1);
-}
-.btn-small::after {
-    content:'';
-    position:absolute;
-    top:50%; left:50%;
-    width:0; height:0;
-    background:rgba(255,255,255,0.3);
-    border-radius:50%;
-    transform:translate(-50%,-50%);
-    transition:0.5s;
-}
-.btn-small:hover::after { width:200%; height:500%; }
-
-/* ---------------- RANGLISTA ---------------- */
+/* Ranglista */
 .rank-list {
-    max-width:320px;
-    margin:40px auto 60px auto;
-    text-align:left;
-    color:#d4af37;
-    font-size:16px;
-    border:2px solid #d4af37;
-    border-radius:10px;
-    padding:15px;
-    background:rgba(0,0,0,0.6);
+  max-width:320px;
+  margin:40px auto 60px auto;
+  text-align:left;
+  color:#d4af37;
+  font-size:16px;
+  border:2px solid #d4af37;
+  border-radius:10px;
+  padding:15px;
+  background:rgba(0,0,0,0.6);
 }
 .rank-list h3 { margin-top:0; text-align:center; }
 .rank-list ul { list-style:none; padding:0; margin:0; }
@@ -170,34 +147,25 @@ body::before {
 .rank-list li:last-child { border-bottom:none; }
 .rank-list li span { margin-right:10px; font-size:18px; }
 .rank-list li:hover { color:#fff; font-weight:bold; transform:scale(1.08); }
-.rank-list li:first-child { text-shadow:0 0 15px gold; }
 
-/* ---------------- PARTICLES ---------------- */
-.particle {
-    position: absolute;
-    width: 6px;
-    height: 6px;
-    background: rgba(212,175,55,0.8);
-    border-radius: 50%;
-    pointer-events: none;
-    animation: fall 7s linear infinite;
+/* Élő státusz jelző */
+.status-dot {
+  display:inline-block;
+  width:12px;
+  height:12px;
+  border-radius:50%;
+  margin-right:8px;
 }
-@keyframes fall {
-    0% { transform: translateY(-10px) translateX(0) rotate(0deg); opacity:1; }
-    100% { transform: translateY(110vh) translateX(20px) rotate(360deg); opacity:0; }
-}
+.status-online { background:lime; }
+.status-idle { background:yellow; }
+.status-dnd { background:red; }
+.status-offline { background:grey; }
 
-/* ---------------- SPARKS ---------------- */
-.spark { position: absolute; width:4px; height:4px; background:gold; border-radius:50%; pointer-events:none; opacity:0; }
-
-/* ---------------- ANIMATIONS ---------------- */
-@keyframes pulseBorder { 0% { box-shadow:0 0 15px rgba(212,175,55,0.5); } 100% { box-shadow:0 0 50px rgba(212,175,55,1); } }
-@keyframes floatWidget { 0% { transform: translateY(0); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0); } }
 </style>
 </head>
 <body>
 
-<!-- Floating lights -->
+<!-- Mozgó fények -->
 <div class="floating-light" style="top:80%; left:10%; width:60px; height:60px;"></div>
 <div class="floating-light" style="top:50%; left:80%; width:40px; height:40px;"></div>
 <div class="floating-light" style="top:20%; left:30%; width:50px; height:50px;"></div>
@@ -208,82 +176,32 @@ body::before {
   <h1 class="title">BLACK CROWN ORGANIZATION</h1>
   <p class="sub">Erő. Hűség. Hatalom.<br>A korona nem mindenkinek jár.</p>
 
-  <div class="flex-container">
-    <!-- Discord widget -->
-    <div class="flex-item marmin-widget" id="discordWidget">
-      <iframe src="https://discord.com/widget?id=1462235651616411821&theme=dark"
-              width="100%" height="250" frameborder="0" allowtransparency="true"></iframe>
-    </div>
-
-    <!-- Szabályzat -->
-    <div class="flex-item widget-box" style="text-align:left; color:#fff; font-size:14px;">
-      <h3>📜 Szabályzat</h3>
-      <ul>
-        <li>1️⃣ Tilos a griefing és a toxic viselkedés.</li>
-        <li>2️⃣ RP szabályokat mindig tartsd be.</li>
-        <li>3️⃣ Ne spameld a chatet.</li>
-        <li>4️⃣ Respect minden játékos és staff felé.</li>
-        <li>
-          5️⃣ Egyéb, szerver specifikus szabályok:
-          <a href="https://discord.gg/JVDSkp3UaZ" target="_blank" class="btn-small">🔗 Megtekintés</a>
-        </li>
-      </ul>
-    </div>
+  <!-- Discord widget -->
+  <div class="widget-box">
+    <iframe src="https://discord.com/widget?id=1472381413847208064&theme=dark"
+            width="100%"
+            height="200"
+            allowtransparency="true"
+            frameborder="0">
+    </iframe>
   </div>
 
-  <!-- Join button -->
-  <a href="https://discord.gg/JVDSkp3UaZ" class="btn" target="_blank" id="joinBtn">👑 Csatlakozz a Koronához</a>
+  <!-- Gombok -->
+  <a href="https://discord.gg/JVDSkp3UaZ" class="btn">👑 Csatlakozz a Koronához</a>
+  <a href="https://discord.gg/JVDSkp3UaZ" class="btn">📜 Szabályzat</a>
 
   <!-- Ranglista -->
   <div class="rank-list">
     <h3>🏆 Ranglista</h3>
     <ul>
-      <li><span>👑</span> Főnök: David Jackson (Boss)</li>
-      <li><span>💼</span> Főnök jobb keze: Jackson West (UnderBoss)</li>
-      <li><span>🔫</span> Kis Samu (Capo)</li>
-      <li><span>🪖</span> Soldier: Csontos Bence (Soldier)</li>
-      <li><span>🪖</span> Soldier: Smith James (Soldier)</li>
+      <li><span class="status-dot status-online"></span> Főnök: David Jackson (Boss)</li>
+      <li><span class="status-dot status-online"></span> Főnök jobb keze: Jackson West (UnderBoss)</li>
+      <li><span class="status-dot status-idle"></span> Kis Samu (Capo)</li>
+      <li><span class="status-dot status-online"></span> Csontos Bence (Soldier)</li>
+      <li><span class="status-dot status-idle"></span> Smith James (Soldier)</li>
     </ul>
   </div>
 </div>
-
-<script>
-/* ---------------- PARTICLES ---------------- */
-const numParticles = 50;
-for(let i=0;i<numParticles;i++){
-    const p=document.createElement('div');
-    p.classList.add('particle');
-    p.style.left=Math.random()*100+'vw';
-    p.style.animationDelay=Math.random()*7+'s';
-    p.style.width=3+Math.random()*6+'px';
-    p.style.height=p.style.width;
-    p.style.opacity=Math.random();
-    document.body.appendChild(p);
-}
-
-/* ---------------- HOVER HANG + SPARK ---------------- */
-const hoverSound = new Audio('https://www.soundjay.com/buttons/sounds/button-16.mp3'); 
-function createSparks(elem){
-    for(let i=0;i<10;i++){
-        const s=document.createElement('div');
-        s.classList.add('spark');
-        s.style.left=(elem.offsetLeft + Math.random()*elem.offsetWidth)+'px';
-        s.style.top=(elem.offsetTop + Math.random()*elem.offsetHeight)+'px';
-        document.body.appendChild(s);
-        s.style.opacity=1;
-        let x=(Math.random()-0.5)*100;
-        let y=(Math.random()-0.5)*100;
-        let rot=Math.random()*360;
-        s.animate([
-            {transform:`translate(0px,0px) rotate(0deg)`, opacity:1},
-            {transform:`translate(${x}px,${y}px) rotate(${rot}deg)`, opacity:0}
-        ],{duration:500+Math.random()*500,easing:'ease-out',fill:'forwards'});
-        setTimeout(()=>s.remove(),700);
-    }
-}
-document.getElementById('joinBtn').addEventListener('mouseenter',()=>{ hoverSound.play(); createSparks(document.getElementById('joinBtn')); });
-document.getElementById('discordWidget').addEventListener('mouseenter',()=>{ hoverSound.play(); createSparks(document.getElementById('discordWidget')); });
-</script>
 
 </body>
 </html>
