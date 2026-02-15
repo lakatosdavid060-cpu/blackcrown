@@ -80,18 +80,6 @@ body::before {
   margin:20px auto 40px auto;
 }
 
-/* Widget box */
-.widget-box {
-  max-width:440px;
-  margin:0 auto 35px auto;
-  padding:20px;
-  border:3px solid #d4af37;
-  border-radius:15px;
-  box-shadow:0 0 30px rgba(212,175,55,0.7);
-  animation: pulseBorder 3s infinite alternate;
-}
-@keyframes pulseBorder { 0% { box-shadow:0 0 15px rgba(212,175,55,0.5); } 100% { box-shadow:0 0 50px rgba(212,175,55,1); } }
-
 /* Gomb */
 .btn {
   display:inline-block;
@@ -161,6 +149,16 @@ body::before {
 .status-dnd { background:red; }
 .status-offline { background:grey; }
 
+/* Élő számláló box */
+.live-count {
+  font-size:24px;
+  margin:20px auto;
+  padding:10px;
+  width:200px;
+  background:rgba(0,0,0,0.6);
+  border:2px solid #d4af37;
+  border-radius:12px;
+}
 </style>
 </head>
 <body>
@@ -176,14 +174,9 @@ body::before {
   <h1 class="title">BLACK CROWN ORGANIZATION</h1>
   <p class="sub">Erő. Hűség. Hatalom.<br>A korona nem mindenkinek jár.</p>
 
-  <!-- Discord widget -->
-  <div class="widget-box">
-    <iframe src="https://discord.com/widget?id=1472381413847208064&theme=dark"
-            width="100%"
-            height="200"
-            allowtransparency="true"
-            frameborder="0">
-    </iframe>
+  <!-- Élő számláló -->
+  <div class="live-count">
+    Online tagok: <span id="onlineCount">0</span>
   </div>
 
   <!-- Gombok -->
@@ -193,7 +186,7 @@ body::before {
   <!-- Ranglista -->
   <div class="rank-list">
     <h3>🏆 Ranglista</h3>
-    <ul>
+    <ul id="rankList">
       <li><span class="status-dot status-online"></span> Főnök: David Jackson (Boss)</li>
       <li><span class="status-dot status-online"></span> Főnök jobb keze: Jackson West (UnderBoss)</li>
       <li><span class="status-dot status-idle"></span> Kis Samu (Capo)</li>
@@ -202,6 +195,21 @@ body::before {
     </ul>
   </div>
 </div>
+
+<script>
+// Példa: élő számláló szimulálása (Statbot API később integrálható)
+let onlineCount = 12; // Kezdő érték
+const maxOnline = 50;
+
+function updateOnline() {
+  document.getElementById('onlineCount').textContent = onlineCount;
+  // Csak demo: véletlenszerű változás
+  onlineCount = Math.max(0, Math.min(maxOnline, onlineCount + Math.floor(Math.random()*3)-1));
+}
+
+setInterval(updateOnline, 5000); // 5 másodpercenként frissít
+updateOnline();
+</script>
 
 </body>
 </html>
