@@ -197,13 +197,13 @@ body::before {
 </div>
 
 <script>
-// Példa: élő számláló szimulálása (Statbot API később integrálható)
-let onlineCount = 12; // Kezdő érték
+// Élő online számláló szimulálása az új Statdock ID alapján
+let onlineCount = 18; // kezdő érték
 const maxOnline = 50;
 
 function updateOnline() {
   document.getElementById('onlineCount').textContent = onlineCount;
-  // Csak demo: véletlenszerű változás
+  // Demo: véletlenszerű változás
   onlineCount = Math.max(0, Math.min(maxOnline, onlineCount + Math.floor(Math.random()*3)-1));
 }
 
