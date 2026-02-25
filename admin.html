@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Black Crown Maffia - Admin Panel</title>
+<title>Admin Panel - Black Crown Maffia</title>
 <style>
 body{background:#000;color:white;font-family:sans-serif;text-align:center;padding:20px;}
 h1{color:#ff0000;}
@@ -14,128 +14,85 @@ td{background:#222;transition: background 0.5s;}
 .status-Függőben{color:#ffff00;font-weight:bold;}
 .status-Elfogadva{color:#00ff00;font-weight:bold;}
 .status-Elutasítva{color:#ff0000;font-weight:bold;}
-.progress-container{width:100%;background:#111;border-radius:10px;height:15px;overflow:hidden;margin-top:5px;}
-.progress-bar{height:100%;width:0%;background:#00ffff;border-radius:10px;transition:width 0.5s;}
 button{padding:5px 10px;margin:2px;border:none;border-radius:6px;background:#ff0000;color:white;cursor:pointer;}
 button:hover{background:#00ffff;color:black;}
-@keyframes flash {0%{background:#fff;color:#000;}50%{background:#000;color:#fff;}100%{background:#222;color:#fff;}}
-#summary{display:flex;justify-content:center;gap:20px;margin-top:10px;}
-.summary-box{padding:10px 20px;border-radius:10px;font-weight:bold;}
-.summary-Függőben{background:#ffff00;color:#000;}
-.summary-Elfogadva{background:#00ff00;color:#000;}
-.summary-Elutasítva{background:#ff0000;color:#fff;}
 </style>
 </head>
 <body>
 
-<h1>Black Crown Maffia - Admin Panel</h1>
+<h1>Admin Panel - Black Crown Maffia</h1>
 
 <script>
-// ---------------- Persistent login
+// Persistent login
 let user = localStorage.getItem("bc_user");
 let pass = localStorage.getItem("bc_pass");
-if(!user || !pass || pass !== "BlackCrown2026" || (user!=="Boss" && user!=="UnderBoss")){
+if(!user || !pass || pass!=="BlackCrown2026" || (user!=="Boss" && user!=="UnderBoss")){
     user = prompt("Felhasználónév (Boss / UnderBoss):");
     pass = prompt("Jelszó:");
-    if(pass !== "BlackCrown2026" || (user!=="Boss" && user!=="UnderBoss")){
+    if(pass!=="BlackCrown2026" || (user!=="Boss" && user!=="UnderBoss")){
         alert("❌ Helytelen felhasználónév vagy jelszó!");
         window.location.href="index.html";
     }
     localStorage.setItem("bc_user", user);
     localStorage.setItem("bc_pass", pass);
 }
+
+function logout(){
+    localStorage.removeItem("bc_user");
+    localStorage.removeItem("bc_pass");
+    location.reload();
+}
 document.write(`<button onclick="logout()">Kijelentkezés</button>`);
-function logout(){localStorage.removeItem("bc_user");localStorage.removeItem("bc_pass");location.reload();}
-</script>
 
-<div id="summary">
-  <div class="summary-box summary-Függőben">Függőben: <span id="sum-pending">0</span></div>
-  <div class="summary-box summary-Elfogadva">Elfogadva: <span id="sum-accepted">0</span></div>
-  <div class="summary-box summary-Elutasítva">Elutasítva: <span id="sum-rejected">0</span></div>
-</div>
-
-<h2>Jelentkezések</h2>
-<table id="applications">
-<tr>
+// Admin table
+const table = document.createElement("table");
+table.innerHTML = `<tr>
 <th>Karakter Név</th>
 <th>Discord Név</th>
 <th>Üzenet</th>
 <th>Dátum</th>
 <th>Status</th>
 <th>Művelet</th>
-<th>Progress</th>
-</tr>
-</table>
+</tr>`;
+document.body.appendChild(table);
 
-<script>
-// ---------------- JSON betöltés a Web App doGet-ből
-const webAppURL = "https://script.google.com/macros/s/AKfycbzFR3CocD15XGwOuv1XqrjpM33EpPYPeIEQymVRrFJmY278fuhdLOLgxADn6jXkJw4TnQ/exec";
-
-let summary = { "Függőben":0, "Elfogadva":0, "Elutasítva":0 };
-
-function updateSummary(){
-    document.getElementById("sum-pending").innerText = summary["Függőben"];
-    document.getElementById("sum-accepted").innerText = summary["Elfogadva"];
-    document.getElementById("sum-rejected").innerText = summary["Elutasítva"];
-}
-
-// fetch JSON
-fetch(webAppURL)
-.then(res => res.json())
-.then(data => {
-    const table = document.getElementById("applications");
-    data.forEach(row => {
-        const status = row.Status || "Függőben";
-        summary[status]++;
+// Betöltés localStorage-ból
+function loadJelentkezesek(){
+    table.innerHTML = `<tr>
+<th>Karakter Név</th>
+<th>Discord Név</th>
+<th>Üzenet</th>
+<th>Dátum</th>
+<th>Status</th>
+<th>Művelet</th>
+</tr>`;
+    let adatok = JSON.parse(localStorage.getItem("jelentkezok") || "[]");
+    adatok.forEach(j => {
         const tr = document.createElement("tr");
         tr.innerHTML = `
-            <td>${row["Karakter Név"]}</td>
-            <td>${row["Discord Név"]}</td>
-            <td>${row["Üzenet"]}</td>
-            <td>${row["Dátum"]}</td>
-            <td id="status-${row.row}" class="status-${status}">${status}</td>
-            <td>
-                ${user==="Boss"?`<button onclick="updateStatus(${row.row},'Elfogadva')">✅</button>
-                <button onclick="updateStatus(${row.row},'Elutasítva')">❌</button>`:""}
-            </td>
-            <td>
-                <div class="progress-container"><div id="progress-${row.row}" class="progress-bar"></div></div>
-            </td>
+        <td>${j.name}</td>
+        <td>${j.discord}</td>
+        <td>${j.message}</td>
+        <td>${j.date}</td>
+        <td id="status-${j.id}" class="status-${j.status}">${j.status}</td>
+        <td>
+            <button onclick="updateStatus(${j.id},'Elfogadva')">✅</button>
+            <button onclick="updateStatus(${j.id},'Elutasítva')">❌</button>
+        </td>
         `;
         table.appendChild(tr);
-        const progress = document.getElementById(`progress-${row.row}`);
-        progress.style.width = (status==="Elfogadva"? "100%" : status==="Elutasítva"? "0%" : "20%");
     });
-    updateSummary();
-})
-.catch(err=>console.error("Hiba a JSON betöltésénél:", err));
+}
+loadJelentkezesek();
 
-// ---------------- Státusz módosítás és mentés
-function updateStatus(rowIndex, newStatus){
-    const td = document.getElementById(`status-${rowIndex}`);
-    const oldStatus = td.innerText;
-    td.innerText = newStatus;
-    td.className = "status-" + newStatus;
-    td.style.animation = "flash 0.5s";
-    td.addEventListener("animationend", ()=>{ td.style.animation = ""; });
-
-    const progress = document.getElementById(`progress-${rowIndex}`);
-    if(newStatus==="Elfogadva") progress.style.width="100%";
-    else if(newStatus==="Elutasítva") progress.style.width="0%";
-    else progress.style.width="20%";
-
-    summary[oldStatus]--;
-    summary[newStatus]++;
-    updateSummary();
-
-    fetch(webAppURL, {
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({row:rowIndex,status:newStatus})
-    })
-    .then(res=>res.json())
-    .then(data=>console.log("Mentés sikeres", data))
-    .catch(err=>console.error("Hiba a mentésnél:", err));
+function updateStatus(id, newStatus){
+    let adatok = JSON.parse(localStorage.getItem("jelentkezok") || "[]");
+    adatok = adatok.map(j=>{
+        if(j.id===id) j.status=newStatus;
+        return j;
+    });
+    localStorage.setItem("jelentkezok", JSON.stringify(adatok));
+    loadJelentkezesek();
 }
 </script>
 
