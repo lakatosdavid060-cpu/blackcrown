@@ -9,8 +9,10 @@
 *{margin:0;padding:0;box-sizing:border-box;font-family:'Orbitron',sans-serif;}
 body{background:#000;color:white;text-align:center;padding:20px;overflow-x:hidden;}
 h1,h2{color:#ff0000;margin-bottom:20px;text-shadow:0 0 10px #ff0000;}
-iframe{width:100%;height:500px;border:2px solid #ff0000;border-radius:15px;margin-top:20px;}
-button{padding:8px 15px;margin:5px;border:none;border-radius:8px;background:#ff0000;color:white;font-weight:bold;cursor:pointer;transition:0.3s;}
+table{width:100%;border-collapse:collapse;margin-top:20px;}
+th,td{border:1px solid #ff0000;padding:10px;}
+th{background:#111;}
+button{padding:5px 12px;margin:2px;border:none;border-radius:6px;background:#ff0000;color:white;font-weight:bold;cursor:pointer;transition:0.3s;}
 button:hover{background:#00ffff;color:black;}
 </style>
 </head>
@@ -19,12 +21,10 @@ button:hover{background:#00ffff;color:black;}
 <h1>Black Crown Maffia - Admin Panel</h1>
 <p>⚠️ Boss felhasználóval tudod módosítani a státuszt. UnderBoss csak megtekintheti.</p>
 
-<div id="sheetContainer">
-  <iframe id="sheetFrame" src="" frameborder="0"></iframe>
-</div>
+<div id="sheetContainer">Betöltés…</div>
 
 <script>
-// Bejelentkezés
+// 🔹 Belépés
 let felhasznalo = prompt("Felhasználónév (Boss / UnderBoss):");
 let jelszo = prompt("Jelszó:");
 if(jelszo !== "BlackCrown2026" || (felhasznalo !== "Boss" && felhasznalo !== "UnderBoss")){
@@ -34,14 +34,49 @@ if(jelszo !== "BlackCrown2026" || (felhasznalo !== "Boss" && felhasznalo !== "Un
   alert("✅ Beléptél mint " + felhasznalo);
 }
 
-// Google Sheet publikus HTML linkje
-// FONTOS: cseréld ki a saját Sheet publikus HTML linkedre
-const sheetURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSNPsSD9aVIqsNyQn7zEV1OT4TFRPcmKFniNkpSDBiejaaR_hmzY7CLBUAdabuMyOEaLFtrzYenj2Cr/pubhtml?widget=true&headers=false";
+// 🔹 Google Apps Script Web App URL (ez a te deploy linked)
+const webAppURL = "ITT_A_TE_WEB_APP_DEPLOY_LINKED";
 
-document.getElementById("sheetFrame").src = sheetURL;
+// 🔹 Jelentkezések betöltése
+fetch(`${webAppURL}?action=get`)
+.then(res=>res.json())
+.then(data=>{
+  const container = document.getElementById("sheetContainer");
+  const table = document.createElement("table");
+  table.innerHTML = "<tr><th>Karakter Név</th><th>Discord Név</th><th>Üzenet</th><th>Dátum</th><th>Status</th><th>Művelet</th></tr>";
 
-// Boss felhasználó esetén státusz gombok hozzáadása lehetőségként
-// Itt később lehet bővíteni, hogy Apps Script segítségével frissítse a Sheet-et
+  data.forEach(row=>{
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${row["Karakter Név"]}</td>
+      <td>${row["Discord Név"]}</td>
+      <td>${row["Üzenet"]}</td>
+      <td>${row["Dátum"]}</td>
+      <td id="status-${row["Karakter Név"]}">${row["Status"] || "Függőben"}</td>
+      <td>
+        ${felhasznalo==="Boss"?`<button onclick="updateStatus('${row["Karakter Név"]}','Elfogadva')">✅</button>
+        <button onclick="updateStatus('${row["Karakter Név"]}','Elutasítva')">❌</button>`:""}
+      </td>
+    `;
+    table.appendChild(tr);
+  });
+
+  container.innerHTML="";
+  container.appendChild(table);
+});
+
+// 🔹 Státusz frissítés
+function updateStatus(character,status){
+  fetch(`${webAppURL}?action=update&Karakter Név=${encodeURIComponent(character)}&Status=${encodeURIComponent(status)}`)
+  .then(res=>res.text())
+  .then(txt=>{
+    if(txt==="OK"){
+      document.getElementById("status-"+character).innerText=status;
+    } else {
+      alert("Hiba a státusz frissítésénél!");
+    }
+  });
+}
 </script>
 
 </body>
