@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Black Crown Maffia - Turbo</title>
+<title>Black Crown Maffia - Turbo Menüs</title>
 <style>
 /* --- Body és parallax háttér --- */
 body {
   margin:0;
-  padding:40px;
+  padding:80px 40px 40px 40px;
   font-family:'Orbitron', sans-serif;
   color:white;
   text-align:center;
@@ -16,10 +16,37 @@ body {
   background: url('https://wallpapers.com/images/hd/skull-black-king-crown-z2sij0bg02ro5oao.jpg') no-repeat center center fixed;
   background-size:cover;
   perspective:1000px;
+  backdrop-filter: brightness(0.7);
+}
+
+/* --- Menüsáv --- */
+#mainMenu {
+  position:fixed;
+  top:0; left:0; width:100%;
+  background: rgba(0,0,0,0.85);
+  padding:10px;
+  display:flex; justify-content:center; gap:20px;
+  z-index:1000;
+  box-shadow:0 0 20px #00ffff inset;
+}
+#mainMenu button {
+  padding:10px 18px;
+  font-weight:bold;
+  border-radius:10px;
+  border:none;
+  background: rgba(255,0,0,0.8);
+  color:black;
+  text-shadow:1px 1px 2px #000;
+  cursor:pointer;
+  transition:0.3s;
+}
+#mainMenu button:hover{
+  background: rgba(0,255,255,0.85);
+  transform:scale(1.1);
 }
 
 /* --- Inputok és gombok --- */
-input, button{
+input, button.jelentkez {
   padding:14px 22px;
   margin:5px;
   border:none;
@@ -33,7 +60,7 @@ input, button{
   transition: all 0.3s ease;
 }
 input:focus{outline:none; box-shadow:0 0 10px #00ffff;}
-button:hover{
+button.jelentkez:hover{
   transform:scale(1.05);
   box-shadow:0 0 20px #00ffff;
   background: rgba(0,255,255,0.85);
@@ -103,36 +130,83 @@ h1{
   font-weight:bold;
   text-shadow:0 0 10px #000;
 }
+
+/* --- Szekciók --- */
+section{
+  margin-top:30px;
+}
 </style>
 </head>
 <body>
 
 <h1>Black Crown Maffia</h1>
 
-<div id="postAccept">
-  <button id="discordBtn" onclick="window.open('https://discord.gg/4nspFjYC','_blank')">Discord Csatlakozás</button>
-  <button id="staffBtn" onclick="checkAdminAccess()">Staff / Admin Panel</button>
-</div>
+<!-- Menüsáv fent fixen -->
+<nav id="mainMenu">
+  <button onclick="showSection('jelentkezes')">Jelentkezés</button>
+  <button onclick="showSection('szabalyzat')">Szabályzat</button>
+  <button onclick="showSection('rangok')">Rangok</button>
+</nav>
 
-<div id="loginDiv">
-  <p>Jelentkezés</p>
-  <input type="text" id="userName" placeholder="Név"><br>
-  <input type="text" id="userDiscord" placeholder="Discord Név"><br>
-  <input type="number" id="userAge" placeholder="Életkor"><br>
-  <button onclick="submitApplication()">Jelentkezés</button>
-  <button onclick="resetApplication()">Újra jelentkezés</button>
-</div>
+<!-- Jelentkezés szekció -->
+<section id="jelentkezes">
+  <div id="postAccept">
+    <button id="discordBtn" onclick="window.open('https://discord.gg/4nspFjYC','_blank')">Discord Csatlakozás</button>
+    <button id="staffBtn" onclick="checkAdminAccess()">Staff / Admin Panel</button>
+  </div>
 
-<div id="adminLoginDiv">
-  <p>Staff/Admin belépés</p>
-  <input type="text" id="adminUser" placeholder="Felhasználónév"><br>
-  <input type="password" id="adminPass" placeholder="Jelszó"><br>
-  <button onclick="checkAdminLogin()">Belépés</button>
-</div>
+  <div id="loginDiv">
+    <p>Jelentkezés</p>
+    <input type="text" id="userName" placeholder="Név"><br>
+    <input type="text" id="userDiscord" placeholder="Discord Név"><br>
+    <input type="number" id="userAge" placeholder="Életkor"><br>
+    <button class="jelentkez" onclick="submitApplication()">Jelentkezés</button>
+    <button class="jelentkez" onclick="resetApplication()">Újra jelentkezés</button>
+  </div>
+
+  <div id="adminLoginDiv">
+    <p>Staff/Admin belépés</p>
+    <input type="text" id="adminUser" placeholder="Felhasználónév"><br>
+    <input type="password" id="adminPass" placeholder="Jelszó"><br>
+    <button class="jelentkez" onclick="checkAdminLogin()">Belépés</button>
+  </div>
+</section>
+
+<!-- Szabályzat szekció -->
+<section id="szabalyzat" style="display:none;">
+  <h2>Szabályzat</h2>
+  <ul style="text-align:left; max-width:600px; margin:auto; font-size:1.1em;">
+    <li>1. Tilos csalni vagy exploitálni a rendszert.</li>
+    <li>2. Más játékosok zaklatása tilos.</li>
+    <li>3. A Discord szabályait mindenki köteles betartani.</li>
+    <li>4. Rangsor változtatás admin döntése alapján.</li>
+    <li>5. Legyél tisztelettudó és udvarias.</li>
+  </ul>
+</section>
+
+<!-- Rangok szekció -->
+<section id="rangok" style="display:none;">
+  <h2>Rangok</h2>
+  <ul style="text-align:left; max-width:600px; margin:auto; font-size:1.1em;">
+    <li><strong>Boss:</strong> Teljes vezetői jogok, döntések a csapat irányában.</li>
+    <li><strong>Underboss:</strong> Segíti a vezetőt, rangok kiosztása.</li>
+    <li><strong>Capo:</strong> Kis csapat vezető, missziók irányítása.</li>
+    <li><strong>Soldier:</strong> Alap tag, küldetések végrehajtása.</li>
+    <li><strong>Associate:</strong> Próbaidős tag, még nem teljes jogokkal.</li>
+  </ul>
+</section>
 
 <p id="statusMsg"></p>
 
 <script>
+// --- Szekció váltás ---
+function showSection(id){
+  const sections=['jelentkezes','szabalyzat','rangok'];
+  sections.forEach(sec=>{
+    document.getElementById(sec).style.display=(sec===id)?'block':'none';
+  });
+}
+
 // --- Jelentkezés ---
 function submitApplication(){
     const name=document.getElementById("userName").value.trim();
@@ -148,7 +222,6 @@ function submitApplication(){
     checkStatus();
     alert("✅ Sikeres jelentkezés! Várd az elfogadást.");
 }
-
 function resetApplication(){
     localStorage.removeItem("bc_user");
     checkStatus();
