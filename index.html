@@ -8,35 +8,47 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:'Orbitron',sans-serif;}
 body{background:#000;color:white;text-align:center;overflow-x:hidden;}
+/* NAV */
 nav{position:fixed;width:100%;background:rgba(0,0,0,0.85);padding:15px;text-align:center;z-index:1000;backdrop-filter:blur(5px);border-bottom:1px solid #ff0000;}
-nav a{color:white;margin:0 15px;text-decoration:none;font-weight:bold;transition:0.3s;}
-nav a:hover{color:#ff0000;text-shadow:0 0 10px #ff0000;}
-.hero{position:relative;height:90vh;display:flex;justify-content:center;align-items:center;text-align:center;overflow:hidden;}
-.hero video{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;z-index:-1;filter:brightness(30%);}
+nav a{color:white;margin:0 15px;text-decoration:none;font-weight:bold;transition:0.3s;text-shadow:0 0 5px #ff0000;animation:pulse 2s infinite;}
+nav a:hover{text-shadow:0 0 20px #ff0000;}
+@keyframes pulse{0%,100%{text-shadow:0 0 5px #ff0000;}50%{text-shadow:0 0 20px #ff0000;}}
+/* HERO */
+.hero{position:relative;height:90vh;display:flex;justify-content:center;align-items:center;text-align:center;overflow:hidden;
+background: url('https://thumbs.dreamstime.com/b/golden-light-crown-black-background-golden-glowing-crown-centered-against-black-background-made-lines-radiating-376295377.jpg') center/cover no-repeat;}
+.hero::after{content:'';position:absolute;top:0;left:0;width:100%;height:100%;background:linear-gradient(120deg, rgba(255,0,0,0.2), rgba(0,255,255,0.2));mix-blend-mode: overlay;animation:moveOverlay 10s linear infinite;}
+@keyframes moveOverlay{0%{background-position:0 0;}100%{background-position:200% 200%;}}
 .hero h1{font-size:3em;color:#ff0000;text-shadow:0 0 20px #ff0000;}
 section{padding:60px 20px;}
-button{padding:12px 25px;border:none;border-radius:30px;background:#ff0000;color:black;font-weight:bold;cursor:pointer;transition:0.3s;margin-top:10px;}
-button:hover{background:#00ffff;color:black;box-shadow:0 0 20px #00ffff;}
+button{padding:12px 25px;border:none;border-radius:30px;background:#ff0000;color:black;font-weight:bold;cursor:pointer;transition:0.3s;margin-top:10px;box-shadow:0 0 10px #ff0000;}
+button:hover{box-shadow:0 0 30px #00ffff,0 0 50px #00ffff;transform:scale(1.05);}
 .server-box{background:#111;padding:30px;border-radius:15px;border:1px solid #ff0000;display:inline-block;margin-top:20px;}
 footer{background:#000;padding:20px;text-align:center;font-size:14px;}
 audio{position:fixed;bottom:10px;right:10px;width:200px;border-radius:10px;}
-@media(max-width:768px){.hero h1{font-size:2.2em;}}
+/* VIP */
+#vip{padding:60px 20px;}
+.card{display:inline-block;margin:10px;padding:20px;border-radius:15px;background:#111;border:2px solid #ff0000;color:white;font-weight:bold;transition:0.3s, transform 0.5s; opacity:0; transform:scale(0.8);}
+.card.show{opacity:1; transform:scale(1);}
+.card:hover{border-color:#00ffff;box-shadow:0 0 20px #00ffff;transform:translateY(-5px);}
+@media(max-width:768px){
+.hero h1{font-size:2.2em;}
+nav{display:flex;flex-direction:column;}
+nav a{margin:5px 0;}
+.card{width:80%;margin:10px auto;}
+iframe{height:400px;}
+}
 </style>
 </head>
 <body>
 
 <nav>
 <a href="#home">Főoldal</a>
-<a href="#server">Szerver</a>
+<a href="#server">Discord</a>
 <a href="#apply">Jelentkezés</a>
 <a href="https://lakatosdavid060-cpu.github.io/blackcrown/Staff.html" target="_blank">Staff Panel</a>
 </nav>
 
-<!-- HERO -->
 <div class="hero" id="home">
-<video autoplay muted loop>
-<source src="https://cdn.coverr.co/videos/coverr-driving-through-the-city-1573/1080p.mp4" type="video/mp4">
-</video>
 <div>
 <h1>Black Crown Maffia</h1>
 <p>GTA / FiveM Roleplay</p>
@@ -44,13 +56,13 @@ audio{position:fixed;bottom:10px;right:10px;width:200px;border-radius:10px;}
 </div>
 </div>
 
-<!-- SERVER INFO -->
+<!-- DISCORD WIDGET -->
 <section id="server">
-<h2>Szerver Információ</h2>
-<div class="server-box">
-<p><strong>IP:</strong> cfx.re/join/IDEIP</p>
-<p><strong>Játékosok:</strong> <span id="players">Betöltés...</span></p>
-<button onclick="copyIP()">IP Másolása</button>
+<h2>Discord Szerver</h2>
+<div class="server-box" style="width:100%;max-width:400px;margin:0 auto;">
+<iframe src="https://discord.com/widget?id=1475997967206056036&theme=dark" 
+        width="100%" height="500" allowtransparency="true" frameborder="0" sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts">
+</iframe>
 </div>
 </section>
 
@@ -58,25 +70,36 @@ audio{position:fixed;bottom:10px;right:10px;width:200px;border-radius:10px;}
 <section id="apply">
 <h2>Jelentkezés</h2>
 <p>Kattints a gombra, hogy a jelentkezési űrlaphoz juss:</p>
-<button onclick="window.open('https://docs.google.com/forms/d/e/1FAIpQLSd00Zm7beEEmrtdGXKdVcnDM13e0Nb6w4Sl5o-hYEU0X4OrZg/viewform?usp=publish-editor','_blank')">
-Jelentkezés</button>
+<button onclick="window.open('https://docs.google.com/forms/d/e/1FAIpQLSd00Zm7beEEmrtdGXKdVcnDM13e0Nb6w4Sl5o-hYEU0X4OrZg/viewform?usp=publish-editor','_blank')">Jelentkezés</button>
+</section>
+
+<!-- VIP / Rangok -->
+<section id="vip">
+<h2>VIP / Rangok</h2>
+<div class="card">Bronz VIP</div>
+<div class="card">Ezüst VIP</div>
+<div class="card">Arany VIP</div>
 </section>
 
 <!-- ZENE -->
-<audio autoplay loop controls>
+<audio autoplay loop controls id="bgMusic">
 <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3" type="audio/mpeg">
 </audio>
+<button onclick="toggleMusic()">Zene ki/be</button>
 
-<!-- FOOTER -->
 <footer>© 2026 Black Crown Maffia</footer>
 
 <script>
-// FAKE PLAYER COUNTER
-let randomPlayers = Math.floor(Math.random()*120)+10;
-document.getElementById("players").innerText = randomPlayers+" / 128";
+// ZENE KI/BE
+function toggleMusic(){let audio=document.getElementById("bgMusic");if(audio.paused)audio.play();else audio.pause();}
 
-// IP MÁSOLÁS
-function copyIP(){navigator.clipboard.writeText("cfx.re/join/IDEIP");alert("IP kimásolva!");}
+// VIP KÁRTYÁK BELÉPŐ ANIMÁCIÓ
+window.addEventListener('load', ()=>{
+  const cards=document.querySelectorAll('.card');
+  cards.forEach((card,i)=>{
+    setTimeout(()=>{card.classList.add('show');}, i*300);
+  });
+});
 </script>
 
 </body>
