@@ -3,81 +3,105 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Black Crown Maffia</title>
+<title>Black Crown Maffia - Turbo</title>
 <style>
+/* --- Body és parallax háttér --- */
 body {
+  margin:0;
+  padding:40px;
+  font-family:'Orbitron', sans-serif;
+  color:white;
+  text-align:center;
+  overflow-x:hidden;
   background: url('https://wallpapers.com/images/hd/skull-black-king-crown-z2sij0bg02ro5oao.jpg') no-repeat center center fixed;
-  background-size: cover;
-  color: white;
-  font-family: sans-serif;
-  text-align: center;
-  padding: 40px;
-  backdrop-filter: brightness(0.7);
+  background-size:cover;
+  perspective:1000px;
 }
-input, button {
-  padding: 12px 20px;
-  margin: 5px;
-  border: none;
-  border-radius: 10px;
-  cursor: pointer;
-  font-weight: bold;
-  background: rgba(255, 0, 0, 0.8);
-  color: black;
-  text-shadow: 1px 1px 2px #000;
-  transition: 0.3s;
+
+/* --- Inputok és gombok --- */
+input, button{
+  padding:14px 22px;
+  margin:5px;
+  border:none;
+  border-radius:12px;
+  cursor:pointer;
+  font-weight:bold;
+  background: rgba(255,0,0,0.85);
+  color:black;
+  text-shadow:1px 1px 2px #000;
+  font-size:1em;
+  transition: all 0.3s ease;
 }
-button:hover {
-  background: rgba(0, 255, 255, 0.8);
+input:focus{outline:none; box-shadow:0 0 10px #00ffff;}
+button:hover{
+  transform:scale(1.05);
+  box-shadow:0 0 20px #00ffff;
+  background: rgba(0,255,255,0.85);
 }
-#discordBtn {
-  display: none;
-  font-size: 1.2em;
-  animation: pulse 1.5s infinite alternate;
-  margin-top: 10px;
+
+/* --- Discord gomb animáció --- */
+#discordBtn{
+  display:none;
+  font-size:1.4em;
+  margin-top:15px;
+  animation:pulse 1.2s infinite alternate, glow 2s infinite alternate;
 }
-#postAccept {
-  display: none;
-  margin-top: 10px;
+@keyframes pulse{
+  0%{transform:scale(1);}
+  50%{transform:scale(1.1);}
+  100%{transform:scale(1);}
 }
-#adminLoginDiv {
-  display: none;
-  margin-top: 10px;
+@keyframes glow{
+  0%{box-shadow:0 0 5px #0ff;}
+  50%{box-shadow:0 0 25px #0ff;}
+  100%{box-shadow:0 0 5px #0ff;}
 }
-#acceptPopup {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%) scale(0);
-  background: #0f0;
-  color: #000;
-  padding: 20px 40px;
-  border-radius: 15px;
-  font-size: 1.5em;
-  font-weight: bold;
-  z-index: 1000;
-  animation: popupAnim 0.8s forwards;
+
+/* --- Popup animáció --- */
+#acceptPopup{
+  position:fixed;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%) scale(0);
+  background:#0f0;
+  color:#000;
+  padding:25px 50px;
+  border-radius:20px;
+  font-size:2em;
+  font-weight:bold;
+  z-index:1000;
+  animation:popupAnim 0.8s forwards;
+  box-shadow:0 0 30px #0ff,0 0 60px #0ff inset;
 }
-@keyframes popupAnim {
-  0% { transform: translate(-50%, -50%) scale(0); }
-  50% { transform: translate(-50%, -50%) scale(1.2); }
-  100% { transform: translate(-50%, -50%) scale(1); }
+@keyframes popupAnim{
+  0%{transform:translate(-50%,-50%) scale(0);}
+  50%{transform:translate(-50%,-50%) scale(1.3);}
+  100%{transform:translate(-50%,-50%) scale(1);}
 }
-.confetti-piece {
-  position: fixed;
-  width: 10px;
-  height: 10px;
-  pointer-events: none;
-  opacity: 0.9;
-  animation: fall linear forwards;
+
+/* --- Confetti --- */
+.confetti-piece{
+  position:fixed;
+  width:12px;height:12px;
+  pointer-events:none;
+  opacity:0.95;
+  animation:fall linear forwards;
 }
-@keyframes fall {
-  0% { transform: translateY(0px) rotate(0deg); }
-  100% { transform: translateY(100vh) rotate(360deg); }
+@keyframes fall{
+  0%{transform:translateY(0px) rotate(0deg);}
+  100%{transform:translateY(100vh) rotate(360deg);}
 }
-@keyframes pulse {
-  0% { box-shadow: 0 0 10px #00ffff; }
-  50% { box-shadow: 0 0 30px #00ffff; }
-  100% { box-shadow: 0 0 10px #00ffff; }
+
+/* --- Text effektek --- */
+h1{
+  text-shadow: 0 0 10px #f00, 0 0 20px #0ff, 0 0 30px #f0f;
+  font-size:3em;
+}
+#statusMsg{
+  margin-top:15px;
+  font-size:1.3em;
+  font-weight:bold;
+  text-shadow:0 0 10px #000;
 }
 </style>
 </head>
@@ -169,12 +193,16 @@ function showAcceptPopup(){
 }
 function runConfetti(){
     const colors=['#ff0','#0ff','#f0f','#ff8800','#00ff88','#ff0088'];
-    for(let i=0;i<50;i++){
+    for(let i=0;i<60;i++){
+        const shapes=['●','★','♛','☠'];
         const c=document.createElement('div'); c.classList.add('confetti-piece');
-        c.style.backgroundColor=colors[Math.floor(Math.random()*colors.length)];
-        c.style.left=Math.random()*100+'vw'; c.style.width=c.style.height=Math.random()*10+5+'px';
+        c.innerText=shapes[Math.floor(Math.random()*shapes.length)];
+        c.style.color=colors[Math.floor(Math.random()*colors.length)];
+        c.style.left=Math.random()*100+'vw';
+        c.style.fontSize=Math.random()*24+12+'px';
         c.style.animationDuration=(Math.random()*2+2)+'s';
-        document.body.appendChild(c); setTimeout(()=>{c.remove();},3000);
+        document.body.appendChild(c);
+        setTimeout(()=>{c.remove();},3500);
     }
 }
 
