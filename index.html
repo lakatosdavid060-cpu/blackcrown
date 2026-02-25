@@ -10,12 +10,13 @@ button,input{padding:12px 24px;margin:10px;border:none;border-radius:10px;backgr
 button:hover,input:hover{background:#00ffff;color:black;}
 #discordBtn{display:none;font-size:1.2em;animation:pulse 1.5s infinite alternate;}
 #postAccept{display:none;}
+#staffBtn{margin-top:20px;}
+#adminLoginDiv{display:none;margin-top:10px;}
 @keyframes pulse{
   0%{box-shadow:0 0 10px #00ffff;}
   50%{box-shadow:0 0 30px #00ffff;}
   100%{box-shadow:0 0 10px #00ffff;}
 }
-/* Felugró popup */
 #acceptPopup{
   position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);
   background:#0f0;color:#000;padding:20px 40px;border-radius:15px;font-size:1.5em;font-weight:bold;
@@ -26,14 +27,8 @@ button:hover,input:hover{background:#00ffff;color:black;}
   50%{transform:translate(-50%,-50%) scale(1.2);}
   100%{transform:translate(-50%,-50%) scale(1);}
 }
-/* Konfetti stílus */
 .confetti-piece{
-  position:fixed;
-  width:10px; height:10px;
-  background-color:yellow;
-  top:0; left:0;
-  opacity:0.9;
-  pointer-events:none;
+  position:fixed;width:10px;height:10px;opacity:0.9;pointer-events:none;
   animation:fall linear forwards;
 }
 @keyframes fall{
@@ -46,20 +41,31 @@ button:hover,input:hover{background:#00ffff;color:black;}
 
 <h1>Black Crown Maffia</h1>
 
+<!-- Discord és Staff/Admin gomb Elfogadás esetén -->
 <div id="postAccept">
   <button id="discordBtn" onclick="window.open('https://discord.gg/4nspFjYC','_blank')">Discord Csatlakozás</button>
-  <button onclick="window.location.href='admin.html'">Staff / Admin Panel</button>
+  <button id="staffBtn" onclick="checkAdminAccess()">Staff / Admin Panel</button>
 </div>
 
+<!-- Felhasználó Discord neve -->
 <div id="loginDiv">
   <p>Írd be a Discord neved a Discord gomb engedélyezéséhez:</p>
   <input type="text" id="userName" placeholder="Discord Név">
   <button onclick="loginUser()">Bejelentkezés</button>
 </div>
 
+<!-- Admin login felugró -->
+<div id="adminLoginDiv">
+  <p>Staff/Admin belépés</p>
+  <input type="text" id="adminUser" placeholder="Felhasználónév">
+  <input type="password" id="adminPass" placeholder="Jelszó">
+  <button onclick="checkAdminLogin()">Belépés</button>
+</div>
+
 <p id="statusMsg"></p>
 
 <script>
+// Felhasználó Discord név mentése
 function loginUser(){
     const name = document.getElementById("userName").value.trim();
     if(!name){ alert("Kérlek, add meg a Discord neved!"); return; }
@@ -67,6 +73,7 @@ function loginUser(){
     checkStatus();
 }
 
+// Ellenőrizzük a státuszt
 function checkStatus(){
     const name = localStorage.getItem("bc_user");
     const adatok = JSON.parse(localStorage.getItem("jelentkezok") || "[]");
@@ -85,11 +92,10 @@ function checkStatus(){
         document.getElementById("postAccept").style.display = "block";
         document.getElementById("discordBtn").style.display = "inline-block";
         document.getElementById("statusMsg").innerText = "✅ Elfogadva! Most már csatlakozhatsz a Discordhoz!";
-        // popup + konfetti csak egyszer
         const popupShownKey = `popupShown_${name}`;
         if(!localStorage.getItem(popupShownKey)){
             showAcceptPopup();
-            localStorage.setItem(popupShownKey, "true");
+            localStorage.setItem(popupShownKey,"true");
         }
     } else if(user.status === "Elutasítva"){
         alert("⛔ Elutasították a jelentkezésedet!");
@@ -100,26 +106,50 @@ function checkStatus(){
     }
 }
 
+// Popup + konfetti
 function showAcceptPopup(){
     const popup = document.createElement('div');
-    popup.id = 'acceptPopup';
-    popup.innerText = '✅ Elfogadva!';
+    popup.id='acceptPopup';
+    popup.innerText='✅ Elfogadva!';
     document.body.appendChild(popup);
     runConfetti();
     setTimeout(()=>{popup.remove();},2000);
 }
 
 function runConfetti(){
-    const colors = ['#ff0','#0ff','#f0f','#ff8800','#00ff88','#ff0088'];
+    const colors=['#ff0','#0ff','#f0f','#ff8800','#00ff88','#ff0088'];
     for(let i=0;i<50;i++){
         const conf = document.createElement('div');
         conf.classList.add('confetti-piece');
-        conf.style.backgroundColor = colors[Math.floor(Math.random()*colors.length)];
-        conf.style.left = Math.random()*100+'vw';
-        conf.style.width = conf.style.height = Math.random()*10+5+'px';
-        conf.style.animationDuration = (Math.random()*2+2)+'s';
+        conf.style.backgroundColor=colors[Math.floor(Math.random()*colors.length)];
+        conf.style.left=Math.random()*100+'vw';
+        conf.style.width=conf.style.height=Math.random()*10+5+'px';
+        conf.style.animationDuration=(Math.random()*2+2)+'s';
         document.body.appendChild(conf);
         setTimeout(()=>{conf.remove();},3000);
+    }
+}
+
+// Staff/Admin jelszóvédelem
+function checkAdminAccess(){
+    if(localStorage.getItem("bc_admin_logged")==="true"){
+        window.location.href="admin.html";
+        return;
+    }
+    document.getElementById("adminLoginDiv").style.display="block";
+}
+
+const ADMIN_CREDENTIALS={user:"admin",pass:"admin"};
+
+function checkAdminLogin(){
+    const user=document.getElementById("adminUser").value.trim();
+    const pass=document.getElementById("adminPass").value.trim();
+    if(user===ADMIN_CREDENTIALS.user && pass===ADMIN_CREDENTIALS.pass){
+        localStorage.setItem("bc_admin_logged","true");
+        alert("✅ Belépés sikeres!");
+        window.location.href="admin.html";
+    } else {
+        alert("❌ Helytelen felhasználónév vagy jelszó!");
     }
 }
 
