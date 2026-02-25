@@ -3,84 +3,89 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Admin Panel - Black Crown Maffia</title>
+<title>Admin Panel</title>
 <style>
-body{background:#000;color:white;font-family:sans-serif;text-align:center;padding:20px;}
-h1{color:#ff0000;margin-bottom:20px;}
-button{padding:5px 10px;margin:2px;border:none;border-radius:6px;background:#ff0000;color:white;cursor:pointer;}
-button:hover{background:#00ffff;color:black;}
-table{width:100%;border-collapse:collapse;margin-top:20px;}
-th,td{border:1px solid #ff0000;padding:10px;}
-th{background:#111;}
-td{background:#222;transition: background 0.3s;}
-.status-Függőben{color:#ffff00;font-weight:bold;}
-.status-Elfogadva{color:#00ff00;font-weight:bold;}
-.status-Elutasítva{color:#ff0000;font-weight:bold;}
+body {
+  background: url('https://images.unsplash.com/photo-1530915362671-6d0e0e8c5b3d?auto=format&fit=crop&w=1400&q=80') no-repeat center center fixed;
+  background-size: cover;
+  color: white;
+  font-family: sans-serif;
+  text-align: center;
+  padding: 40px;
+}
+table {margin:auto;border-collapse:collapse;width:90%; transition:0.3s;}
+th, td {border:1px solid #fff;padding:10px; text-align:center;}
+th {background:#222;}
+tr:hover {background: rgba(255,255,255,0.1);}
+button {padding:8px 15px;margin:2px;border:none;border-radius:10px;cursor:pointer;font-weight:bold;transition:0.3s;}
+button:hover {background:#00ffff;color:black;}
+#logoutBtn {margin-top:20px;}
+.status-accepted{color:#0f0;font-weight:bold;}
+.status-rejected{color:#f00;font-weight:bold;}
+.status-pending{color:#ff0;font-weight:bold;}
 </style>
 </head>
 <body>
 
-<h1>Admin Panel</h1>
+<h1>Staff / Admin Panel</h1>
 
-<table id="adminTable">
+<table id="appTable">
+<thead>
 <tr>
-<th>Karakter Név</th>
-<th>Discord Név</th>
-<th>Kor</th>
-<th>Üzenet</th>
-<th>Status</th>
-<th>Művelet</th>
+<th>Név</th>
+<th>Discord</th>
+<th>Életkor</th>
+<th>Státusz</th>
+<th>Műveletek</th>
 </tr>
+</thead>
+<tbody></tbody>
 </table>
 
-<button onclick="window.location.href='index.html'">🏠 Főoldal</button>
+<button id="logoutBtn" onclick="logoutAdmin()">Kijelentkezés</button>
 
 <script>
-function loadJelentkezesek(){
-    const table = document.getElementById("adminTable");
-    table.innerHTML = `<tr>
-<th>Karakter Név</th>
-<th>Discord Név</th>
-<th>Kor</th>
-<th>Üzenet</th>
-<th>Status</th>
-<th>Művelet</th>
-</tr>`;
-    const adatok = JSON.parse(localStorage.getItem("jelentkezok")||"[]");
-    adatok.forEach(j=>{
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-        <td>${j.name}</td>
-        <td>${j.discord}</td>
-        <td>${j.age}</td>
-        <td>${j.message}</td>
-        <td id="status-${j.id}" class="status-${j.status}">${j.status}</td>
+function loadApplications(){
+    const data=JSON.parse(localStorage.getItem("jelentkezok")||"[]");
+    const tbody=document.querySelector("#appTable tbody");
+    tbody.innerHTML="";
+    data.forEach((u,i)=>{
+        const tr=document.createElement("tr");
+        tr.innerHTML=`<td>${u.name}</td>
+        <td>${u.discord}</td>
+        <td>${u.age}</td>
+        <td class="status-${u.status==='Elfogadva'?'accepted':u.status==='Elutasítva'?'rejected':'pending'}">${u.status}</td>
         <td>
-            <button onclick="updateStatus(${j.id},'Elfogadva')">✅</button>
-            <button onclick="updateStatus(${j.id},'Elutasítva')">❌</button>
-            <button onclick="deleteUser(${j.id})">🗑️ Törlés</button>
-        </td>
-        `;
-        table.appendChild(tr);
+        <button onclick="changeStatus(${i},'Elfogadva')">✅</button>
+        <button onclick="changeStatus(${i},'Elutasítva')">❌</button>
+        <button onclick="deleteUser(${i})">🗑️</button>
+        </td>`;
+        tbody.appendChild(tr);
     });
 }
 
-function updateStatus(id,newStatus){
-    let adatok = JSON.parse(localStorage.getItem("jelentkezok")||"[]");
-    adatok = adatok.map(j=>{if(j.id===id) j.status=newStatus; return j;});
-    localStorage.setItem("jelentkezok",JSON.stringify(adatok));
-    loadJelentkezesek();
+function changeStatus(index,status){
+    const data=JSON.parse(localStorage.getItem("jelentkezok")||"[]");
+    data[index].status=status;
+    localStorage.setItem("jelentkezok",JSON.stringify(data));
+    loadApplications();
+    alert("✅ Státusz frissítve: "+status);
 }
 
-function deleteUser(id){
-    if(!confirm("Biztosan törölni szeretnéd ezt a jelentkezőt?")) return;
-    let adatok = JSON.parse(localStorage.getItem("jelentkezok")||"[]");
-    adatok = adatok.filter(j => j.id !== id);
-    localStorage.setItem("jelentkezok", JSON.stringify(adatok));
-    loadJelentkezesek();
+function deleteUser(index){
+    if(!confirm("Biztos törlöd a jelentkezőt?")) return;
+    const data=JSON.parse(localStorage.getItem("jelentkezok")||"[]");
+    data.splice(index,1);
+    localStorage.setItem("jelentkezok",JSON.stringify(data));
+    loadApplications();
 }
 
-loadJelentkezesek();
+function logoutAdmin(){
+    localStorage.removeItem("bc_admin_logged");
+    window.location.href="index.html";
+}
+
+document.addEventListener("DOMContentLoaded", loadApplications);
 </script>
 
 </body>
