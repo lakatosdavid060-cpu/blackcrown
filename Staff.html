@@ -52,6 +52,11 @@ iframe{
   transform:scale(1.05);
   box-shadow:0 0 20px #ff4f4f;
 }
+.staff-card.active{
+  border:3px solid #00ff00;
+  background:rgba(0,255,0,0.1);
+  box-shadow:0 0 20px #00ff00;
+}
 @keyframes cardPulse{
   0%{box-shadow:0 0 10px #ff0000;}
   50%{box-shadow:0 0 20px #ff4f4f;}
@@ -73,21 +78,71 @@ iframe{
 #music-btn:hover{
   box-shadow:0 0 20px #ff4f4f;
 }
+#user-display{
+  color:#ff4f4f;
+  font-weight:bold;
+  margin-top:10px;
+  font-size:1.2rem;
+}
 </style>
 <script>
-  // STAFF JELSZÓ
-  const password = prompt("Add meg a Boss jelszót:");
-  if(password !== "Boss"){
+const validUsers = ["Boss","UnderBoss"];
+const correctPassword = "BlackCrown2026";
+
+// Belépés
+if(!sessionStorage.getItem("staffPassword") || !sessionStorage.getItem("staffUsername")){
+  let password = prompt("Add meg a staff jelszót:");
+  if(password !== correctPassword){
     alert("❌ Helytelen jelszó!");
     window.location.href="index.html";
+  } else {
+    let username = prompt("Add meg a felhasználóneved (Boss vagy UnderBoss):");
+    if(!validUsers.includes(username)){
+      alert("❌ Érvénytelen felhasználónév!");
+      window.location.href="index.html";
+    } else {
+      sessionStorage.setItem("staffPassword", password);
+      sessionStorage.setItem("staffUsername", username);
+    }
   }
+}
 
-  // Zene gomb
-  function playMusic(){
-    const audio = document.getElementById("bgm");
-    if(audio.paused) audio.play();
-    else audio.pause();
-  }
+// Felhasználó kiírása
+document.addEventListener("DOMContentLoaded", () => {
+  const username = sessionStorage.getItem("staffUsername");
+  const userDisplay = document.createElement("p");
+  userDisplay.id = "user-display";
+  userDisplay.innerText = `Bejelentkezve: ${username}`;
+  document.body.insertBefore(userDisplay, document.body.children[1]);
+
+  // Staff kártyák létrehozása
+  const staffContainer = document.createElement("div");
+  staffContainer.id = "staff-container";
+
+  const staffList = ["Boss","UnderBoss"];
+  staffList.forEach(staff => {
+    const card = document.createElement("div");
+    card.className = "staff-card";
+    if(staff === username) card.classList.add("active"); // kiemelés a bejelentkezettnek
+    const nameDiv = document.createElement("div");
+    nameDiv.innerText = staff;
+    const roleDiv = document.createElement("div");
+    roleDiv.className = "staff-role";
+    roleDiv.innerText = (staff === "Boss") ? "Főnök" : "Alfőnök";
+    card.appendChild(nameDiv);
+    card.appendChild(roleDiv);
+    staffContainer.appendChild(card);
+  });
+
+  document.body.appendChild(staffContainer);
+});
+
+// Zene gomb
+function playMusic(){
+  const audio = document.getElementById("bgm");
+  if(audio.paused) audio.play();
+  else audio.pause();
+}
 </script>
 </head>
 <body>
@@ -101,26 +156,7 @@ iframe{
 
 <h2>Jelentkezések</h2>
 <p>⚠️ Jelentkezések automatikusan a Google Sheetből frissülnek.</p>
-
 <iframe src="https://docs.google.com/spreadsheets/d/e/2PACX-1vSNPsSD9aVIqsNyQn7zEV1OT4TFRPcmKFniNkpSDBiejaaR_hmzY7CLBUAdabuMyOEaLFtrzYenj2Cr/pubhtml?widget=true&amp;headers=false"></iframe>
-
-<h2>Staff Rangok</h2>
-<div class="staff-card">
-  <div>Boss</div>
-  <div class="staff-role">Főnök</div>
-</div>
-<div class="staff-card">
-  <div>UnderBoss</div>
-  <div class="staff-role">Alfőnök</div>
-</div>
-<div class="staff-card">
-  <div>Capo</div>
-  <div class="staff-role">Kapitány</div>
-</div>
-<div class="staff-card">
-  <div>Soldier</div>
-  <div class="staff-role">Katona</div>
-</div>
 
 </body>
 </html>
