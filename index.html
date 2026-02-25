@@ -29,7 +29,7 @@ audio{position:fixed;bottom:10px;right:10px;width:200px;border-radius:10px;}
 <a href="#home">Főoldal</a>
 <a href="#server">Szerver</a>
 <a href="#apply">Jelentkezés</a>
-<a href="#" onclick="staffLogin()">Staff Panel</a>
+<a href="https://lakatosdavid060-cpu.github.io/blackcrown/Staff.html" target="_blank">Staff Panel</a>
 </nav>
 
 <!-- HERO -->
@@ -71,13 +71,6 @@ Jelentkezés</button>
 <footer>© 2026 Black Crown Maffia</footer>
 
 <script>
-// STAFF PANEL
-function staffLogin(){
-let pass = prompt("Add meg a staff jelszót:");
-if(pass==="BlackCrown2026"){window.location.href="staff.html";}
-else{alert("❌ Helytelen jelszó!");}
-}
-
 // FAKE PLAYER COUNTER
 let randomPlayers = Math.floor(Math.random()*120)+10;
 document.getElementById("players").innerText = randomPlayers+" / 128";
@@ -88,5 +81,3 @@ function copyIP(){navigator.clipboard.writeText("cfx.re/join/IDEIP");alert("IP k
 
 </body>
 </html>
-
-
