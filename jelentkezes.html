@@ -29,7 +29,6 @@ button:hover{background:#00ffff;color:black;}
 <button onclick="goBack()">🏠 Vissza a főoldalra</button>
 
 <script>
-// Jelentkezés localStorage-be
 const form = document.getElementById("applyForm");
 const statusMsg = document.getElementById("status");
 
@@ -54,9 +53,7 @@ form.addEventListener("submit", e=>{
     form.reset();
 });
 
-function goBack(){
-    window.location.href = "index.html";
-}
+function goBack(){ window.location.href = "index.html"; }
 </script>
 
 </body>
