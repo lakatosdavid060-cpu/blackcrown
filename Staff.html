@@ -6,35 +6,121 @@
 <title>Black Crown Maffia - Staff Panel</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
 <style>
-  *{margin:0;padding:0;box-sizing:border-box;font-family:'Orbitron',sans-serif;}
-  body{background:#000;color:white;text-align:center;}
-  h1,h2{color:#ff0000;margin-bottom:20px;text-shadow:0 0 10px #ff0000;}
-  iframe{
-    width:90%;
-    height:600px;
-    border:2px solid #ff0000;
-    border-radius:10px;
-    margin:20px auto;
-    display:block;
-  }
-  p{margin-top:10px;}
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Orbitron',sans-serif;}
+body{background:#000;color:white;text-align:center;overflow-x:hidden;}
+h1{
+  color:#ff0000;
+  font-size:2.5rem;
+  text-shadow:0 0 5px #ff0000,0 0 10px #ff0000,0 0 20px #ff0000;
+  animation: neonGlow 1.5s infinite alternate;
+  margin-top:30px;
+}
+@keyframes neonGlow{
+  0%{text-shadow:0 0 5px #ff0000,0 0 10px #ff0000,0 0 20px #ff0000;}
+  50%{text-shadow:0 0 20px #ff4f4f,0 0 30px #ff4f4f,0 0 40px #ff4f4f;}
+  100%{text-shadow:0 0 5px #ff0000,0 0 10px #ff0000,0 0 20px #ff0000;}
+}
+iframe{
+  width:90%;
+  height:600px;
+  border:3px solid #ff0000;
+  border-radius:15px;
+  margin:20px auto;
+  display:block;
+  box-shadow:0 0 20px #ff0000, 0 0 40px #ff4f4f;
+  animation: iframeGlow 2s infinite alternate;
+}
+@keyframes iframeGlow{
+  0%{box-shadow:0 0 20px #ff0000,0 0 40px #ff4f4f;}
+  50%{box-shadow:0 0 40px #ff4f4f,0 0 60px #ff9999;}
+  100%{box-shadow:0 0 20px #ff0000,0 0 40px #ff4f4f;}
+}
+.staff-card{
+  display:inline-block;
+  width:200px;
+  margin:10px;
+  padding:15px;
+  border:2px solid #ff0000;
+  border-radius:10px;
+  text-align:center;
+  background:rgba(255,0,0,0.05);
+  box-shadow:0 0 10px #ff0000;
+  transition:0.3s;
+  animation: cardPulse 2s infinite alternate;
+}
+.staff-card:hover{
+  transform:scale(1.05);
+  box-shadow:0 0 20px #ff4f4f;
+}
+@keyframes cardPulse{
+  0%{box-shadow:0 0 10px #ff0000;}
+  50%{box-shadow:0 0 20px #ff4f4f;}
+  100%{box-shadow:0 0 10px #ff0000;}
+}
+.staff-role{color:#ff4f4f;font-weight:bold;margin-top:5px;}
+#music-btn{
+  margin:20px;
+  padding:10px 20px;
+  background:#ff0000;
+  color:white;
+  border:none;
+  border-radius:5px;
+  font-weight:bold;
+  cursor:pointer;
+  box-shadow:0 0 10px #ff0000;
+  transition:0.3s;
+}
+#music-btn:hover{
+  box-shadow:0 0 20px #ff4f4f;
+}
 </style>
 <script>
   // STAFF JELSZÓ
   const password = prompt("Add meg a staff jelszót:");
   if(password !== "David2026"){
     alert("❌ Helytelen jelszó!");
-    window.location.href="index.html"; // vissza a főoldalra
+    window.location.href="index.html";
+  }
+
+  // Zene gomb
+  function playMusic(){
+    const audio = document.getElementById("bgm");
+    if(audio.paused) audio.play();
+    else audio.pause();
   }
 </script>
 </head>
 <body>
 
 <h1>Black Crown Maffia - Staff Panel</h1>
+
+<button id="music-btn" onclick="playMusic()">🎵 Zene bekapcsolása / leállítása</button>
+<audio id="bgm" loop>
+  <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg">
+</audio>
+
 <h2>Jelentkezések</h2>
 <p>⚠️ Jelentkezések automatikusan a Google Sheetből frissülnek.</p>
 
-<iframe src="<iframe src="https://docs.google.com/spreadsheets/d/e/2PACX-1vSNPsSD9aVIqsNyQn7zEV1OT4TFRPcmKFniNkpSDBiejaaR_hmzY7CLBUAdabuMyOEaLFtrzYenj2Cr/pubhtml?widget=true&amp;headers=false"></iframe>"></iframe>
+<iframe src="https://docs.google.com/spreadsheets/d/e/2PACX-1vSNPsSD9aVIqsNyQn7zEV1OT4TFRPcmKFniNkpSDBiejaaR_hmzY7CLBUAdabuMyOEaLFtrzYenj2Cr/pubhtml?widget=true&amp;headers=false"></iframe>
+
+<h2>Staff Rangok</h2>
+<div class="staff-card">
+  <div>Boss</div>
+  <div class="staff-role">Főnök</div>
+</div>
+<div class="staff-card">
+  <div>UnderBoss</div>
+  <div class="staff-role">Alfőnök</div>
+</div>
+<div class="staff-card">
+  <div>Capo</div>
+  <div class="staff-role">Kapitány</div>
+</div>
+<div class="staff-card">
+  <div>Soldier</div>
+  <div class="staff-role">Katona</div>
+</div>
 
 </body>
 </html>
