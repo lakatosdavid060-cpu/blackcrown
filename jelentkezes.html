@@ -15,50 +15,48 @@ button:hover{background:#00ffff;color:black;}
 </head>
 <body>
 
-<h1>Black Crown Maffia - Jelentkezési Űrlap</h1>
+<h1>Jelentkezési Űrlap</h1>
 
 <form id="applyForm">
   <input type="text" id="name" placeholder="Karakter Név" required><br>
   <input type="text" id="discord" placeholder="Discord Név" required><br>
+  <input type="number" id="age" placeholder="Kor" required><br>
   <textarea id="message" placeholder="Üzenet" required></textarea><br>
   <button type="submit">Jelentkezés Küldése</button>
 </form>
 
 <p id="status"></p>
+<button onclick="goBack()">🏠 Vissza a főoldalra</button>
 
 <script>
-// Hibamentes offline jelentkezés localStorage-be
+// Jelentkezés localStorage-be
 const form = document.getElementById("applyForm");
 const statusMsg = document.getElementById("status");
 
-form.addEventListener("submit", e => {
+form.addEventListener("submit", e=>{
     e.preventDefault();
-
-    const name = document.getElementById("name").value.trim();
-    const discord = document.getElementById("discord").value.trim();
-    const message = document.getElementById("message").value.trim();
-
-    if(!name || !discord || !message){
+    const jelentkezes = {
+        id: Date.now(),
+        name: document.getElementById("name").value.trim(),
+        discord: document.getElementById("discord").value.trim(),
+        age: document.getElementById("age").value.trim(),
+        message: document.getElementById("message").value.trim(),
+        status: "Függőben"
+    };
+    if(!jelentkezes.name || !jelentkezes.discord || !jelentkezes.age || !jelentkezes.message){
         statusMsg.innerText = "❌ Kérlek töltsd ki az összes mezőt!";
         return;
     }
-
-    const jelentkezes = {
-        id: Date.now(),
-        name: name,
-        discord: discord,
-        message: message,
-        date: new Date().toLocaleString(),
-        status: "Függőben"
-    };
-
     let adatok = JSON.parse(localStorage.getItem("jelentkezok") || "[]");
     adatok.push(jelentkezes);
     localStorage.setItem("jelentkezok", JSON.stringify(adatok));
-
     statusMsg.innerText = "✅ Sikeres jelentkezés!";
     form.reset();
 });
+
+function goBack(){
+    window.location.href = "index.html";
+}
 </script>
 
 </body>
