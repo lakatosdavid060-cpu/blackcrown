@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jelentkezés - Black Crown Maffia</title>
+<style>
+body{background:#000;color:white;font-family:sans-serif;text-align:center;padding:20px;}
+input,textarea,button{padding:10px;margin:10px;width:80%;border-radius:8px;border:none;}
+button{background:#ff0000;color:white;cursor:pointer;}
+button:hover{background:#00ffff;color:black;}
+</style>
+</head>
+<body>
+
+<h1>Black Crown Maffia - Jelentkezési Űrlap</h1>
+
+<form id="applyForm">
+  <input type="text" id="name" placeholder="Karakter Név" required><br>
+  <input type="text" id="discord" placeholder="Discord Név" required><br>
+  <textarea id="message" placeholder="Üzenet" required></textarea><br>
+  <button type="submit">Jelentkezés Küldése</button>
+</form>
+
+<p id="status"></p>
+
+<script>
+const form = document.getElementById("applyForm");
+
+form.addEventListener("submit", e=>{
+    e.preventDefault();
+
+    const jelentkezes = {
+        id: Date.now(),
+        name: document.getElementById("name").value,
+        discord: document.getElementById("discord").value,
+        message: document.getElementById("message").value,
+        date: new Date().toLocaleString(),
+        status: "Függőben"
+    };
+
+    // Mentés localStorage-be
+    let adatok = JSON.parse(localStorage.getItem("jelentkezok") || "[]");
+    adatok.push(jelentkezes);
+    localStorage.setItem("jelentkezok", JSON.stringify(adatok));
+
+    document.getElementById("status").innerText = "✅ Sikeres jelentkezés!";
+    form.reset();
+});
+</script>
+
+</body>
+</html>
