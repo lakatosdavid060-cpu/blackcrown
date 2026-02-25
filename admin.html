@@ -35,7 +35,7 @@ button:hover{background:#00ffff;color:black;}
 <h1>Black Crown Maffia - Admin Panel</h1>
 
 <script>
-// Persistent login
+// 🛡️ Persistent login
 let user = localStorage.getItem("bc_user");
 let pass = localStorage.getItem("bc_pass");
 if(!user || !pass || pass !== "BlackCrown2026" || (user!=="Boss" && user!=="UnderBoss")){
@@ -44,10 +44,9 @@ if(!user || !pass || pass !== "BlackCrown2026" || (user!=="Boss" && user!=="Unde
     if(pass !== "BlackCrown2026" || (user!=="Boss" && user!=="UnderBoss")){
         alert("❌ Helytelen felhasználónév vagy jelszó!");
         window.location.href="index.html";
-    } else {
-        localStorage.setItem("bc_user", user);
-        localStorage.setItem("bc_pass", pass);
     }
+    localStorage.setItem("bc_user", user);
+    localStorage.setItem("bc_pass", pass);
 }
 document.write(`<button onclick="logout()">Kijelentkezés</button>`);
 
@@ -58,7 +57,7 @@ function logout(){
 }
 </script>
 
-<!-- Összegző sáv -->
+<!-- 📊 Összegző sáv -->
 <div id="summary">
   <div class="summary-box summary-Függőben">Függőben: <span id="sum-pending">0</span></div>
   <div class="summary-box summary-Elfogadva">Elfogadva: <span id="sum-accepted">0</span></div>
@@ -79,7 +78,11 @@ function logout(){
 </table>
 
 <script>
-const sheetURL = "https://docs.google.com/spreadsheets/d/10GSXkieZmFQr1RXtg2IPeAkt0UNVMDuOsmNClpJIZFs/export?format=csv&gid=103646644";
+// 📁 A te CSV export link a Sheet‑ből
+const sheetCSV = "https://docs.google.com/spreadsheets/d/10GSXkieZmFQr1RXtg2IPeAkt0UNVMDuOsmNClpJIZFs/export?format=csv&gid=103646644";
+
+// 🛠️ A te Web App URL-ed (amit küldtél)
+const webAppURL = "https://script.google.com/macros/s/AKfycbzFR3CocD15XGwOuv1XqrjpM33EpPYPeIEQymVRrFJmY278fuhdLOLgxADn6jXkJw4TnQ/exec";
 
 let summary = { "Függőben":0, "Elfogadva":0, "Elutasítva":0 };
 
@@ -89,7 +92,8 @@ function updateSummary(){
     document.getElementById("sum-rejected").innerText = summary["Elutasítva"];
 }
 
-fetch(sheetURL)
+// 📥 Betöltjük a CSV‑t
+fetch(sheetCSV)
 .then(res => res.text())
 .then(csv => {
     const rows = csv.split("\n");
@@ -98,7 +102,7 @@ fetch(sheetURL)
     rows.forEach((row,i) => {
         if(!row) return;
         const cols = row.split(",");
-        if(i === 0) return; // fejléc kihagyása
+        if(i === 0) return; // első sor = fejléc
         if(cols.length < 4) return;
 
         const name = cols[0];
@@ -131,6 +135,7 @@ fetch(sheetURL)
 })
 .catch(err => console.log("Hiba a CSV betöltésénél:", err));
 
+// 🛠️ Státusz mentése Apps Script‑tel
 function updateStatus(i, newStatus){
     const td = document.getElementById(`status-${i}`);
     const oldStatus = td.innerText;
@@ -147,6 +152,16 @@ function updateStatus(i, newStatus){
     summary[oldStatus]--;
     summary[newStatus]++;
     updateSummary();
+
+    // 📨 POST a Web App‑hoz
+    fetch(webAppURL, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({row:i, status:newStatus})
+    })
+    .then(res => res.json())
+    .then(data => console.log("Mentés sikeres", data))
+    .catch(err => console.error("Hiba a mentésnél:", err));
 }
 </script>
 
