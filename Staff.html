@@ -3,61 +3,38 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Black Crown Maffia Staff Panel</title>
+<title>Black Crown Maffia - Staff Panel</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
 <style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:'Orbitron',sans-serif;}
-body{background:#000;color:white;text-align:center;}
-h1,h2{color:#ff0000;margin-bottom:20px;}
-section{padding:80px 20px;}
-table{margin:0 auto;border-collapse:collapse;width:90%;max-width:800px;}
-th,td{border:1px solid #ff0000;padding:12px;}
-th{background:#111;}
-tr:nth-child(even){background:#111;}
-tr:nth-child(odd){background:#222;}
+  *{margin:0;padding:0;box-sizing:border-box;font-family:'Orbitron',sans-serif;}
+  body{background:#000;color:white;text-align:center;}
+  h1,h2{color:#ff0000;margin-bottom:20px;text-shadow:0 0 10px #ff0000;}
+  iframe{
+    width:90%;
+    height:600px;
+    border:2px solid #ff0000;
+    border-radius:10px;
+    margin:20px auto;
+    display:block;
+  }
+  p{margin-top:10px;}
 </style>
+<script>
+  // STAFF JELSZÓ
+  const password = prompt("Add meg a staff jelszót:");
+  if(password !== "David2026"){
+    alert("❌ Helytelen jelszó!");
+    window.location.href="index.html"; // vissza a főoldalra
+  }
+</script>
 </head>
 <body>
 
 <h1>Black Crown Maffia - Staff Panel</h1>
 <h2>Jelentkezések</h2>
-
 <p>⚠️ Jelentkezések automatikusan a Google Sheetből frissülnek.</p>
 
-<table id="applications">
-<tr>
-<th>Karakter Név</th>
-<th>Discord Név</th>
-<th>Üzenet</th>
-<th>Dátum</th>
-</tr>
-</table>
-
-<script>
-// STAFF JELSZÓ
-let pass = prompt("Add meg a staff jelszót:");
-if(pass !== "BlackCrown2026"){alert("❌ Helytelen jelszó!"); window.location.href="index.html";}
-
-// GOOGLE SHEET INTEGRÁCIÓ
-// 1️⃣ Google Sheet → Fájl → Publikálás webre → JSON
-// 2️⃣ Cseréld ki a sheetURL-t a saját JSON linkre
-const sheetURL = "IDE_A_TE_GOOGLE_SHEET_JSON_LINK";
-
-// Adatok betöltése
-fetch(sheetURL)
-.then(res => res.json())
-.then(data => {
-  const table = document.getElementById("applications");
-  data.feed.entry.forEach(row => {
-    const r = table.insertRow();
-    r.insertCell(0).innerText = row.gsx$karakternev.$t;
-    r.insertCell(1).innerText = row.gsx$discord.$t;
-    r.insertCell(2).innerText = row.gsx$uzenet.$t;
-    r.insertCell(3).innerText = row.gsx$datum.$t;
-  });
-})
-.catch(err => console.log("Hiba a Sheet betöltésénél:", err));
-</script>
+<iframe src="<IFRAME_LINK>"></iframe>
 
 </body>
 </html>
