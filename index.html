@@ -6,52 +6,78 @@
 <title>Black Crown Maffia</title>
 <style>
 body {
-  background: url('https://images.unsplash.com/photo-1587316745621-3757c7076f5d?auto=format&fit=crop&w=1400&q=80') no-repeat center center fixed;
+  background: url('https://wallpapers.com/images/hd/skull-black-king-crown-z2sij0bg02ro5oao.jpg') no-repeat center center fixed;
   background-size: cover;
   color: white;
   font-family: sans-serif;
   text-align: center;
   padding: 40px;
+  backdrop-filter: brightness(0.7);
 }
-input, button{
-  padding:12px 20px;
-  margin:5px;
-  border:none;
-  border-radius:10px;
-  cursor:pointer;
-  font-weight:bold;
-  background: rgba(255,0,0,0.8);
-  color:black;
-  text-shadow:1px 1px 2px #000;
-  transition:0.3s;
+input, button {
+  padding: 12px 20px;
+  margin: 5px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: bold;
+  background: rgba(255, 0, 0, 0.8);
+  color: black;
+  text-shadow: 1px 1px 2px #000;
+  transition: 0.3s;
 }
-button:hover{background: rgba(0,255,255,0.8);}
-#discordBtn{display:none;font-size:1.2em;animation:pulse 1.5s infinite alternate;margin-top:10px;}
-#postAccept{display:none;margin-top:10px;}
-#staffBtn{margin-top:20px;}
-#adminLoginDiv{display:none;margin-top:10px;}
-#acceptPopup{
-  position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);
-  background:#0f0;color:#000;padding:20px 40px;border-radius:15px;font-size:1.5em;font-weight:bold;
-  z-index:1000;animation:popupAnim 0.8s forwards;
+button:hover {
+  background: rgba(0, 255, 255, 0.8);
 }
-@keyframes popupAnim{
-  0%{transform:translate(-50%,-50%) scale(0);}
-  50%{transform:translate(-50%,-50%) scale(1.2);}
-  100%{transform:translate(-50%,-50%) scale(1);}
+#discordBtn {
+  display: none;
+  font-size: 1.2em;
+  animation: pulse 1.5s infinite alternate;
+  margin-top: 10px;
 }
-.confetti-piece{
-  position:fixed;width:10px;height:10px;pointer-events:none;opacity:0.9;
-  animation:fall linear forwards;
+#postAccept {
+  display: none;
+  margin-top: 10px;
 }
-@keyframes fall{
-  0%{transform:translateY(0px) rotate(0deg);}
-  100%{transform:translateY(100vh) rotate(360deg);}
+#adminLoginDiv {
+  display: none;
+  margin-top: 10px;
 }
-@keyframes pulse{
-  0%{box-shadow:0 0 10px #00ffff;}
-  50%{box-shadow:0 0 30px #00ffff;}
-  100%{box-shadow:0 0 10px #00ffff;}
+#acceptPopup {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  background: #0f0;
+  color: #000;
+  padding: 20px 40px;
+  border-radius: 15px;
+  font-size: 1.5em;
+  font-weight: bold;
+  z-index: 1000;
+  animation: popupAnim 0.8s forwards;
+}
+@keyframes popupAnim {
+  0% { transform: translate(-50%, -50%) scale(0); }
+  50% { transform: translate(-50%, -50%) scale(1.2); }
+  100% { transform: translate(-50%, -50%) scale(1); }
+}
+.confetti-piece {
+  position: fixed;
+  width: 10px;
+  height: 10px;
+  pointer-events: none;
+  opacity: 0.9;
+  animation: fall linear forwards;
+}
+@keyframes fall {
+  0% { transform: translateY(0px) rotate(0deg); }
+  100% { transform: translateY(100vh) rotate(360deg); }
+}
+@keyframes pulse {
+  0% { box-shadow: 0 0 10px #00ffff; }
+  50% { box-shadow: 0 0 30px #00ffff; }
+  100% { box-shadow: 0 0 10px #00ffff; }
 }
 </style>
 </head>
@@ -172,4 +198,3 @@ document.addEventListener("DOMContentLoaded", checkStatus);
 
 </body>
 </html>
-
