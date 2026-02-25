@@ -3,33 +3,28 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Black Crown Maffia Admin Panel</title>
+<title>Black Crown Maffia - Admin Panel</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:'Orbitron',sans-serif;}
-body{background:#000;color:white;text-align:center;padding:20px;}
-h1,h2{color:#ff0000;margin-bottom:20px;}
-table{margin:0 auto;border-collapse:collapse;width:100%;max-width:900px;}
-th,td{border:1px solid #ff0000;padding:10px;}
-th{background:#111;}
-tr:nth-child(even){background:#111;}
-tr:nth-child(odd){background:#222;}
-button{padding:5px 10px;margin:2px;background:#ff0000;color:#fff;border:none;cursor:pointer;}
-button:hover{background:#ff5555;}
-.status-fuggo{color:yellow;font-weight:bold;}
-.status-elfogadva{color:lime;font-weight:bold;}
-.status-elutasitva{color:red;font-weight:bold;}
+body{background:#000;color:white;text-align:center;padding:20px;overflow-x:hidden;}
+h1,h2{color:#ff0000;margin-bottom:20px;text-shadow:0 0 10px #ff0000;}
+iframe{width:100%;height:500px;border:2px solid #ff0000;border-radius:15px;margin-top:20px;}
+button{padding:8px 15px;margin:5px;border:none;border-radius:8px;background:#ff0000;color:white;font-weight:bold;cursor:pointer;transition:0.3s;}
+button:hover{background:#00ffff;color:black;}
 </style>
 </head>
 <body>
 
 <h1>Black Crown Maffia - Admin Panel</h1>
+<p>⚠️ Boss felhasználóval tudod módosítani a státuszt. UnderBoss csak megtekintheti.</p>
 
-<h2>Bejelentkezés</h2>
-<p>Felhasználónév: Boss vagy UnderBoss</p>
-<p>Jelszó: BlackCrown2026</p>
+<div id="sheetContainer">
+  <iframe id="sheetFrame" src="" frameborder="0"></iframe>
+</div>
 
 <script>
+// Bejelentkezés
 let felhasznalo = prompt("Felhasználónév (Boss / UnderBoss):");
 let jelszo = prompt("Jelszó:");
 if(jelszo !== "BlackCrown2026" || (felhasznalo !== "Boss" && felhasznalo !== "UnderBoss")){
@@ -38,76 +33,15 @@ if(jelszo !== "BlackCrown2026" || (felhasznalo !== "Boss" && felhasznalo !== "Un
 } else {
   alert("✅ Beléptél mint " + felhasznalo);
 }
-</script>
 
-<h2>Jelentkezések</h2>
-<table id="applications">
-<tr>
-<th>#</th>
-<th>Karakter Név</th>
-<th>Discord Név</th>
-<th>Üzenet</th>
-<th>Dátum</th>
-<th>Státusz</th>
-<th>Művelet</th>
-</tr>
-</table>
+// Google Sheet publikus HTML linkje
+// FONTOS: cseréld ki a saját Sheet publikus HTML linkedre
+const sheetURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSNPsSD9aVIqsNyQn7zEV1OT4TFRPcmKFniNkpSDBiejaaR_hmzY7CLBUAdabuMyOEaLFtrzYenj2Cr/pubhtml?widget=true&headers=false";
 
-<script>
-// Backend link
-const backendURL = "https://script.google.com/macros/s/AKfycbyRuFKlG0jvp2V6qSXgsg0QvcqSAjulVPEQxDSIv0L5_SU0wYKRquNcV0Tkmmec1JMucw/exec";
+document.getElementById("sheetFrame").src = sheetURL;
 
-// Betöltjük a jelentkezéseket
-fetch(backendURL)
-.then(res => res.json())
-.then(data => {
-  const table = document.getElementById("applications");
-  for(let i=1; i<data.length; i++){ // első sor = fejléc
-    const rowData = data[i];
-    const r = table.insertRow();
-    r.insertCell(0).innerText = i;
-    r.insertCell(1).innerText = rowData[0];
-    r.insertCell(2).innerText = rowData[1];
-    r.insertCell(3).innerText = rowData[2];
-    r.insertCell(4).innerText = rowData[3];
-    
-    // Státusz
-    const statusCell = r.insertCell(5);
-    const status = rowData[4] || "Függőben";
-    statusCell.innerText = status;
-    statusCell.className = status === "Elfogadva" ? "status-elfogadva" : status === "Elutasítva" ? "status-elutasitva" : "status-fuggo";
-    
-    // Gombok csak Boss-nak
-    const actionCell = r.insertCell(6);
-    if(felhasznalo === "Boss"){
-      const elfogadBtn = document.createElement("button");
-      elfogadBtn.innerText = "✅ Elfogad";
-      elfogadBtn.onclick = () => updateStatus(i+1,"Elfogadva",statusCell);
-      actionCell.appendChild(elfogadBtn);
-
-      const elutasitBtn = document.createElement("button");
-      elutasitBtn.innerText = "❌ Elutasít";
-      elutasitBtn.onclick = () => updateStatus(i+1,"Elutasítva",statusCell);
-      actionCell.appendChild(elutasitBtn);
-    } else {
-      actionCell.innerText = "-";
-    }
-  }
-})
-.catch(err => console.log("Hiba a backend betöltésénél:", err));
-
-// Status frissítése Google Sheetben
-function updateStatus(row,status,cell){
-  const url = backendURL + "?row="+row+"&status="+encodeURIComponent(status);
-  fetch(url)
-  .then(r=>r.text())
-  .then(res=>{
-    cell.innerText = status;
-    cell.className = status === "Elfogadva" ? "status-elfogadva" : "status-elutasitva";
-    alert("✅ Státusz frissítve: "+status);
-  })
-  .catch(e=>alert("Hiba a státusz frissítésnél"));
-}
+// Boss felhasználó esetén státusz gombok hozzáadása lehetőségként
+// Itt később lehet bővíteni, hogy Apps Script segítségével frissítse a Sheet-et
 </script>
 
 </body>
