@@ -36,7 +36,6 @@ td{background:#222;transition: background 0.3s;}
 <button onclick="window.location.href='index.html'">🏠 Főoldal</button>
 
 <script>
-// Betöltés
 function loadJelentkezesek(){
     const table = document.getElementById("adminTable");
     table.innerHTML = `<tr>
@@ -66,7 +65,6 @@ function loadJelentkezesek(){
     });
 }
 
-// Státusz frissítése
 function updateStatus(id,newStatus){
     let adatok = JSON.parse(localStorage.getItem("jelentkezok")||"[]");
     adatok = adatok.map(j=>{if(j.id===id) j.status=newStatus; return j;});
@@ -74,18 +72,14 @@ function updateStatus(id,newStatus){
     loadJelentkezesek();
 }
 
-// Jelentkező törlése
 function deleteUser(id){
-    if(!confirm("Biztosan törölni szeretnéd ezt a jelentkezőt?")){
-        return;
-    }
+    if(!confirm("Biztosan törölni szeretnéd ezt a jelentkezőt?")) return;
     let adatok = JSON.parse(localStorage.getItem("jelentkezok")||"[]");
     adatok = adatok.filter(j => j.id !== id);
     localStorage.setItem("jelentkezok", JSON.stringify(adatok));
     loadJelentkezesek();
 }
 
-// Betöltéskor táblázat frissítése
 loadJelentkezesek();
 </script>
 
