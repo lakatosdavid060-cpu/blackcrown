@@ -6,26 +6,42 @@
 <title>Admin Panel - Black Crown Maffia</title>
 <style>
 body{background:#000;color:white;font-family:sans-serif;text-align:center;padding:20px;}
-h1{color:#ff0000;}
+h1{color:#ff0000;margin-bottom:20px;}
+button{padding:5px 10px;margin:2px;border:none;border-radius:6px;background:#ff0000;color:white;cursor:pointer;}
+button:hover{background:#00ffff;color:black;}
 table{width:100%;border-collapse:collapse;margin-top:20px;}
 th,td{border:1px solid #ff0000;padding:10px;}
 th{background:#111;}
-td{background:#222;transition: background 0.5s;}
+td{background:#222;transition: background 0.3s;}
 .status-Függőben{color:#ffff00;font-weight:bold;}
 .status-Elfogadva{color:#00ff00;font-weight:bold;}
 .status-Elutasítva{color:#ff0000;font-weight:bold;}
-button{padding:5px 10px;margin:2px;border:none;border-radius:6px;background:#ff0000;color:white;cursor:pointer;}
-button:hover{background:#00ffff;color:black;}
+.progress-container{width:100%;background:#111;border-radius:10px;height:15px;overflow:hidden;margin-top:5px;}
+.progress-bar{height:100%;width:0%;background:#00ffff;border-radius:10px;transition:width 0.5s;}
 </style>
 </head>
 <body>
 
 <h1>Admin Panel - Black Crown Maffia</h1>
+<button onclick="logout()">Kijelentkezés</button>
+
+<table id="adminTable">
+<tr>
+<th>Karakter Név</th>
+<th>Discord Név</th>
+<th>Üzenet</th>
+<th>Dátum</th>
+<th>Status</th>
+<th>Művelet</th>
+<th>Progress</th>
+</tr>
+</table>
 
 <script>
-// Persistent login
+// Login persistent
 let user = localStorage.getItem("bc_user");
 let pass = localStorage.getItem("bc_pass");
+
 if(!user || !pass || pass!=="BlackCrown2026" || (user!=="Boss" && user!=="UnderBoss")){
     user = prompt("Felhasználónév (Boss / UnderBoss):");
     pass = prompt("Jelszó:");
@@ -42,22 +58,11 @@ function logout(){
     localStorage.removeItem("bc_pass");
     location.reload();
 }
-document.write(`<button onclick="logout()">Kijelentkezés</button>`);
 
-// Admin table
-const table = document.createElement("table");
-table.innerHTML = `<tr>
-<th>Karakter Név</th>
-<th>Discord Név</th>
-<th>Üzenet</th>
-<th>Dátum</th>
-<th>Status</th>
-<th>Művelet</th>
-</tr>`;
-document.body.appendChild(table);
-
-// Betöltés localStorage-ból
+// Betöltés és table frissítés
 function loadJelentkezesek(){
+    const table = document.getElementById("adminTable");
+    // Clear except header
     table.innerHTML = `<tr>
 <th>Karakter Név</th>
 <th>Discord Név</th>
@@ -65,10 +70,15 @@ function loadJelentkezesek(){
 <th>Dátum</th>
 <th>Status</th>
 <th>Művelet</th>
+<th>Progress</th>
 </tr>`;
-    let adatok = JSON.parse(localStorage.getItem("jelentkezok") || "[]");
+
+    const adatok = JSON.parse(localStorage.getItem("jelentkezok") || "[]");
+
     adatok.forEach(j => {
         const tr = document.createElement("tr");
+        let progressWidth = j.status==="Elfogadva"? "100%" : j.status==="Elutasítva"? "0%" : "20%";
+
         tr.innerHTML = `
         <td>${j.name}</td>
         <td>${j.discord}</td>
@@ -79,21 +89,28 @@ function loadJelentkezesek(){
             <button onclick="updateStatus(${j.id},'Elfogadva')">✅</button>
             <button onclick="updateStatus(${j.id},'Elutasítva')">❌</button>
         </td>
+        <td>
+            <div class="progress-container">
+                <div id="progress-${j.id}" class="progress-bar" style="width:${progressWidth};"></div>
+            </div>
+        </td>
         `;
         table.appendChild(tr);
     });
 }
-loadJelentkezesek();
 
 function updateStatus(id, newStatus){
     let adatok = JSON.parse(localStorage.getItem("jelentkezok") || "[]");
-    adatok = adatok.map(j=>{
-        if(j.id===id) j.status=newStatus;
+    adatok = adatok.map(j => {
+        if(j.id===id) j.status = newStatus;
         return j;
     });
     localStorage.setItem("jelentkezok", JSON.stringify(adatok));
     loadJelentkezesek();
 }
+
+// Betöltés induláskor
+loadJelentkezesek();
 </script>
 
 </body>
