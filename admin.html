@@ -59,12 +59,14 @@ function loadJelentkezesek(){
         <td>
             <button onclick="updateStatus(${j.id},'Elfogadva')">✅</button>
             <button onclick="updateStatus(${j.id},'Elutasítva')">❌</button>
+            <button onclick="deleteUser(${j.id})">🗑️ Törlés</button>
         </td>
         `;
         table.appendChild(tr);
     });
 }
 
+// Státusz frissítése
 function updateStatus(id,newStatus){
     let adatok = JSON.parse(localStorage.getItem("jelentkezok")||"[]");
     adatok = adatok.map(j=>{if(j.id===id) j.status=newStatus; return j;});
@@ -72,6 +74,18 @@ function updateStatus(id,newStatus){
     loadJelentkezesek();
 }
 
+// Jelentkező törlése
+function deleteUser(id){
+    if(!confirm("Biztosan törölni szeretnéd ezt a jelentkezőt?")){
+        return;
+    }
+    let adatok = JSON.parse(localStorage.getItem("jelentkezok")||"[]");
+    adatok = adatok.filter(j => j.id !== id);
+    localStorage.setItem("jelentkezok", JSON.stringify(adatok));
+    loadJelentkezesek();
+}
+
+// Betöltéskor táblázat frissítése
 loadJelentkezesek();
 </script>
 
