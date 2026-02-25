@@ -69,6 +69,7 @@ nav a{margin:5px 0;}
 <a href="#home">Főoldal</a>
 <a href="#members">Tagok / Rangok</a>
 <a href="#apply">Jelentkezés</a>
+<a href="#" onclick="adminLogin()">Admin Panel</a>
 <a href="https://lakatosdavid060-cpu.github.io/blackcrown/Staff.html" target="_blank">Staff Panel</a>
 </nav>
 
@@ -137,15 +138,27 @@ window.addEventListener('load', ()=>{
   cards.forEach((card,i)=>{
     setTimeout(()=>{card.classList.add('show');}, i*300);
 
-  // Progress bar animáció
-  const progresses = document.querySelectorAll('.progress');
-  progresses.forEach(progress => {
-    const width = progress.style.width;
-    progress.style.width = '0%';
-    setTimeout(()=>{progress.style.width = width;}, 100);
+    // Progress bar animáció
+    const progresses = document.querySelectorAll('.progress');
+    progresses.forEach(progress => {
+      const width = progress.style.width;
+      progress.style.width = '0%';
+      setTimeout(()=>{progress.style.width = width;}, 100);
+    });
   });
 });
-});
+
+// ADMIN BELÉPÉS
+function adminLogin(){
+  let felhasznalo = prompt("Felhasználónév (Boss / UnderBoss):");
+  let jelszo = prompt("Jelszó:");
+  if(jelszo !== "BlackCrown2026" || (felhasznalo !== "Boss" && felhasznalo !== "UnderBoss")){
+      alert("❌ Helytelen felhasználónév vagy jelszó!");
+  } else {
+      alert("✅ Beléptél mint " + felhasznalo);
+      window.location.href = "admin.html"; // ide viszi az admin panelhez
+  }
+}
 </script>
 
 </body>
