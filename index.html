@@ -23,7 +23,7 @@ section{padding:60px 20px;}
 .stats{display:flex;justify-content:center;gap:20px;margin-top:20px;}
 .stat-card{background:#111;border:2px solid #ff0000;border-radius:15px;padding:20px 40px;color:white;font-weight:bold;min-width:150px;}
 .stat-card span{display:block;font-size:2em;margin-top:10px;color:#00ffff;}
-footer{background:#000;padding:20px;text-align:center;font-size:14px;}
+#discordBtn{display:none;}
 </style>
 </head>
 <body>
@@ -42,7 +42,7 @@ footer{background:#000;padding:20px;text-align:center;font-size:14px;}
 <p>GTA / FiveM Roleplay</p>
 <button onclick="window.location.href='jelentkezes.html'">Jelentkezés</button>
 <button onclick="window.location.href='admin.html'">Staff / Admin Panel</button>
-<button onclick="window.location.href='https://discord.gg/4nspFjYC'">Discord Csatlakozás</button>
+<button id="discordBtn" onclick="window.open('https://discord.gg/4nspFjYC','_blank')">Discord Csatlakozás</button>
 </div>
 </div>
 
@@ -67,7 +67,6 @@ footer{background:#000;padding:20px;text-align:center;font-size:14px;}
 <h2>Fontos linkek</h2>
 <button onclick="window.location.href='jelentkezes.html'">Jelentkezés űrlap</button>
 <button onclick="window.location.href='admin.html'">Staff / Admin Panel</button>
-<button onclick="window.open('https://discord.gg/4nspFjYC','_blank')">Discord</button>
 </section>
 
 <footer>© 2026 Black Crown Maffia</footer>
@@ -75,18 +74,28 @@ footer{background:#000;padding:20px;text-align:center;font-size:14px;}
 <script>
 // Frissíti a statisztikát localStorage alapján
 function updateStats(){
-    let adatok = JSON.parse(localStorage.getItem("jelentkezok") || "[]");
-    let pending = adatok.filter(j=>j.status==="Függőben").length;
-    let approved = adatok.filter(j=>j.status==="Elfogadva").length;
-    let rejected = adatok.filter(j=>j.status==="Elutasítva").length;
-    document.getElementById("count-pending").innerText = pending;
-    document.getElementById("count-approved").innerText = approved;
-    document.getElementById("count-rejected").innerText = rejected;
+    const adatok = JSON.parse(localStorage.getItem("jelentkezok") || "[]");
+    document.getElementById("count-pending").innerText = adatok.filter(j=>j.status==="Függőben").length;
+    document.getElementById("count-approved").innerText = adatok.filter(j=>j.status==="Elfogadva").length;
+    document.getElementById("count-rejected").innerText = adatok.filter(j=>j.status==="Elutasítva").length;
 }
 
-// Frissítés folyamatosan (ha admin módosítja)
-setInterval(updateStats, 1000);
+// Discord gomb engedélyezés
+function checkDiscordAccess(){
+    const userName = prompt("Add meg a Discord neved vagy azonosítód:");
+    const adatok = JSON.parse(localStorage.getItem("jelentkezok") || "[]");
+    const engedelyezett = adatok.some(j => j.discord === userName && j.status === "Elfogadva");
+    if(engedelyezett){
+        document.getElementById("discordBtn").style.display = "inline-block";
+    } else {
+        alert("⛔ Még nem vagy elfogadva a Discordhoz!");
+    }
+}
+
+// Betöltéskor
 updateStats();
+checkDiscordAccess();
+setInterval(updateStats, 1000);
 </script>
 
 </body>
