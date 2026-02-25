@@ -9,6 +9,13 @@ body{background:#000;color:white;font-family:sans-serif;text-align:center;paddin
 button,input{padding:10px 20px;margin:10px;border:none;border-radius:8px;background:#ff0000;color:black;font-weight:bold;cursor:pointer;}
 button:hover,input:hover{background:#00ffff;color:black;}
 #discordBtn{display:none;}
+table{width:90%;margin:20px auto;border-collapse:collapse;}
+th,td{border:1px solid #ff0000;padding:8px;}
+th{background:#111;}
+td{background:#222;}
+.status-Függőben{color:#ffff00;font-weight:bold;}
+.status-Elfogadva{color:#00ff00;font-weight:bold;}
+.status-Elutasítva{color:#ff0000;font-weight:bold;}
 </style>
 </head>
 <body>
@@ -30,6 +37,18 @@ button:hover,input:hover{background:#00ffff;color:black;}
 <button id="discordBtn" onclick="window.open('https://discord.gg/4nspFjYC','_blank')">Discord Csatlakozás</button>
 <p id="statusMsg"></p>
 
+<!-- Jelentkezők listája -->
+<h2>Jelentkezők</h2>
+<table id="jelentkezokTable">
+<tr>
+<th>Karakter Név</th>
+<th>Discord Név</th>
+<th>Kor</th>
+<th>Üzenet</th>
+<th>Status</th>
+</tr>
+</table>
+
 <script>
 // Discord név mentése localStorage-be
 function loginUser(){
@@ -49,23 +68,46 @@ function checkDiscord(){
         document.getElementById("statusMsg").innerText = "⏳ Még nem töltötted ki a jelentkezést!";
         document.getElementById("discordBtn").style.display = "none";
         document.getElementById("loginDiv").style.display = "block";
-        return;
-    }
-
-    document.getElementById("loginDiv").style.display = "none";
-    if(user.status === "Elfogadva"){
-        document.getElementById("discordBtn").style.display = "inline-block";
-        document.getElementById("statusMsg").innerText = "✅ Elfogadva! Most már csatlakozhatsz a Discordhoz!";
-    } else if(user.status === "Elutasítva"){
-        alert("⛔ Elutasították a jelentkezésedet!");
-        window.location.href = "index.html";
     } else {
-        document.getElementById("statusMsg").innerText = "⏳ Még nem fogadták el a jelentkezésedet!";
-        document.getElementById("discordBtn").style.display = "none";
+        document.getElementById("loginDiv").style.display = "none";
+        if(user.status === "Elfogadva"){
+            document.getElementById("discordBtn").style.display = "inline-block";
+            document.getElementById("statusMsg").innerText = "✅ Elfogadva! Most már csatlakozhatsz a Discordhoz!";
+        } else if(user.status === "Elutasítva"){
+            alert("⛔ Elutasították a jelentkezésedet!");
+            window.location.href = "index.html";
+        } else {
+            document.getElementById("statusMsg").innerText = "⏳ Még nem fogadták el a jelentkezésedet!";
+            document.getElementById("discordBtn").style.display = "none";
+        }
     }
 }
 
-document.addEventListener("DOMContentLoaded", checkDiscord);
+// Jelentkezők táblázat betöltése
+function loadJelentkezok(){
+    const table = document.getElementById("jelentkezokTable");
+    table.innerHTML = `<tr>
+<th>Karakter Név</th><th>Discord Név</th><th>Kor</th><th>Üzenet</th><th>Status</th>
+</tr>`;
+    const adatok = JSON.parse(localStorage.getItem("jelentkezok")||"[]");
+    adatok.forEach(j=>{
+        const tr = document.createElement("tr");
+        const discordDisplay = j.status === "Elfogadva" ? j.discord : "—";
+        tr.innerHTML = `
+        <td>${j.name}</td>
+        <td>${discordDisplay}</td>
+        <td>${j.age}</td>
+        <td>${j.message}</td>
+        <td class="status-${j.status}">${j.status}</td>
+        `;
+        table.appendChild(tr);
+    });
+}
+
+document.addEventListener("DOMContentLoaded", ()=>{
+    checkDiscord();
+    loadJelentkezok();
+});
 </script>
 
 </body>
