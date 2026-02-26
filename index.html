@@ -18,7 +18,6 @@ label{font-size:13px;margin-right:8px;display:inline-block;}
 .topgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;}
 .summary{font-size:18px;font-weight:bold;margin-bottom:10px;color:#38bdf8;}
 .resetbtn{background:#334155;color:white;}
-.helpBtn{background:#38bdf8;color:#000;padding:8px;border:none;border-radius:8px;cursor:pointer;font-weight:bold;width:100%;}
 .helpContent{display:none;background:#334155;color:white;padding:10px;border-radius:8px;margin-top:5px;line-height:1.4;}
 .icon-panel{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:15px;}
 .icon-panel button{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px;}
@@ -40,17 +39,17 @@ li{margin-bottom:5px;}
   <button onclick="nullazHetiLog()"><span>♻️</span>Heti nullázás</button>
 </div>
 
-<!-- Lenyíló vizuális használati útmutató -->
+<!-- Használati útmutató -->
 <div id="helpContent" class="helpContent">
   <h3>Használati útmutató</h3>
   <ul>
     <li><b>🧮 Számol:</b> Kiszámolja a tagok fizetését az aktuális rablások és Mosó/Craft alapján.</li>
-    <li><b>Rablások jelölése:</b> Pipáld be a résztvevőket a Paleto, Állami, Múzeum, Bobcat rablásoknál. Csak a pipált tagok kapják a rablás összegét.</li>
-    <li><b>Mosó +250 / Craft +250:</b> Növeli a tag Mosó vagy Craft értékét 250$-ral. <b>−</b> gomb csökkenti ugyanennyivel.</li>
+    <li><b>Rablások jelölése:</b> Pipáld be a résztvevőket a Paleto, Állami, Múzeum, Bobcat rablásoknál.</li>
+    <li><b>Mosó +250 / Craft +250:</b> Növeli a tag Mosó vagy Craft értékét 250$-ral.</li>
     <li><b>❌ / ✅ Kifizetett státusz:</b> Piros = nincs kifizetve, zöld = kifizetve. Kattintással lehet váltani.</li>
     <li><b>🔄 Reset:</b> Visszaállítja a tag összes értékét nullára.</li>
-    <li><b>💾 Naplózás:</b> Mentse a mai nap adatait a heti logba. Naponta használd, így a heti PDF teljes lesz.</li>
-    <li><b>📄 PDF Export:</b> Átvisz a pdf.html oldalra, ahol a heti log táblázatos, színes PDF formátumban készül.</li>
+    <li><b>💾 Naplózás:</b> Mentse a mai nap adatait a heti logba. Naponta használd.</li>
+    <li><b>📄 PDF Export:</b> Átvisz a pdf.html oldalra, ahol a heti log táblázatos PDF-ben látható.</li>
     <li>💡 Tipp: Mindig jelöld a résztvevőket és nyomd a Számol gombot, mielőtt naplózol vagy PDF-et készítesz.</li>
   </ul>
 </div>
@@ -70,7 +69,7 @@ li{margin-bottom:5px;}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <script>
-// Tagok listája
+// Tagok
 const nevek=[
 "Ugaros Turul (Bobi)","Yukito Osano (Neon)","Emily Mitsuko (Biskota)",
 "Vladimir Iwanow (Majom)","Todor Zsombor (Recsi)","Daryl Dixon (Oroszlán)",
@@ -82,7 +81,6 @@ const nevek=[
 "Henry Parker (Pufi)"
 ];
 
-// Adatok
 let adatok = nevek.map(n=>({
   nev: n, moso:0, craft:0, fizetett:false, osszeg:0,
   rablas:{paleto:false,allami:false,muzeum:false,bobcat:false}
@@ -167,7 +165,7 @@ function mentNap(){
 // PDF
 function openPDF(){
   localStorage.setItem("hetiLogPDF", JSON.stringify(hetiLog));
-  window.open("pdf.html", "_blank");
+  window.open("pdf.html", "_blank"); // csak új ablak
 }
 
 // Segítség lenyitható
@@ -188,6 +186,5 @@ function nullazHetiLog(){
 
 render();
 </script>
-
 </body>
 </html>
