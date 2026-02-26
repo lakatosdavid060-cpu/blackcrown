@@ -25,6 +25,7 @@ input[type="number"]{width:80px;padding:4px;border-radius:6px;border:none;}
 
 <div class="icon-panel">
   <button onclick="szamol()"><span>🧮</span>Számol</button>
+  <button onclick="mentNap()"><span>💾</span>Naplóz</button>
   <button onclick="openPDF()"><span>📄</span>PDF</button>
   <button onclick="toggleHelp()"><span>ℹ️</span>Segítség</button>
   <button onclick="nullazHetiLog()"><span>♻️</span>Heti nullázás</button>
@@ -34,13 +35,13 @@ input[type="number"]{width:80px;padding:4px;border-radius:6px;border:none;}
 <h3>Használati útmutató – Heti összesítés</h3>
 <ul>
 <li>Beírod minden tag rablásait a hétre (Paleto, Állami, Múzeum, Bobcat) és Mosó/Craft értékeit.</li>
-<li>Nyomd meg a <b>Számol</b> gombot – ez az összes rablást és Mosó/Craft-ot összeadja **hetente** minden taghoz.</li>
+<li>Nyomd meg a <b>Számol</b> gombot – ez kiszámolja a heti fizetést minden taghoz.</li>
 <li>Fizetés formula minden taghoz:  
 <pre>
 ((Heti rablások összege ÷ 2) ÷ résztvevők száma) × 0.82 + Mosó*250 + Craft*250
 </pre>
 </li>
-<li>PDF gomb: új ablakban látod a heti összesített adatot, innen mentheted PDF-be.</li>
+<li>PDF gomb: új ablakban a **naplózott állapotot** mutatja, nem a main.html aktuális állapotát.</li>
 <li>Heti nullázás: törli az összes heti adatot, új hét kezdhető.</li>
 </ul>
 </div>
@@ -116,7 +117,6 @@ render();
 
 // RENDER
 function render(){
-let total=adatok.reduce((sum,t)=>sum+t.osszeg,0);
 document.getElementById("tagokTable").innerHTML="";
 adatok.forEach((t,i)=>{
 let html=`<tr>
@@ -134,9 +134,16 @@ document.getElementById("tagokTable").innerHTML += html;
 });
 }
 
-// PDF
+// Naplózás – fix PDF állapot
+function mentNap(){
+const datum = new Date().toISOString().slice(0,10);
+const pdfAdatok = JSON.parse(JSON.stringify(adatok));
+localStorage.setItem("hetiLogPDF", JSON.stringify({datum, adatok: pdfAdatok}));
+alert("Naplózva: " + datum + " (PDF állapot rögzítve)");
+}
+
+// PDF megnyitás
 function openPDF(){
-localStorage.setItem("hetiLogPDF", JSON.stringify(adatok));
 window.open("pdf.html","_blank");
 }
 
