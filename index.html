@@ -3,9 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Heti Fizetés</title>
+<title>Heti Fizetés – Naplózott</title>
 <style>
-body{font-family:Arial;background:#0f172a;color:white;padding:15px;margin:0}
+body{font-family:Arial;background:#0f172a;color:white;padding:15px;margin:0;display:flex;}
+.left-panel{flex:1;padding-right:20px;}
+.right-panel{width:300px;position:fixed;top:15px;right:15px;background:#334155;color:#fff;padding:15px;border-radius:14px;line-height:1.4;overflow:auto;height:90vh;}
 .card{background:#1e293b;padding:15px;border-radius:14px;margin-bottom:15px;box-shadow:0 8px 20px rgba(0,0,0,.25)}
 button{padding:6px 10px;margin:3px;border:none;border-radius:8px;cursor:pointer;font-weight:bold}
 input[type="number"]{width:120px;padding:6px;border-radius:8px;border:none}
@@ -17,22 +19,12 @@ label{font-size:13px;margin-right:8px;display:inline-block}
 .topgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
 .summary{font-size:18px;font-weight:bold;margin-bottom:10px;color:#38bdf8}
 .resetbtn{background:#334155;color:white}
-.info-card{background:#334155;color:#fff;padding:15px;border-radius:14px;margin-bottom:15px;line-height:1.4;}
 </style>
 </head>
 <body>
 
-<h2>💰 Heti Fizetés Számoló</h2>
-
-<div class="info-card">
-<h3>ℹ️ Hogyan működik a fizetés</h3>
-<ul>
-<li>Rablások: a teljes összeg felét osztjuk a résztvevők között, majd 0.82× résztvevőnként.</li>
-<li>Mosó / Craft: +250$ minden gombnyomásra.</li>
-<li>Kifizetett státusz: zöld ✅ kifizetve, piros ❌ nincs kifizetve.</li>
-<li>Reset gomb: visszaállítja a tag összes értékét.</li>
-</ul>
-</div>
+<div class="left-panel">
+<h2>💰 Heti Fizetés – Naplózott</h2>
 
 <div class="card">
 <div class="topgrid">
@@ -43,12 +35,26 @@ label{font-size:13px;margin-right:8px;display:inline-block}
 </div>
 <br>
 <button onclick="szamol()">Számol</button>
-<!-- PDF gomb -->
+<button onclick="mentNap()">💾 Hozzáad naplóhoz</button>
 <button onclick="openPDF()">📄 PDF Export</button>
 </div>
 
 <div class="summary" id="summary"></div>
 <div id="tagok"></div>
+</div>
+
+<div class="right-panel">
+<h3>ℹ️ Használati útmutató</h3>
+<ul>
+<li>Minden nap külön rablás adható hozzá, korábbi napok nem vesznek el.</li>
+<li>Rablások: (összeg ÷ 2 ÷ résztvevők) × 0.82 + Mosó + Craft</li>
+<li>Mosó / Craft: +250$ minden kattintásra</li>
+<li>Kifizetett státusz: zöld ✅ kifizetve, piros ❌ nincs kifizetve</li>
+<li>Reset gomb: visszaállítja a tag összes értékét</li>
+<li>💾 Hozzáad naplóhoz: naplózza a mai adatokat a heti logba</li>
+<li>📄 PDF Export: átvisz a PDF oldalra</li>
+</ul>
+</div>
 
 <script>
 // Tagok
@@ -67,6 +73,9 @@ let adatok = nevek.map(n=>({
   nev: n, moso:0, craft:0, fizetett:false, osszeg:0,
   rablas:{paleto:false,allami:false,muzeum:false,bobcat:false}
 }));
+
+// Heti log
+let hetiLog = JSON.parse(localStorage.getItem("hetiLog")) || [];
 
 // MOSÓ / CRAFT
 function addMoso(i){adatok[i].moso++; render();}
@@ -134,13 +143,22 @@ function render(){
   document.getElementById("tagok").innerHTML=html;
 }
 
+// Naplóhoz mentés
+function mentNap(){
+  const datum = new Date().toISOString().slice(0,10); // YYYY-MM-DD
+  hetiLog.push({datum, tagok: JSON.parse(JSON.stringify(adatok))});
+  localStorage.setItem("hetiLog", JSON.stringify(hetiLog));
+  alert("Rablás naplózva: "+datum);
+}
+
 // PDF oldal megnyitása
 function openPDF(){
-  localStorage.setItem("hetiFizetesPDF", JSON.stringify(adatok));
-  window.open("pdf.html", "_blank"); // új ablakban nyitja
+  localStorage.setItem("hetiLogPDF", JSON.stringify(hetiLog));
+  window.open("pdf.html", "_blank");
 }
 
 render();
 </script>
+
 </body>
 </html>
