@@ -53,16 +53,15 @@ Példa: Paleto = 100000, 2 résztvevő
 </li>
 <li><b>Mosó/Craft +250:</b> Növeli a Mosó vagy Craft értéket 250$-ral. <b>−</b> csökkenti ugyanennyivel.</li>
 <li><b>❌ / ✅ Kifizetett:</b> Piros = nincs kifizetve, zöld = kifizetve.</li>
-<li><b>Naplózás:</b> Mentse a mai nap adatait a heti logba.  
-A naplózott adatokat a PDF is használja.</li>
-<li><b>PDF:</b> Új ablakban nyílik, ahol a heti logot PDF formátumban mentheted.</li>
+<li><b>Naplózás:</b> Mentse a mai nap adatait a heti logba, és frissíti a heti összesítést.</li>
+<li><b>PDF:</b> Új ablakban nyílik, ahol a heti összesített logot PDF formátumban mentheted.</li>
 <li><b>Heti nullázás:</b> Törli az összes heti logot, így új hét kezdhető.</li>
 <li><b>Tippek:</b>
 <ul>
 <li>Ha egy rablás során több tag vett részt, a rablás összege igazságosan oszlik el a résztvevők között.</li>
 <li>Mindig a résztvevőkre számol a 0.82 szorzót, nem a teljes rablásra.</li>
 <li>Mosó és Craft mindig +250$/gombként, hozzáadódik a rablás összegéhez.</li>
-<li>PDF gomb csak megnyitja az ablakot, nem tölti le automatikusan.</li>
+<li>PDF gomb csak megnyitja az ablakot, nem tölt le automatikusan.</li>
 </ul>
 </li>
 </ul>
@@ -107,6 +106,7 @@ rablas:{paleto:false,allami:false,muzeum:false,bobcat:false}
 }));
 
 let hetiLog = JSON.parse(localStorage.getItem("hetiLog")) || [];
+let hetiOsszesites = JSON.parse(localStorage.getItem("hetiOsszesites")) || {};
 
 // MOSÓ / CRAFT
 function addMoso(i){adatok[i].moso++; render();}
@@ -138,7 +138,6 @@ if(t.rablas.muzeum) resz+=((muzeum/2)/cM)*0.82;
 if(t.rablas.bobcat) resz+=((bobcat/2)/cB)*0.82;
 t.osszeg = resz + t.moso*250 + t.craft*250;
 });
-
 render();
 }
 
@@ -164,17 +163,44 @@ html+=`<tr>
 document.getElementById("tagokTable").innerHTML=html;
 }
 
-// Naplózás
+// Naplózás + heti összesítés
 function mentNap(){
 const datum = new Date().toISOString().slice(0,10);
+
+// Összesítés frissítése
+adatok.forEach(t => {
+if (!hetiOsszesites[t.nev]) {
+hetiOsszesites[t.nev] = {
+nev: t.nev,
+moso: t.moso,
+craft: t.craft,
+osszeg: t.osszeg,
+fizetett: t.fizetett,
+rablas: {...t.rablas}
+};
+} else {
+hetiOsszesites[t.nev].moso += t.moso;
+hetiOsszesites[t.nev].craft += t.craft;
+hetiOsszesites[t.nev].osszeg += t.osszeg;
+hetiOsszesites[t.nev].fizetett = hetiOsszesites[t.nev].fizetett || t.fizetett;
+Object.keys(t.rablas).forEach(k => {
+hetiOsszesites[t.nev].rablas[k] = hetiOsszesites[t.nev].rablas[k] || t.rablas[k];
+});
+}
+});
+
+localStorage.setItem("hetiOsszesites", JSON.stringify(hetiOsszesites));
+
+// Eredeti naplózás dátummal
 hetiLog.push({datum, tagok: JSON.parse(JSON.stringify(adatok))});
 localStorage.setItem("hetiLog", JSON.stringify(hetiLog));
-alert("Rablás naplózva: "+datum);
+
+alert("Rablás naplózva és heti összesítés frissítve: "+datum);
 }
 
 // PDF
 function openPDF(){
-localStorage.setItem("hetiLogPDF", JSON.stringify(hetiLog));
+localStorage.setItem("hetiLogPDF", JSON.stringify(hetiOsszesites));
 window.open("pdf.html","_blank");
 }
 
@@ -189,7 +215,9 @@ function nullazHetiLog(){
 if(confirm("Biztosan törlöd a heti PDF logot?")) {
 localStorage.removeItem("hetiLog");
 localStorage.removeItem("hetiLogPDF");
+localStorage.removeItem("hetiOsszesites");
 hetiLog = [];
+hetiOsszesites = {};
 alert("A heti log törölve lett.");
 }
 }
