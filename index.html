@@ -37,6 +37,7 @@ li{margin-bottom:5px;}
   <button onclick="mentNap()"><span>💾</span>Naplóz</button>
   <button onclick="openPDF()"><span>📄</span>PDF</button>
   <button onclick="toggleHelp()"><span>ℹ️</span>Segítség</button>
+  <button onclick="nullazHetiLog()"><span>♻️</span>Heti nullázás</button>
 </div>
 
 <!-- Lenyíló vizuális használati útmutató -->
@@ -173,6 +174,16 @@ function openPDF(){
 function toggleHelp(){
   const help = document.getElementById("helpContent");
   help.style.display = help.style.display==="none"?"block":"none";
+}
+
+// Heti nullázás
+function nullazHetiLog(){
+  if(confirm("Biztosan törlöd a heti PDF logot?")) {
+    localStorage.removeItem("hetiLog");
+    localStorage.removeItem("hetiLogPDF");
+    hetiLog = [];
+    alert("A heti log törölve lett.");
+  }
 }
 
 render();
