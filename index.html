@@ -17,6 +17,9 @@ label{font-size:13px;margin-right:8px;display:inline-block}
 .topgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
 .summary{font-size:18px;font-weight:bold;margin-bottom:10px;color:#38bdf8}
 .resetbtn{background:#334155;color:white}
+#pdf-table{display:none;} /* alapból rejtve a PDF táblázat */
+table, th, td{border:1px solid #000; border-collapse: collapse;}
+th, td{padding:5px; text-align:center;}
 </style>
 </head>
 <body>
@@ -38,8 +41,10 @@ label{font-size:13px;margin-right:8px;display:inline-block}
 <div id="tagok"></div>
 <button onclick="exportTablePDF()" class="craft">📄 PDF Mentés (Táblázatos)</button>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<!-- PDF táblázat a DOM-ban -->
+<div id="pdf-table"></div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <script>
 // Tagok listája
 const nevek=[
@@ -52,7 +57,6 @@ const nevek=[
 "Williams Jackson (Easy)","Jackson West (Kalap)","David Jackson (Kabát)"
 ];
 
-// Adatok helyi tárolás
 let adatok=JSON.parse(localStorage.getItem("hetiFizetes"))||
 nevek.map(n=>({
   nev:n,moso:0,craft:0,fizetett:false,osszeg:0,
@@ -78,7 +82,7 @@ function resetTag(i){
   save();render();
 }
 
-// SZÁMOL – Helyes logika: résztvevőnként osztva, utána 0.82
+// SZÁMOL – helyes logika: résztvevőnként osztva, utána 0.82
 function szamol(){
   let paleto=+document.getElementById("paleto").value||0;
   let allami=+document.getElementById("allami").value||0;
@@ -138,46 +142,43 @@ function render(){
   document.getElementById("tagok").innerHTML=html;
 }
 
-render();
-
-// PDF EXPORT – biztosan látható világos táblázat
+// PDF EXPORT – mindig látható
 function exportTablePDF() {
-  const container = document.createElement('div');
-  container.style.backgroundColor = '#fff';
-  container.style.color = '#000';
-  container.style.padding = '10px';
-  container.style.fontFamily = 'Arial, sans-serif';
-  container.style.width = '100%';
+  const pdfDiv = document.getElementById("pdf-table");
+  pdfDiv.style.display="block"; // látható a canvas számára
 
-  let html = `<table border="1" cellspacing="0" cellpadding="5" style="width:100%; border-collapse: collapse; text-align:center;">
+  let html = `<table style="width:100%; border-collapse: collapse; text-align:center;">
     <tr style="background-color:#38bdf8; font-weight:bold;">
-      <th>Név</th><th>Paleto</th><th>Állami</th><th>Múzeum</th><th>Bobcat</th><th>Mosó</th><th>Craft</th><th>Összeg ($)</th><th>Kifizetve</th>
+      <th>Név</th><th>Paleto</th><th>Állami</th><th>Múzeum</th><th>Bobcat</th>
+      <th>Mosó</th><th>Craft</th><th>Összeg ($)</th><th>Kifizetve</th>
     </tr>`;
-
-  adatok.forEach(t => {
-    html += `<tr>
+  adatok.forEach(t=>{
+    html+=`<tr>
       <td>${t.nev}</td>
-      <td>${t.rablas.paleto ? '✅' : ''}</td>
-      <td>${t.rablas.allami ? '✅' : ''}</td>
-      <td>${t.rablas.muzeum ? '✅' : ''}</td>
-      <td>${t.rablas.bobcat ? '✅' : ''}</td>
+      <td>${t.rablas.paleto?'✅':''}</td>
+      <td>${t.rablas.allami?'✅':''}</td>
+      <td>${t.rablas.muzeum?'✅':''}</td>
+      <td>${t.rablas.bobcat?'✅':''}</td>
       <td>${t.moso}</td>
       <td>${t.craft}</td>
       <td>${t.osszeg.toFixed(2)}</td>
-      <td>${t.fizetett ? '✅' : '❌'}</td>
+      <td>${t.fizetett?'✅':'❌'}</td>
     </tr>`;
   });
+  html+=`</table>`;
+  pdfDiv.innerHTML = html;
 
-  html += `</table>`;
-  container.innerHTML = html;
-
-  html2pdf().from(container).set({
+  html2pdf().from(pdfDiv).set({
     margin:0.5,
     filename:'heti_fizetes_tabla.pdf',
-    jsPDF:{unit:'in', format:'letter', orientation:'landscape'},
+    jsPDF:{unit:'in',format:'letter',orientation:'landscape'},
     html2canvas:{scale:2, backgroundColor:'#fff'}
   }).save();
+
+  pdfDiv.style.display="none"; // visszaállítjuk rejtettnek
 }
+
+render();
 </script>
 
 </body>
