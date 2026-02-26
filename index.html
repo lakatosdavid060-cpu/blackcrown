@@ -5,57 +5,64 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Heti Fizetés – Naplózott</title>
 <style>
-body{font-family:Arial;background:#0f172a;color:white;padding:15px;margin:0;display:flex;}
-.left-panel{flex:1;padding-right:20px;}
-.right-panel{width:300px;position:fixed;top:15px;right:15px;background:#334155;color:#fff;padding:15px;border-radius:14px;line-height:1.4;overflow:auto;height:90vh;}
-.card{background:#1e293b;padding:15px;border-radius:14px;margin-bottom:15px;box-shadow:0 8px 20px rgba(0,0,0,.25)}
-button{padding:6px 10px;margin:3px;border:none;border-radius:8px;cursor:pointer;font-weight:bold}
-input[type="number"]{width:120px;padding:6px;border-radius:8px;border:none}
-.green{background:#16a34a;color:white}
-.red{background:#dc2626;color:white}
-.moso{background:#9333ea;color:white}
-.craft{background:#f59e0b;color:black}
-label{font-size:13px;margin-right:8px;display:inline-block}
-.topgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
-.summary{font-size:18px;font-weight:bold;margin-bottom:10px;color:#38bdf8}
-.resetbtn{background:#334155;color:white}
+body{font-family:Arial;background:#0f172a;color:white;padding:15px;margin:0;}
+.card{background:#1e293b;padding:15px;border-radius:14px;margin-bottom:15px;box-shadow:0 8px 20px rgba(0,0,0,.25);}
+button{padding:6px 10px;margin:3px;border:none;border-radius:8px;cursor:pointer;font-weight:bold;}
+input[type="number"]{width:120px;padding:6px;border-radius:8px;border:none;}
+.green{background:#16a34a;color:white;}
+.red{background:#dc2626;color:white;}
+.moso{background:#9333ea;color:white;}
+.craft{background:#f59e0b;color:black;}
+label{font-size:13px;margin-right:8px;display:inline-block;}
+.topgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;}
+.summary{font-size:18px;font-weight:bold;margin-bottom:10px;color:#38bdf8;}
+.resetbtn{background:#334155;color:white;}
+.helpBtn{background:#38bdf8;color:#000;padding:8px;border:none;border-radius:8px;cursor:pointer;font-weight:bold;width:100%;}
+.helpContent{display:none;background:#334155;color:white;padding:10px;border-radius:8px;margin-top:5px;line-height:1.4;}
+.icon-panel{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:15px;}
+.icon-panel button{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px;}
+.icon-panel span{font-size:20px;margin-bottom:5px;}
 </style>
 </head>
 <body>
 
-<div class="left-panel">
 <h2>💰 Heti Fizetés – Naplózott</h2>
 
-<div class="card">
-<div class="topgrid">
-<div>Paletói $<br><input type="number" id="paleto"></div>
-<div>Állami $<br><input type="number" id="allami"></div>
-<div>Múzeum $<br><input type="number" id="muzeum"></div>
-<div>Bobcat $<br><input type="number" id="bobcat"></div>
+<!-- Ikonos gombpanel -->
+<div class="icon-panel">
+  <button onclick="szamol()"><span>🧮</span>Számol</button>
+  <button onclick="mentNap()"><span>💾</span>Naplóz</button>
+  <button onclick="openPDF()"><span>📄</span>PDF</button>
+  <button onclick="toggleHelp()"><span>ℹ️</span>Segítség</button>
 </div>
-<br>
-<button onclick="szamol()">Számol</button>
-<button onclick="mentNap()">💾 Hozzáad naplóhoz</button>
-<button onclick="openPDF()">📄 PDF Export</button>
+
+<!-- Használati útmutató lenyíló -->
+<div id="helpContent" class="helpContent">
+  <ul>
+    <li>Minden nap külön rablás adható hozzá.</li>
+    <li>Rablások: (összeg ÷ 2 ÷ résztvevők) × 0.82 + Mosó + Craft</li>
+    <li>Mosó / Craft: +250$ minden kattintásra</li>
+    <li>Kifizetett státusz: zöld ✅ kifizetve, piros ❌ nincs kifizetve</li>
+    <li>Reset gomb: visszaállítja a tag összes értékét</li>
+    <li>💾 Hozzáad naplóhoz: naplózza a mai adatokat a heti logba</li>
+    <li>📄 PDF Export: átvisz a PDF oldalra</li>
+  </ul>
+</div>
+
+<!-- Számoló panel -->
+<div class="card">
+  <div class="topgrid">
+    <div>Paletói $<br><input type="number" id="paleto"></div>
+    <div>Állami $<br><input type="number" id="allami"></div>
+    <div>Múzeum $<br><input type="number" id="muzeum"></div>
+    <div>Bobcat $<br><input type="number" id="bobcat"></div>
+  </div>
 </div>
 
 <div class="summary" id="summary"></div>
 <div id="tagok"></div>
-</div>
 
-<div class="right-panel">
-<h3>ℹ️ Használati útmutató</h3>
-<ul>
-<li>Minden nap külön rablás adható hozzá, korábbi napok nem vesznek el.</li>
-<li>Rablások: (összeg ÷ 2 ÷ résztvevők) × 0.82 + Mosó + Craft</li>
-<li>Mosó / Craft: +250$ minden kattintásra</li>
-<li>Kifizetett státusz: zöld ✅ kifizetve, piros ❌ nincs kifizetve</li>
-<li>Reset gomb: visszaállítja a tag összes értékét</li>
-<li>💾 Hozzáad naplóhoz: naplózza a mai adatokat a heti logba</li>
-<li>📄 PDF Export: átvisz a PDF oldalra</li>
-</ul>
-</div>
-
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <script>
 // Tagok
 const nevek=[
@@ -80,8 +87,8 @@ let hetiLog = JSON.parse(localStorage.getItem("hetiLog")) || [];
 // MOSÓ / CRAFT
 function addMoso(i){adatok[i].moso++; render();}
 function minusMoso(i){if(adatok[i].moso>0)adatok[i].moso--; render();}
-function addCraft(i){adatok[i].craft++; render();}
-function minusCraft(i){if(adatok[i].craft>0)adatok[i].craft--; render();}
+function addCraft(i){if(adatok[i].craft>0)adatok[i].craft--; render();}
+function minusCraft(i){adatok[i].craft--; render();}
 
 // TOGGLE
 function toggleRablas(i,t){adatok[i].rablas[t]=!adatok[i].rablas[t]; render();}
@@ -145,7 +152,7 @@ function render(){
 
 // Naplóhoz mentés
 function mentNap(){
-  const datum = new Date().toISOString().slice(0,10); // YYYY-MM-DD
+  const datum = new Date().toISOString().slice(0,10);
   hetiLog.push({datum, tagok: JSON.parse(JSON.stringify(adatok))});
   localStorage.setItem("hetiLog", JSON.stringify(hetiLog));
   alert("Rablás naplózva: "+datum);
@@ -155,6 +162,12 @@ function mentNap(){
 function openPDF(){
   localStorage.setItem("hetiLogPDF", JSON.stringify(hetiLog));
   window.open("pdf.html", "_blank");
+}
+
+// Lenytható segítség
+function toggleHelp(){
+  const help = document.getElementById("helpContent");
+  help.style.display = help.style.display==="none"?"block":"none";
 }
 
 render();
