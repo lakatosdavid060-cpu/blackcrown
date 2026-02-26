@@ -54,7 +54,7 @@ Példa: Paleto = 100000, 2 résztvevő
 <li><b>Mosó/Craft +250:</b> Növeli a Mosó vagy Craft értéket 250$-ral. <b>−</b> csökkenti ugyanennyivel.</li>
 <li><b>❌ / ✅ Kifizetett:</b> Piros = nincs kifizetve, zöld = kifizetve.</li>
 <li><b>Naplózás:</b> Mentse a mai nap adatait a heti logba, és frissíti a heti összesítést.</li>
-<li><b>PDF:</b> Új ablakban nyílik, ahol a heti összesített logot PDF formátumban mentheted.</li>
+<li><b>PDF:</b> Új ablakban nyílik, ahol a heti összesített logot PDF formátumban mentheted. Mindig friss adatot lát.</li>
 <li><b>Heti nullázás:</b> Törli az összes heti logot, így új hét kezdhető.</li>
 <li><b>Tippek:</b>
 <ul>
@@ -107,6 +107,7 @@ rablas:{paleto:false,allami:false,muzeum:false,bobcat:false}
 
 let hetiLog = JSON.parse(localStorage.getItem("hetiLog")) || [];
 let hetiOsszesites = JSON.parse(localStorage.getItem("hetiOsszesites")) || {};
+let pdfWindow = null;
 
 // MOSÓ / CRAFT
 function addMoso(i){adatok[i].moso++; render();}
@@ -196,12 +197,17 @@ hetiLog.push({datum, tagok: JSON.parse(JSON.stringify(adatok))});
 localStorage.setItem("hetiLog", JSON.stringify(hetiLog));
 
 alert("Rablás naplózva és heti összesítés frissítve: "+datum);
+
+// Automatikus PDF frissítés, ha ablak nyitva
+if (pdfWindow && !pdfWindow.closed) {
+pdfWindow.location.reload();
+}
 }
 
 // PDF
 function openPDF(){
 localStorage.setItem("hetiLogPDF", JSON.stringify(hetiOsszesites));
-window.open("pdf.html","_blank");
+pdfWindow = window.open("pdf.html","_blank");
 }
 
 // Segítség lenyitható
