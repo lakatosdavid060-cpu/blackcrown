@@ -78,14 +78,13 @@ function resetTag(i){
   save();render();
 }
 
-// SZÁMOL – Helyes logika: a 0.82-t minden résztvevőre kell alkalmazni
+// SZÁMOL – Helyes logika: résztvevőnként osztva, utána 0.82
 function szamol(){
   let paleto=+document.getElementById("paleto").value||0;
   let allami=+document.getElementById("allami").value||0;
   let muzeum=+document.getElementById("muzeum").value||0;
   let bobcat=+document.getElementById("bobcat").value||0;
 
-  // résztvevők száma minden rablásnál
   const cP = adatok.filter(x=>x.rablas.paleto).length || 1;
   const cA = adatok.filter(x=>x.rablas.allami).length || 1;
   const cM = adatok.filter(x=>x.rablas.muzeum).length || 1;
@@ -93,8 +92,6 @@ function szamol(){
 
   adatok.forEach(t=>{
     let resz=0;
-
-    // minden résztvevőre 0.82 szorzó a részösszegre
     if(t.rablas.paleto) resz += ((paleto/2)/cP) * 0.82;
     if(t.rablas.allami) resz += ((allami/2)/cA) * 0.82;
     if(t.rablas.muzeum) resz += ((muzeum/2)/cM) * 0.82;
@@ -143,12 +140,14 @@ function render(){
 
 render();
 
-// PDF EXPORT
+// PDF EXPORT – világos háttér, látható táblázat
 function exportTablePDF() {
   const container = document.createElement('div');
   container.style.fontFamily = 'Arial, sans-serif';
   container.style.color = '#000';
+  container.style.backgroundColor = '#fff';
   container.style.width = '100%';
+  container.style.padding = '10px';
 
   let html = `<table border="1" cellspacing="0" cellpadding="5" style="width:100%; border-collapse: collapse;">
     <tr style="background-color:#38bdf8; color:#000; font-weight:bold; text-align:center;">
@@ -184,7 +183,7 @@ function exportTablePDF() {
     margin: 0.5,
     filename: 'heti_fizetes_tabla.pdf',
     image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2 },
+    html2canvas: { scale: 2, backgroundColor: '#fff' },
     jsPDF: { unit: 'in', format: 'letter', orientation: 'landscape' }
   };
 
