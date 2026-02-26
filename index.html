@@ -38,10 +38,10 @@ label{font-size:13px;margin-right:8px;display:inline-block}
 <div id="tagok"></div>
 <button onclick="exportTablePDF()" class="craft">📄 PDF Mentés (Táblázatos)</button>
 
-<!-- html2pdf könyvtár -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
 <script>
+// Tagok listája
 const nevek=[
 "Ugaros Turul (Bobi)","Yukito Osano (Neon)","Emily Mitsuko (Biskota)",
 "Vladimir Iwanow (Majom)","Todor Zsombor (Recsi)","Daryl Dixon (Oroszlán)",
@@ -52,6 +52,7 @@ const nevek=[
 "Williams Jackson (Easy)","Jackson West (Kalap)","David Jackson (Kabát)"
 ];
 
+// Adatok helyi tárolás
 let adatok=JSON.parse(localStorage.getItem("hetiFizetes"))||
 nevek.map(n=>({
   nev:n,moso:0,craft:0,fizetett:false,osszeg:0,
@@ -77,63 +78,67 @@ function resetTag(i){
   save();render();
 }
 
-// SZÁMOL
+// SZÁMOL – Helyes logika: a 0.82-t minden résztvevőre kell alkalmazni
 function szamol(){
-let paleto=+document.getElementById("paleto").value||0;
-let allami=+document.getElementById("allami").value||0;
-let muzeum=+document.getElementById("muzeum").value||0;
-let bobcat=+document.getElementById("bobcat").value||0;
+  let paleto=+document.getElementById("paleto").value||0;
+  let allami=+document.getElementById("allami").value||0;
+  let muzeum=+document.getElementById("muzeum").value||0;
+  let bobcat=+document.getElementById("bobcat").value||0;
 
-const cP=adatok.filter(x=>x.rablas.paleto).length||1;
-const cA=adatok.filter(x=>x.rablas.allami).length||1;
-const cM=adatok.filter(x=>x.rablas.muzeum).length||1;
-const cB=adatok.filter(x=>x.rablas.bobcat).length||1;
+  // résztvevők száma minden rablásnál
+  const cP = adatok.filter(x=>x.rablas.paleto).length || 1;
+  const cA = adatok.filter(x=>x.rablas.allami).length || 1;
+  const cM = adatok.filter(x=>x.rablas.muzeum).length || 1;
+  const cB = adatok.filter(x=>x.rablas.bobcat).length || 1;
 
-adatok.forEach(t=>{
-let resz=0;
-if(t.rablas.paleto) resz += ((paleto/2)/cP) * 0.82;
-if(t.rablas.allami) resz += ((allami/2)/cA) * 0.82;
-if(t.rablas.muzeum) resz += ((muzeum/2)/cM) * 0.82;
-if(t.rablas.bobcat) resz += ((bobcat/2)/cB) * 0.82;
-t.osszeg = resz + t.moso*250 + t.craft*250;
-});
+  adatok.forEach(t=>{
+    let resz=0;
 
-save();render();
+    // minden résztvevőre 0.82 szorzó a részösszegre
+    if(t.rablas.paleto) resz += ((paleto/2)/cP) * 0.82;
+    if(t.rablas.allami) resz += ((allami/2)/cA) * 0.82;
+    if(t.rablas.muzeum) resz += ((muzeum/2)/cM) * 0.82;
+    if(t.rablas.bobcat) resz += ((bobcat/2)/cB) * 0.82;
+
+    t.osszeg = resz + t.moso*250 + t.craft*250;
+  });
+
+  save();render();
 }
 
 // RENDER
 function render(){
-let total=0;
-adatok.forEach(t=>total+=t.osszeg);
-document.getElementById("summary").innerHTML=
-"💵 Összes kiosztva: "+total.toFixed(2)+" $";
+  let total=0;
+  adatok.forEach(t=>total+=t.osszeg);
+  document.getElementById("summary").innerHTML=
+  "💵 Összes kiosztva: "+total.toFixed(2)+" $";
 
-let html="";
-adatok.forEach((t,i)=>{
-html+=`
-<div class="card">
-<b>${t.nev}</b><br><br>
-<b>Rablások:</b><br>
-<label><input type="checkbox" ${t.rablas.paleto?'checked':''} onclick="toggleRablas(${i},'paleto')"> Paleto</label>
-<label><input type="checkbox" ${t.rablas.allami?'checked':''} onclick="toggleRablas(${i},'allami')"> Állami</label>
-<label><input type="checkbox" ${t.rablas.muzeum?'checked':''} onclick="toggleRablas(${i},'muzeum')"> Múzeum</label>
-<label><input type="checkbox" ${t.rablas.bobcat?'checked':''} onclick="toggleRablas(${i},'bobcat')"> Bobcat</label>
-<br><br>
-<button class="moso" onclick="minusMoso(${i})">−</button>
-<button class="moso" onclick="addMoso(${i})">Mosó +250</button> ${t.moso}
-<button class="craft" onclick="minusCraft(${i})">−</button>
-<button class="craft" onclick="addCraft(${i})">Craft +250</button> ${t.craft}
-<br><br>
-Összeg: <b>${t.osszeg.toFixed(2)} $</b><br><br>
-<button class="${t.fizetett?'green':'red'}" onclick="toggleFizetett(${i})">
-${t.fizetett?'✅ Kifizetve':'❌ Nincs kifizetve'}
-</button>
-<br><br>
-<button class="resetbtn" onclick="resetTag(${i})">🔄 Reset</button>
-</div>
-`;
-});
-document.getElementById("tagok").innerHTML=html;
+  let html="";
+  adatok.forEach((t,i)=>{
+    html+=`
+    <div class="card">
+      <b>${t.nev}</b><br><br>
+      <b>Rablások:</b><br>
+      <label><input type="checkbox" ${t.rablas.paleto?'checked':''} onclick="toggleRablas(${i},'paleto')"> Paleto</label>
+      <label><input type="checkbox" ${t.rablas.allami?'checked':''} onclick="toggleRablas(${i},'allami')"> Állami</label>
+      <label><input type="checkbox" ${t.rablas.muzeum?'checked':''} onclick="toggleRablas(${i},'muzeum')"> Múzeum</label>
+      <label><input type="checkbox" ${t.rablas.bobcat?'checked':''} onclick="toggleRablas(${i},'bobcat')"> Bobcat</label>
+      <br><br>
+      <button class="moso" onclick="minusMoso(${i})">−</button>
+      <button class="moso" onclick="addMoso(${i})">Mosó +250</button> ${t.moso}
+      <button class="craft" onclick="minusCraft(${i})">−</button>
+      <button class="craft" onclick="addCraft(${i})">Craft +250</button> ${t.craft}
+      <br><br>
+      Összeg: <b>${t.osszeg.toFixed(2)} $</b><br><br>
+      <button class="${t.fizetett?'green':'red'}" onclick="toggleFizetett(${i})">
+        ${t.fizetett?'✅ Kifizetve':'❌ Nincs kifizetve'}
+      </button>
+      <br><br>
+      <button class="resetbtn" onclick="resetTag(${i})">🔄 Reset</button>
+    </div>
+    `;
+  });
+  document.getElementById("tagok").innerHTML=html;
 }
 
 render();
@@ -144,7 +149,7 @@ function exportTablePDF() {
   container.style.fontFamily = 'Arial, sans-serif';
   container.style.color = '#000';
   container.style.width = '100%';
-  
+
   let html = `<table border="1" cellspacing="0" cellpadding="5" style="width:100%; border-collapse: collapse;">
     <tr style="background-color:#38bdf8; color:#000; font-weight:bold; text-align:center;">
       <th>Név</th>
@@ -176,11 +181,11 @@ function exportTablePDF() {
   container.innerHTML = html;
 
   const opt = {
-    margin:       0.5,
-    filename:     'heti_fizetes_tabla.pdf',
-    image:        { type: 'jpeg', quality: 0.98 },
-    html2canvas:  { scale: 2 },
-    jsPDF:        { unit: 'in', format: 'letter', orientation: 'landscape' }
+    margin: 0.5,
+    filename: 'heti_fizetes_tabla.pdf',
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2 },
+    jsPDF: { unit: 'in', format: 'letter', orientation: 'landscape' }
   };
 
   html2pdf().set(opt).from(container).save();
