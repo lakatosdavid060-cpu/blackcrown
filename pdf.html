@@ -2,71 +2,57 @@
 <html lang="hu">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Heti PDF – Összesített</title>
+<title>Heti Fizetés PDF</title>
 <style>
-body{font-family:Arial;background:#0f172a;color:white;padding:15px;margin:0;}
-h2{color:#38bdf8;text-align:center;margin-bottom:15px;}
-table{border-collapse:collapse;width:100%;color:white;margin-bottom:15px;}
-th, td{border:1px solid #fff;padding:6px;text-align:center;font-size:14px;}
-.green{background:#16a34a;color:white;}
-.red{background:#dc2626;color:white;}
-button{padding:6px 10px;margin-bottom:10px;border:none;border-radius:6px;cursor:pointer;font-weight:bold;}
+body{font-family:Arial;background:#0f172a;color:white;padding:15px;}
+table{border-collapse:collapse;width:100%;color:white;}
+th, td{border:1px solid #fff;padding:6px;text-align:center;}
+h2{color:#38bdf8;}
 </style>
 </head>
 <body>
-
-<h2>📄 Heti Összesített Fizetés</h2>
-<button onclick="exportPDF()">📥 PDF Mentés</button>
-
+<h2>💰 Heti Fizetés – PDF</h2>
 <table id="pdfTable">
 <thead>
 <tr>
-<th>Tag</th>
-<th>Paleto</th>
-<th>Állami</th>
-<th>Múzeum</th>
-<th>Bobcat</th>
-<th>Mosó</th>
-<th>Craft</th>
-<th>Összeg</th>
-<th>Kifizetve</th>
+<th>Tag</th><th>Paleto</th><th>Állami</th><th>Múzeum</th><th>Bobcat</th>
+<th>Mosó</th><th>Craft</th><th>Összeg</th><th>Kifizetve</th>
 </tr>
 </thead>
-<tbody id="pdfBody"></tbody>
+<tbody></tbody>
 </table>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <script>
-// Betöltjük az összesített heti adatot
-const hetiOsszesites = JSON.parse(localStorage.getItem("hetiOsszesites")) || {};
+// Betöltjük a heti összesítést a localStorage-ból
+let heti = JSON.parse(localStorage.getItem("hetiLogPDF")) || {};
+let tbody = document.querySelector("#pdfTable tbody");
 
-// Render
-function renderPDF(){
-  const tbody = document.getElementById("pdfBody");
-  tbody.innerHTML = "";
-  Object.values(hetiOsszesites).forEach(t=>{
-    tbody.innerHTML += `<tr>
-      <td>${t.nev}</td>
-      <td>${t.rablas.paleto?'✅':''}</td>
-      <td>${t.rablas.allami?'✅':''}</td>
-      <td>${t.rablas.muzeum?'✅':''}</td>
-      <td>${t.rablas.bobcat?'✅':''}</td>
-      <td>${t.moso}</td>
-      <td>${t.craft}</td>
-      <td>${t.osszeg.toFixed(2)}</td>
-      <td class="${t.fizetett?'green':'red'}">${t.fizetett?'✅':'❌'}</td>
-    </tr>`;
-  });
-}
+Object.values(heti).forEach(t=>{
+  let tr = document.createElement("tr");
+  tr.innerHTML = `
+    <td>${t.nev}</td>
+    <td>${t.rablas.paleto}</td>
+    <td>${t.rablas.allami}</td>
+    <td>${t.rablas.muzeum}</td>
+    <td>${t.rablas.bobcat}</td>
+    <td>${t.moso}</td>
+    <td>${t.craft}</td>
+    <td>${t.osszeg.toFixed(2)}</td>
+    <td>${t.fizetett?"✅":"❌"}</td>
+  `;
+  tbody.appendChild(tr);
+});
 
-function exportPDF(){
-  const element = document.getElementById("pdfTable");
-  html2pdf().set({margin:0.5,filename:'heti_fizetes.pdf',jsPDF:{orientation:'landscape'}}).from(element).save();
-}
-
-renderPDF();
+// PDF mentés gomb létrehozása
+let btn = document.createElement("button");
+btn.textContent="💾 Mentés PDF-be";
+btn.style.padding="8px 12px";
+btn.style.marginTop="10px";
+btn.onclick = ()=>{
+  html2pdf().set({margin:0.5, filename:'HetiFizetes.pdf', html2canvas:{scale:2}, jsPDF:{orientation:'landscape'}}).from(document.body).save();
+};
+document.body.appendChild(btn);
 </script>
-
 </body>
 </html>
