@@ -140,30 +140,22 @@ function render(){
 
 render();
 
-// PDF EXPORT – világos háttér, látható táblázat
+// PDF EXPORT – biztosan látható világos táblázat
 function exportTablePDF() {
   const container = document.createElement('div');
-  container.style.fontFamily = 'Arial, sans-serif';
-  container.style.color = '#000';
   container.style.backgroundColor = '#fff';
-  container.style.width = '100%';
+  container.style.color = '#000';
   container.style.padding = '10px';
+  container.style.fontFamily = 'Arial, sans-serif';
+  container.style.width = '100%';
 
-  let html = `<table border="1" cellspacing="0" cellpadding="5" style="width:100%; border-collapse: collapse;">
-    <tr style="background-color:#38bdf8; color:#000; font-weight:bold; text-align:center;">
-      <th>Név</th>
-      <th>Paleto</th>
-      <th>Állami</th>
-      <th>Múzeum</th>
-      <th>Bobcat</th>
-      <th>Mosó</th>
-      <th>Craft</th>
-      <th>Összeg ($)</th>
-      <th>Kifizetve</th>
+  let html = `<table border="1" cellspacing="0" cellpadding="5" style="width:100%; border-collapse: collapse; text-align:center;">
+    <tr style="background-color:#38bdf8; font-weight:bold;">
+      <th>Név</th><th>Paleto</th><th>Állami</th><th>Múzeum</th><th>Bobcat</th><th>Mosó</th><th>Craft</th><th>Összeg ($)</th><th>Kifizetve</th>
     </tr>`;
 
   adatok.forEach(t => {
-    html += `<tr style="text-align:center;">
+    html += `<tr>
       <td>${t.nev}</td>
       <td>${t.rablas.paleto ? '✅' : ''}</td>
       <td>${t.rablas.allami ? '✅' : ''}</td>
@@ -179,15 +171,12 @@ function exportTablePDF() {
   html += `</table>`;
   container.innerHTML = html;
 
-  const opt = {
-    margin: 0.5,
-    filename: 'heti_fizetes_tabla.pdf',
-    image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2, backgroundColor: '#fff' },
-    jsPDF: { unit: 'in', format: 'letter', orientation: 'landscape' }
-  };
-
-  html2pdf().set(opt).from(container).save();
+  html2pdf().from(container).set({
+    margin:0.5,
+    filename:'heti_fizetes_tabla.pdf',
+    jsPDF:{unit:'in', format:'letter', orientation:'landscape'},
+    html2canvas:{scale:2, backgroundColor:'#fff'}
+  }).save();
 }
 </script>
 
