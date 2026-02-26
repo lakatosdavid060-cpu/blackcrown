@@ -3,48 +3,61 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PDF Export – Heti Log</title>
+<title>Heti PDF</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <style>
-body{font-family:Arial;background:#fff;color:#000;padding:15px;margin:0;}
-table, th, td{border:1px solid #000; border-collapse:collapse;}
-th, td{padding:5px;text-align:center;}
-th{background:#38bdf8;color:#000;}
-h2{text-align:center;}
+body{font-family:Arial;background:#f0f0f0;color:#000;padding:15px;}
+table{border-collapse:collapse;width:100%;margin-bottom:15px;}
+th, td{border:1px solid #000;padding:5px;text-align:center;}
+button{padding:6px 10px;border:none;border-radius:6px;cursor:pointer;background:#38bdf8;color:black;font-weight:bold;margin-bottom:10px;}
 </style>
 </head>
 <body>
-<h2>💰 Heti Fizetés – Naplózott</h2>
-<div id="pdf-table"></div>
+
+<h2>Heti Fizetés PDF</h2>
+<button onclick="letoltPDF()">📥 PDF letöltése</button>
+<div id="pdfContent"></div>
+
 <script>
-let hetiLog = JSON.parse(localStorage.getItem("hetiLogPDF") || "[]");
-if(hetiLog.length===0) document.getElementById("pdf-table").innerHTML="Nincs adat";
+const hetiLog = JSON.parse(localStorage.getItem("hetiLogPDF")) || [];
 
-let html = "";
-hetiLog.forEach(h=>{
-  html += `<h3>Dátum: ${h.datum}</h3>`;
-  html += `<table style="width:100%;border-collapse:collapse;">
-  <tr><th>Tag</th><th>Paleto</th><th>Állami</th><th>Múzeum</th><th>Bobcat</th><th>Mosó</th><th>Craft</th><th>Összeg</th><th>Kifizetve</th></tr>`;
-  h.tagok.forEach(t=>{
-    html+=`<tr>
-    <td>${t.nev}</td>
-    <td>${t.rablas.paleto?"✅":""}</td>
-    <td>${t.rablas.allami?"✅":""}</td>
-    <td>${t.rablas.muzeum?"✅":""}</td>
-    <td>${t.rablas.bobcat?"✅":""}</td>
-    <td>${t.moso}</td>
-    <td>${t.craft}</td>
-    <td>${t.osszeg.toFixed(2)}</td>
-    <td>${t.fizetett?"✅":"❌"}</td>
-    </tr>`;
+function renderPDF(){
+  const container = document.getElementById("pdfContent");
+  if(hetiLog.length===0){
+    container.innerHTML="<p>Nincs mentett heti log.</p>";
+    return;
+  }
+
+  let html="";
+  hetiLog.forEach(d=>{
+    html += `<h3>${d.datum}</h3>
+      <table>
+      <tr>
+        <th>Tag</th><th>Rablások</th><th>Mosó</th><th>Craft</th><th>Összeg</th><th>Kifizetve</th>
+      </tr>`;
+    d.tagok.forEach(t=>{
+      html += `<tr>
+        <td>${t.nev}</td>
+        <td>${Object.keys(t.rablas).filter(r=>t.rablas[r]).join(', ')}</td>
+        <td>${t.moso}</td>
+        <td>${t.craft}</td>
+        <td>${t.osszeg.toFixed(2)}</td>
+        <td>${t.fizetett?'✅':'❌'}</td>
+      </tr>`;
+    });
+    html += `</table>`;
   });
-  html+="</table><br>";
-});
 
-document.getElementById("pdf-table").innerHTML = html;
+  container.innerHTML = html;
+}
 
-// PDF generálás
-html2pdf().from(document.getElementById("pdf-table")).save("heti_fizetes.pdf");
+function letoltPDF(){
+  const elem = document.getElementById("pdfContent");
+  html2pdf().set({filename:'heti_fizetes.pdf', html2canvas:{scale:2}}).from(elem).save();
+}
+
+renderPDF();
 </script>
+
 </body>
 </html>
