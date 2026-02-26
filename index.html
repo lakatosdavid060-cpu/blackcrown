@@ -17,16 +17,22 @@ label{font-size:13px;margin-right:8px;display:inline-block}
 .topgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
 .summary{font-size:18px;font-weight:bold;margin-bottom:10px;color:#38bdf8}
 .resetbtn{background:#334155;color:white}
-
-/* PDF táblázat rejtve, de látható a canvas számára */
-#pdf-table{position:absolute; top:-9999px; left:-9999px; width:100%; background:#fff; color:#000;}
-table, th, td{border:1px solid #000; border-collapse:collapse;}
-th, td{padding:5px; text-align:center;}
+.info-card{background:#334155;color:#fff;padding:15px;border-radius:14px;margin-bottom:15px;line-height:1.4;}
 </style>
 </head>
 <body>
 
 <h2>💰 Heti Fizetés Számoló</h2>
+
+<div class="info-card">
+<h3>ℹ️ Hogyan működik a fizetés</h3>
+<ul>
+<li>Rablások: a teljes összeg felét osztjuk a résztvevők között, majd 0.82× résztvevőnként.</li>
+<li>Mosó / Craft: +250$ minden gombnyomásra.</li>
+<li>Kifizetett státusz: zöld ✅ kifizetve, piros ❌ nincs kifizetve.</li>
+<li>Reset gomb: visszaállítja a tag összes értékét.</li>
+</ul>
+</div>
 
 <div class="card">
 <div class="topgrid">
@@ -37,16 +43,13 @@ th, td{padding:5px; text-align:center;}
 </div>
 <br>
 <button onclick="szamol()">Számol</button>
+<!-- PDF gomb -->
+<button onclick="openPDF()">📄 PDF Export</button>
 </div>
 
 <div class="summary" id="summary"></div>
 <div id="tagok"></div>
-<button onclick="exportTablePDF()" class="craft">📄 PDF Mentés (Garantáltan látható)</button>
 
-<!-- PDF-hez külön div -->
-<div id="pdf-table"></div>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <script>
 // Tagok
 const nevek=[
@@ -60,23 +63,21 @@ const nevek=[
 ];
 
 // Adatok
-let adatok=JSON.parse(localStorage.getItem("hetiFizetes"))||
-nevek.map(n=>({nev:n,moso:0,craft:0,fizetett:false,osszeg:0,rablas:{paleto:false,allami:false,muzeum:false,bobcat:false}}));
-
-function save(){localStorage.setItem("hetiFizetes",JSON.stringify(adatok));}
+let adatok = nevek.map(n=>({
+  nev: n, moso:0, craft:0, fizetett:false, osszeg:0,
+  rablas:{paleto:false,allami:false,muzeum:false,bobcat:false}
+}));
 
 // MOSÓ / CRAFT
-function addMoso(i){adatok[i].moso++; save(); render();}
-function minusMoso(i){if(adatok[i].moso>0)adatok[i].moso--; save(); render();}
-function addCraft(i){adatok[i].craft++; save(); render();}
-function minusCraft(i){if(adatok[i].craft>0)adatok[i].craft--; save(); render();}
+function addMoso(i){adatok[i].moso++; render();}
+function minusMoso(i){if(adatok[i].moso>0)adatok[i].moso--; render();}
+function addCraft(i){adatok[i].craft++; render();}
+function minusCraft(i){if(adatok[i].craft>0)adatok[i].craft--; render();}
 
 // TOGGLE
-function toggleRablas(i,t){adatok[i].rablas[t]=!adatok[i].rablas[t]; save(); render();}
-function toggleFizetett(i){adatok[i].fizetett=!adatok[i].fizetett; save(); render();}
-
-// RESET
-function resetTag(i){adatok[i].moso=0; adatok[i].craft=0; adatok[i].osszeg=0; adatok[i].rablas={paleto:false,allami:false,muzeum:false,bobcat:false}; save(); render();}
+function toggleRablas(i,t){adatok[i].rablas[t]=!adatok[i].rablas[t]; render();}
+function toggleFizetett(i){adatok[i].fizetett=!adatok[i].fizetett; render();}
+function resetTag(i){adatok[i].moso=0; adatok[i].craft=0; adatok[i].osszeg=0; adatok[i].rablas={paleto:false,allami:false,muzeum:false,bobcat:false}; render();}
 
 // SZÁMOLÁS
 function szamol(){
@@ -99,7 +100,7 @@ function szamol(){
     t.osszeg = resz + t.moso*250 + t.craft*250;
   });
 
-  save(); render();
+  render();
 }
 
 // RENDER
@@ -133,40 +134,13 @@ function render(){
   document.getElementById("tagok").innerHTML=html;
 }
 
-// PDF EXPORT – külön táblázat, látható
-function exportTablePDF(){
-  const pdfDiv = document.getElementById("pdf-table");
-  let html = `<table style="width:100%; border-collapse:collapse;">
-    <tr style="background-color:#38bdf8; font-weight:bold;">
-      <th>Név</th><th>Paleto</th><th>Állami</th><th>Múzeum</th><th>Bobcat</th>
-      <th>Mosó</th><th>Craft</th><th>Összeg ($)</th><th>Kifizetve</th>
-    </tr>`;
-  adatok.forEach(t=>{
-    html+=`<tr>
-      <td>${t.nev}</td>
-      <td>${t.rablas.paleto?'✅':''}</td>
-      <td>${t.rablas.allami?'✅':''}</td>
-      <td>${t.rablas.muzeum?'✅':''}</td>
-      <td>${t.rablas.bobcat?'✅':''}</td>
-      <td>${t.moso}</td>
-      <td>${t.craft}</td>
-      <td>${t.osszeg.toFixed(2)}</td>
-      <td>${t.fizetett?'✅':'❌'}</td>
-    </tr>`;
-  });
-  html+='</table>';
-  pdfDiv.innerHTML = html;
-
-  html2pdf().from(pdfDiv).set({
-    margin:0.5,
-    filename:'heti_fizetes.pdf',
-    jsPDF:{unit:'in', format:'letter', orientation:'landscape'},
-    html2canvas:{scale:2, backgroundColor:'#fff'}
-  }).save();
+// PDF oldal megnyitása
+function openPDF(){
+  localStorage.setItem("hetiFizetesPDF", JSON.stringify(adatok));
+  window.open("pdf.html", "_blank"); // új ablakban nyitja
 }
 
 render();
 </script>
-
 </body>
 </html>
