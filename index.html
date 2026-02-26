@@ -3,202 +3,173 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Black Crown Maffia - VIP RP Turbo</title>
+<title>Heti Fizetés Dashboard</title>
+
 <style>
-body {
-  margin:0;
-  padding:100px 40px 40px 40px;
-  font-family:'Orbitron', sans-serif;
-  color:white;
-  text-align:center;
-  overflow-x:hidden;
-  background: url('https://wallpapers.com/images/hd/skull-black-king-crown-z2sij0bg02ro5oao.jpg') no-repeat center center fixed;
-  background-size:cover;
-  backdrop-filter: brightness(0.7);
-}
-#mainMenu {
-  position:fixed;
-  top:0; left:0; width:100%;
-  background: rgba(0,0,0,0.85);
-  padding:10px;
-  display:flex; justify-content:center; gap:20px;
-  z-index:1000;
-  box-shadow:0 0 30px #00ffff inset;
-}
-#mainMenu button {
-  padding:10px 20px;
-  font-weight:bold;
-  border-radius:12px;
-  border:none;
-  background: rgba(255,0,0,0.85);
-  color:black;
-  text-shadow:1px 1px 2px #000;
-  cursor:pointer;
-  transition:0.3s;
-}
-#mainMenu button:hover{
-  background: rgba(0,255,255,0.9);
-  transform:scale(1.1);
-  box-shadow:0 0 25px #0ff, 0 0 40px #0ff inset;
-}
-input, button.jelentkez {
-  padding:14px 22px;
-  margin:5px;
-  border:none;
-  border-radius:12px;
-  cursor:pointer;
-  font-weight:bold;
-  background: rgba(255,0,0,0.85);
-  color:black;
-  text-shadow:1px 1px 2px #000;
-  font-size:1em;
-  transition: all 0.3s ease;
-}
-input:focus{outline:none; box-shadow:0 0 15px #0ff;}
-button.jelentkez:hover{
-  transform:scale(1.05);
-  box-shadow:0 0 20px #0ff;
-  background: rgba(0,255,255,0.85);
-}
-#discordBtn{
-  display:none;
-  font-size:1.4em;
-  margin-top:15px;
-  animation:pulse 1.2s infinite alternate, glow 2s infinite alternate;
-}
-@keyframes pulse{0%{transform:scale(1);}50%{transform:scale(1.1);}100%{transform:scale(1);}}
-@keyframes glow{0%{box-shadow:0 0 5px #0ff;}50%{box-shadow:0 0 25px #0ff;}100%{box-shadow:0 0 5px #0ff;}}
-#acceptPopup{
-  position:fixed; top:50%; left:50%;
-  transform:translate(-50%,-50%) scale(0);
-  background:#0f0; color:#000;
-  padding:25px 50px; border-radius:20px;
-  font-size:2em; font-weight:bold; z-index:1000;
-  animation:popupAnim 0.8s forwards;
-  box-shadow:0 0 40px #0ff,0 0 70px #0ff inset;
-}
-@keyframes popupAnim{0%{transform:translate(-50%,-50%) scale(0);}50%{transform:translate(-50%,-50%) scale(1.3);}100%{transform:translate(-50%,-50%) scale(1);}}
-.confetti-piece{
-  position:fixed; width:12px;height:12px; pointer-events:none; opacity:0.95; animation:fall linear forwards;
-}
-@keyframes fall{0%{transform:translateY(0px) rotate(0deg);}100%{transform:translateY(100vh) rotate(360deg);}}
-#particles{position:fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:0;}
-section{margin-top:40px;}
-h1{font-size:3em; text-shadow: 0 0 15px #f00, 0 0 25px #0ff, 0 0 35px #f0f;}
-#statusMsg{margin-top:15px; font-size:1.3em; font-weight:bold; text-shadow:0 0 15px #000;}
-textarea{resize:none;}
+body { margin:0; font-family:Arial,sans-serif; background: linear-gradient(135deg,#141e30,#243b55); color:white; padding:20px; }
+.container { max-width:1200px; margin:auto; }
+.card { background: rgba(255,255,255,0.05); padding:15px; border-radius:10px; margin-bottom:15px; }
+.member { border-top:1px solid rgba(255,255,255,0.1); padding-top:10px; margin-top:10px; }
+button { padding:5px 10px; border-radius:6px; border:none; cursor:pointer; }
+.paid { background:#00c853; color:white; }
+.unpaid { background:#c62828; color:white; }
+.stats { background: rgba(0,0,0,0.3); padding:15px; border-radius:10px; margin-top:20px; }
+canvas { background:white; border-radius:10px; }
 </style>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
-<div id="particles"></div>
-<h1>Black Crown Maffia</h1>
-<nav id="mainMenu">
-  <button onclick="showSection('jelentkezes')">Jelentkezés</button>
-  <button onclick="showSection('szabalyzat')">Szabályzat</button>
-  <button onclick="showSection('rangok')">Rangok</button>
-</nav>
 
-<section id="jelentkezes">
-<div id="postAccept">
-  <button id="discordBtn" onclick="window.open('https://discord.gg/4nspFjYC','_blank')">Discord Csatlakozás</button>
-  <button id="staffBtn" onclick="checkAdminAccess()">Staff / Admin Panel</button>
+<div class="container">
+
+<h1>💵 Heti Fizetés Dashboard</h1>
+
+<div class="card">
+Rablás végösszeg ($): <input type="number" id="rablas">
+Résztvevők: <input type="number" id="resztvevok">
+<button onclick="mentesGlobal()">Mentés</button>
+<div class="small" id="hetInfo"></div>
 </div>
 
-<div id="loginDiv">
-  <p>Jelentkezés</p>
-  <input type="text" id="userICName" placeholder="IC Név"><br>
-  <input type="number" id="userICAge" placeholder="IC Életkor"><br>
-  <input type="text" id="userRPExp" placeholder="RP tapasztalat röviden"><br>
-  <label>Mit tennél, ha valakit lopáson kapnál?</label><br>
-  <textarea id="userICScenario" placeholder="Írd le röviden" style="width:90%; height:60px; border-radius:10px; padding:10px;"></textarea><br>
-  <button class="jelentkez" onclick="submitApplication()">Jelentkezés</button>
-  <button class="jelentkez" onclick="resetApplication()">Újra jelentkezés</button>
+<div class="card">
+<h3>Tagok</h3>
+<div id="tagok"></div>
 </div>
 
-<div id="adminLoginDiv">
-  <p>Staff/Admin belépés</p>
-  <input type="text" id="adminUser" placeholder="Felhasználónév"><br>
-  <input type="password" id="adminPass" placeholder="Jelszó"><br>
-  <button class="jelentkez" onclick="checkAdminLogin()">Belépés</button>
+<div class="stats" id="statisztika"></div>
+
+<div class="card">
+<h3>📊 Heti Grafikon</h3>
+<canvas id="grafikon" width="400" height="200"></canvas>
+<button onclick="exportPDF()">📥 PDF Export</button>
 </div>
-</section>
 
-<section id="szabalyzat" style="display:none;">
-<h2>Szabályzat</h2>
-<ul style="text-align:left; max-width:600px; margin:auto; font-size:1.1em;">
-<li>1. Tilos csalni vagy exploitálni a rendszert.</li>
-<li>2. Más játékosok zaklatása tilos.</li>
-<li>3. A Discord szabályait mindenki köteles betartani.</li>
-<li>4. Rangsor változtatás admin döntése alapján.</li>
-<li>5. Legyél tisztelettudó és udvarias.</li>
-</ul>
-</section>
+<div class="card">
+<h3>📁 Heti Archívum</h3>
+<div id="archivum"></div>
+</div>
 
-<section id="rangok" style="display:none;">
-<h2>Rangok</h2>
-<ul style="text-align:left; max-width:600px; margin:auto; font-size:1.1em;">
-<li><strong>Boss:</strong> Teljes vezetői jogok, döntések a csapat irányában.</li>
-<li><strong>Underboss:</strong> Segíti a vezetőt, rangok kiosztása.</li>
-<li><strong>Capo:</strong> Kis csapat vezető, missziók irányítása.</li>
-<li><strong>Soldier:</strong> Alap tag, küldetések végrehajtása.</li>
-<li><strong>Associate:</strong> Próbaidős tag, még nem teljes jogokkal.</li>
-</ul>
-</section>
-
-<p id="statusMsg"></p>
+</div>
 
 <script>
-const pContainer=document.getElementById('particles');
-for(let i=0;i<80;i++){
-  const p=document.createElement('div');
-  p.style.position='absolute';
-  p.style.width=(Math.random()*6+2)+'px';
-  p.style.height=p.style.width;
-  p.style.background='rgba(0,255,255,'+Math.random()+')';
-  p.style.borderRadius='50%';
-  p.style.top=Math.random()*100+'%';
-  p.style.left=Math.random()*100+'%';
-  pContainer.appendChild(p);
+
+const alapNevek = [
+"Ugaros Turul (Bobi)","Yukito Osano (Neon)","Emily Mitsuko (Biskota)",
+"Vladimir Iwanow (Majom)","Todor Zsombor (Recsi)",
+"Daryl Dixon (Oroszlán)","Julian Alvarez (Szecska)",
+"Adam Taylor (Young)","Nemeth Andras (arpi)",
+"Enrico Martello (Apu)","Ádám Benjamin (Cowboy)",
+"Mateo Tavares Valesco (Kolbi)","Carl Jesus (Faszos)",
+"Noah Knight (Roberts)","David Smith (Szike)",
+"Nico Alvarez (Milka)","Miguel Alvarez (Raszta)",
+"Wells Jordan (Stone)","Williams Jackson (Easy)",
+"Jackson West (Kalap)","David Jackson (Kabát)"
+];
+
+let adatok = JSON.parse(localStorage.getItem("hetiFizetesGraf")) || {
+    rablas:0,
+    resztvevok:1,
+    hetKezdete: Date.now(),
+    archivum: [],
+    tagok: alapNevek.map(n=>({nev:n, mosas:0, sajat:0, rad:0, masra:0, fizetett:false}))
+};
+
+let chart;
+
+function ellenorizHet(){
+    let most = Date.now();
+    let napok = (most - adatok.hetKezdete)/(1000*60*60*24);
+    if(napok >= 7){ hetiLezaras(); }
 }
 
-function submitApplication(){
-    const icName=document.getElementById("userICName").value.trim();
-    const icAge=document.getElementById("userICAge").value.trim();
-    const rpExp=document.getElementById("userRPExp").value.trim();
-    const scenario=document.getElementById("userICScenario").value.trim();
-    if(!icName||!icAge||!rpExp||!scenario){alert("Kérlek, töltsd ki az összes mezőt!"); return;}
-    let data = JSON.parse(localStorage.getItem("jelentkezok")||"[]");
-    if(data.find(u=>u.icName===icName)){alert("Már jelentkeztél ezzel az IC névvel!"); return;}
-    data.push({icName,icAge,rpExp,scenario,status:"Függőben"});
-    localStorage.setItem("jelentkezok",JSON.stringify(data));
-    localStorage.setItem("bc_user",icName);
-    checkStatus();
-    alert("✅ Sikeres jelentkezés! Várd az elfogadást.");
+function hetiLezaras(){
+    let osszes = 0;
+    adatok.tagok.forEach(tag=>{ osszes+=szamol(tag); });
+    adatok.archivum.push({datum:new Date(adatok.hetKezdete).toLocaleDateString(), osszeg:osszes.toFixed(2)});
+    adatok.rablas=0; adatok.resztvevok=1;
+    adatok.hetKezdete=Date.now();
+    adatok.tagok.forEach(tag=>{ tag.mosas=0; tag.sajat=0; tag.rad=0; tag.masra=0; tag.fizetett=false; });
+    mentes();
 }
 
-function resetApplication(){localStorage.removeItem("bc_user");checkStatus();}
-
-function checkStatus(){
-    const icName=localStorage.getItem("bc_user");
-    const data=JSON.parse(localStorage.getItem("jelentkezok")||"[]");
-    const user=data.find(u=>u.icName===icName);
-    if(!user){document.getElementById("statusMsg").innerText="⏳ Még nem jelentkeztél!";document.getElementById("loginDiv").style.display="block";document.getElementById("postAccept").style.display="none";return;}
-    document.getElementById("loginDiv").style.display="none";
-    if(user.status==="Elfogadva"){document.getElementById("postAccept").style.display="block";document.getElementById("discordBtn").style.display="inline-block";document.getElementById("statusMsg").innerText="✅ Elfogadva! Discord gomb aktív.";const popupKey=`popupShown_${icName}`;if(!localStorage.getItem(popupKey)){showAcceptPopup();localStorage.setItem(popupKey,"true");}}
-    else if(user.status==="Elutasítva"){alert("⛔ Elutasították a jelentkezésedet!");document.getElementById("postAccept").style.display="none";document.getElementById("loginDiv").style.display="block";}
-    else{document.getElementById("statusMsg").innerText="⏳ Jelentkezésed függőben van.";document.getElementById("postAccept").style.display="none";}
+function mentesGlobal(){
+    adatok.rablas=parseFloat(document.getElementById("rablas").value)||0;
+    adatok.resztvevok=parseInt(document.getElementById("resztvevok").value)||1;
+    mentes();
 }
 
-function showAcceptPopup(){const popup=document.createElement('div'); popup.id='acceptPopup'; popup.innerText='✅ Elfogadva!';document.body.appendChild(popup);runConfetti();setTimeout(()=>{popup.remove();},2000);}
-function runConfetti(){const colors=['#ff0','#0ff','#f0f','#ff8800','#00ff88','#ff0088'];for(let i=0;i<60;i++){const shapes=['●','★','♛','☠'];const c=document.createElement('div');c.classList.add('confetti-piece');c.innerText=shapes[Math.floor(Math.random()*shapes.length)];c.style.color=colors[Math.floor(Math.random()*colors.length)];c.style.left=Math.random()*100+'vw';c.style.fontSize=Math.random()*24+12+'px';c.style.animationDuration=(Math.random()*2+2)+'s';document.body.appendChild(c);setTimeout(()=>{c.remove();},3500);}}
+function mentes(){ localStorage.setItem("hetiFizetesGraf",JSON.stringify(adatok)); render(); }
 
-function checkAdminAccess(){if(localStorage.getItem("bc_admin_logged")==="true"){window.location.href="admin.html";return;}document.getElementById("adminLoginDiv").style.display="block";}
-const ADMIN_CREDENTIALS={user:"admin",pass:"admin"};
-function checkAdminLogin(){const user=document.getElementById("adminUser").value.trim();const pass=document.getElementById("adminPass").value.trim();if(user===ADMIN_CREDENTIALS.user && pass===ADMIN_CREDENTIALS.pass){localStorage.setItem("bc_admin_logged","true");alert("✅ Belépés sikeres!");window.location.href="admin.html";}else{alert("❌ Helytelen felhasználónév vagy jelszó!");}}
+function szamol(tag){
+    let rablasResz = ((adatok.rablas/2)/adatok.resztvevok)*0.82;
+    let mosas = tag.mosas*250;
+    return rablasResz+mosas+tag.sajat-tag.rad+tag.masra;
+}
 
-function showSection(id){const sections=['jelentkezes','szabalyzat','rangok'];sections.forEach(sec=>document.getElementById(sec).style.display=(sec===id)?'block':'none');}
+function toggle(i){ adatok.tagok[i].fizetett=!adatok.tagok[i].fizetett; mentes(); }
 
-document.addEventListener("DOMContentLoaded", checkStatus);
+function render(){
+
+    document.getElementById("rablas").value = adatok.rablas;
+    document.getElementById("resztvevok").value = adatok.resztvevok;
+
+    document.getElementById("hetInfo").innerHTML =
+        "Következő nullázás: "+new Date(adatok.hetKezdete + 7*24*60*60*1000).toLocaleDateString();
+
+    let tagDiv=document.getElementById("tagok"); tagDiv.innerHTML="";
+    let osszes=0, kint=0;
+    let grafLabels=[], grafData=[];
+    adatok.tagok.forEach((tag,i)=>{
+        let fizu=szamol(tag); osszes+=fizu; if(!tag.fizetett) kint+=fizu;
+        grafLabels.push(tag.nev); grafData.push(fizu);
+        tagDiv.innerHTML+=`
+        <div class="member">
+        <b>${tag.nev}</b><br>
+        $${fizu.toFixed(2)}<br>
+        <button class="${tag.fizetett?'paid':'unpaid'}" onclick="toggle(${i})">
+        ${tag.fizetett?'✅ Kifizetve':'❌ Nincs kifizetve'}</button>
+        </div>`;
+    });
+
+    document.getElementById("statisztika").innerHTML=
+        `<h3>📊 Aktuális hét</h3>Teljes összeg: $${osszes.toFixed(2)}<br>Kintlévőség: $${kint.toFixed(2)}`;
+
+    // Chart
+    if(chart) chart.destroy();
+    let ctx = document.getElementById("grafikon").getContext("2d");
+    chart = new Chart(ctx,{
+        type:'bar',
+        data:{
+            labels:grafLabels,
+            datasets:[{
+                label:'Fizetés ($)',
+                data:grafData,
+                backgroundColor:'rgba(0,200,83,0.7)',
+                borderColor:'rgba(0,200,83,1)',
+                borderWidth:1
+            }]
+        },
+        options:{responsive:true, scales:{y:{beginAtZero:true}}}
+    });
+
+    // Archívum
+    let arch=""; adatok.archivum.forEach(h=>{arch+=`<div>${h.datum} — $${h.osszeg}</div>`;});
+    document.getElementById("archivum").innerHTML=arch;
+}
+
+function exportPDF(){
+    const { jsPDF } = window.jspdf;
+    let pdf = new jsPDF('l','pt','a4');
+    pdf.setFontSize(16); pdf.text("Heti Fizetés Grafikon", 40, 30);
+    pdf.addImage(chart.toBase64Image(), 'PNG', 40, 50, 700, 400);
+    pdf.save(`heti_fizetes_${new Date().toLocaleDateString()}.pdf`);
+}
+
+ellenorizHet();
+render();
+
 </script>
 </body>
 </html>
