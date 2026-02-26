@@ -6,63 +6,18 @@
 <title>Heti Fizetés</title>
 
 <style>
-body{
-  font-family:Arial;
-  background:#0f172a;
-  color:white;
-  padding:15px;
-  margin:0;
-}
-
-h2{ margin-bottom:15px; }
-
-.card{
-  background:#1e293b;
-  padding:15px;
-  border-radius:14px;
-  margin-bottom:15px;
-  box-shadow:0 8px 20px rgba(0,0,0,0.25);
-}
-
-button{
-  padding:6px 10px;
-  margin:3px;
-  border:none;
-  border-radius:8px;
-  cursor:pointer;
-  font-weight:bold;
-}
-
-input[type="number"]{
-  width:120px;
-  padding:6px;
-  border-radius:8px;
-  border:none;
-}
-
-.green{ background:#16a34a; color:white; }
-.red{ background:#dc2626; color:white; }
-.moso{ background:#9333ea; color:white; }
-.craft{ background:#f59e0b; color:black; }
-
-label{
-  font-size:13px;
-  margin-right:8px;
-  display:inline-block;
-}
-
-.topgrid{
-  display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
-  gap:10px;
-}
-
-.summary{
-  font-size:18px;
-  font-weight:bold;
-  margin-bottom:10px;
-  color:#38bdf8;
-}
+body{font-family:Arial;background:#0f172a;color:white;padding:15px;margin:0}
+.card{background:#1e293b;padding:15px;border-radius:14px;margin-bottom:15px;box-shadow:0 8px 20px rgba(0,0,0,.25)}
+button{padding:6px 10px;margin:3px;border:none;border-radius:8px;cursor:pointer;font-weight:bold}
+input[type="number"]{width:120px;padding:6px;border-radius:8px;border:none}
+.green{background:#16a34a;color:white}
+.red{background:#dc2626;color:white}
+.moso{background:#9333ea;color:white}
+.craft{background:#f59e0b;color:black}
+label{font-size:13px;margin-right:8px;display:inline-block}
+.topgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
+.summary{font-size:18px;font-weight:bold;margin-bottom:10px;color:#38bdf8}
+.resetbtn{background:#334155;color:white}
 </style>
 </head>
 <body>
@@ -70,95 +25,77 @@ label{
 <h2>💰 Heti Fizetés Számoló</h2>
 
 <div class="card">
-
 <div class="topgrid">
 <div>Paletói $<br><input type="number" id="paleto"></div>
 <div>Állami $<br><input type="number" id="allami"></div>
 <div>Múzeum $<br><input type="number" id="muzeum"></div>
 <div>Bobcat $<br><input type="number" id="bobcat"></div>
 </div>
-
 <br>
 <button onclick="szamol()">Számol</button>
-
 </div>
 
 <div class="summary" id="summary"></div>
 <div id="tagok"></div>
 
 <script>
-
-// ===== NEVEK =====
-const nevek = [
-"Ugaros Turul (Bobi)",
-"Yukito Osano (Neon)",
-"Emily Mitsuko (Biskota)",
-"Vladimir Iwanow (Majom)",
-"Todor Zsombor (Recsi)",
-"Daryl Dixon (Oroszlán)",
-"Julian Alvarez (Szecska)",
-"Adam Taylor (Young)",
-"Nemeth Andras (arpi)",
-"Enrico Martello (Apu)",
-"Ádám Benjamin (Cowboy)",
-"Mateo Tavares Valesco (Kolbi)",
-"Carl Jesus (Faszos)",
-"Noah Knight (Roberts)",
-"David Smith (Szike)",
-"Nico Alvarez (Milka)",
-"Miguel Alvarez (Raszta)",
-"Wells Jordan (Stone)",
-"Williams Jackson (Easy)",
-"Jackson West (Kalap)",
-"David Jackson (Kabát)"
+const nevek=[
+"Ugaros Turul (Bobi)","Yukito Osano (Neon)","Emily Mitsuko (Biskota)",
+"Vladimir Iwanow (Majom)","Todor Zsombor (Recsi)","Daryl Dixon (Oroszlán)",
+"Julian Alvarez (Szecska)","Adam Taylor (Young)","Nemeth Andras (arpi)",
+"Enrico Martello (Apu)","Ádám Benjamin (Cowboy)","Mateo Tavares Valesco (Kolbi)",
+"Carl Jesus (Faszos)","Noah Knight (Roberts)","David Smith (Szike)",
+"Nico Alvarez (Milka)","Miguel Alvarez (Raszta)","Wells Jordan (Stone)",
+"Williams Jackson (Easy)","Jackson West (Kalap)","David Jackson (Kabát)"
 ];
 
-// ===== ADATOK =====
-let adatok = JSON.parse(localStorage.getItem("hetiFizetes")) || 
+let adatok=JSON.parse(localStorage.getItem("hetiFizetes"))||
 nevek.map(n=>({
-  nev:n,
-  moso:0,
-  craft:0,
-  fizetett:false,
-  osszeg:0,
-  rablas:{ paleto:false, allami:false, muzeum:false, bobcat:false }
+  nev:n,moso:0,craft:0,fizetett:false,osszeg:0,
+  rablas:{paleto:false,allami:false,muzeum:false,bobcat:false}
 }));
 
-function save(){
-  localStorage.setItem("hetiFizetes", JSON.stringify(adatok));
-}
+function save(){localStorage.setItem("hetiFizetes",JSON.stringify(adatok));}
+
+// ===== MOSÓ / CRAFT =====
+function addMoso(i){adatok[i].moso++;save();render();}
+function minusMoso(i){if(adatok[i].moso>0)adatok[i].moso--;save();render();}
+function addCraft(i){adatok[i].craft++;save();render();}
+function minusCraft(i){if(adatok[i].craft>0)adatok[i].craft--;save();render();}
 
 // ===== TOGGLES =====
-function toggleRablas(i,t){
-  adatok[i].rablas[t]=!adatok[i].rablas[t];
-  save(); render();
+function toggleRablas(i,t){adatok[i].rablas[t]=!adatok[i].rablas[t];save();render();}
+function toggleFizetett(i){adatok[i].fizetett=!adatok[i].fizetett;save();render();}
+
+// ===== RESET =====
+function resetTag(i){
+  adatok[i].moso=0;
+  adatok[i].craft=0;
+  adatok[i].osszeg=0;
+  adatok[i].rablas={paleto:false,allami:false,muzeum:false,bobcat:false};
+  save();
+  render();
 }
-function addMoso(i){ adatok[i].moso++; save(); render(); }
-function addCraft(i){ adatok[i].craft++; save(); render(); }
-function toggleFizetett(i){ adatok[i].fizetett=!adatok[i].fizetett; save(); render(); }
 
-// ===== SZÁMOLÁS =====
+// ===== SZÁMOL =====
 function szamol(){
-
 let paleto=+document.getElementById("paleto").value||0;
 let allami=+document.getElementById("allami").value||0;
 let muzeum=+document.getElementById("muzeum").value||0;
 let bobcat=+document.getElementById("bobcat").value||0;
 
-const countPaleto = adatok.filter(x=>x.rablas.paleto).length||1;
-const countAllami = adatok.filter(x=>x.rablas.allami).length||1;
-const countMuzeum = adatok.filter(x=>x.rablas.muzeum).length||1;
-const countBobcat = adatok.filter(x=>x.rablas.bobcat).length||1;
+const cP=adatok.filter(x=>x.rablas.paleto).length||1;
+const cA=adatok.filter(x=>x.rablas.allami).length||1;
+const cM=adatok.filter(x=>x.rablas.muzeum).length||1;
+const cB=adatok.filter(x=>x.rablas.bobcat).length||1;
 
 adatok.forEach(t=>{
-  let resz=0;
-
-  if(t.rablas.paleto) resz+=((paleto/2)/countPaleto)*0.82;
-  if(t.rablas.allami) resz+=((allami/2)/countAllami)*0.82;
-  if(t.rablas.muzeum) resz+=((muzeum/2)/countMuzeum)*0.82;
-  if(t.rablas.bobcat) resz+=((bobcat/2)/countBobcat)*0.82;
-
-  t.osszeg = resz + t.moso*250 + t.craft*250;
+let resz=0;
+if(t.rablas.paleto)resz+=((paleto/2)/cP)*0.82;
+if(t.rablas.allami)resz+=((allami/2)/cA)*0.82;
+if(t.rablas.muzeum)resz+=((muzeum/2)/cM)*0.82;
+if(t.rablas.bobcat)resz+=((bobcat/2)/cB)*0.82;
+t.osszeg=resz+t.moso*250+t.craft*250;
 });
 
 save();
@@ -167,15 +104,12 @@ render();
 
 // ===== RENDER =====
 function render(){
-
 let total=0;
-adatok.forEach(t=> total+=t.osszeg);
-
-document.getElementById("summary").innerHTML =
+adatok.forEach(t=>total+=t.osszeg);
+document.getElementById("summary").innerHTML=
 "💵 Összes kiosztva: "+total.toFixed(2)+" $";
 
 let html="";
-
 adatok.forEach((t,i)=>{
 html+=`
 <div class="card">
@@ -189,7 +123,10 @@ html+=`
 
 <br><br>
 
+<button class="moso" onclick="minusMoso(${i})">−</button>
 <button class="moso" onclick="addMoso(${i})">Mosó +250</button> ${t.moso}
+
+<button class="craft" onclick="minusCraft(${i})">−</button>
 <button class="craft" onclick="addCraft(${i})">Craft +250</button> ${t.craft}
 
 <br><br>
@@ -198,15 +135,16 @@ html+=`
 <button class="${t.fizetett?'green':'red'}" onclick="toggleFizetett(${i})">
 ${t.fizetett?'✅ Kifizetve':'❌ Nincs kifizetve'}
 </button>
+
+<br><br>
+<button class="resetbtn" onclick="resetTag(${i})">🔄 Reset</button>
 </div>
 `;
 });
-
 document.getElementById("tagok").innerHTML=html;
 }
 
 render();
-
 </script>
 </body>
 </html>
