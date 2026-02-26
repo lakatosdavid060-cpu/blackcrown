@@ -1,142 +1,188 @@
-<!DOCTYPE html>
-<html lang="hu">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Rablási Dashboard – Helyszínek + Trend</title>
-<style>
-body { font-family:Arial,sans-serif; background: #141e30; color:white; padding:20px;}
-.container { max-width:1200px; margin:auto;}
-.card { background: rgba(255,255,255,0.05); padding:15px; border-radius:10px; margin-bottom:15px;}
-button { margin:2px; padding:5px 10px; border-radius:6px; border:none; cursor:pointer;}
-.paid { background:#00c853;color:white;}
-.unpaid { background:#c62828;color:white;}
-canvas { background:white; border-radius:10px; margin-top:10px;}
-.small { font-size:13px; opacity:0.8;}
-</style>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-</head>
-<body>
-
-<div class="container">
-<h1>💵 Rablási Dashboard – Helyszínek + Trend</h1>
-
-<div id="helyszinek"></div>
-
-<div class="card">
-<h3>📊 Heti Grafikon</h3>
-<canvas id="grafikon" width="400" height="200"></canvas>
-<button onclick="exportPDF()">📥 PDF Export</button>
-</div>
-
-<div class="card">
-<h3>📊 Heti Trend</h3>
-<canvas id="trendGrafikon" width="800" height="300"></canvas>
-</div>
-
-<div class="card">
-<h3>📁 Heti Archívum</h3>
-<div id="archivum"></div>
-</div>
-
-</div>
-
 <script>
-const helyszinekAlap = [
-{nev:"Paletói Bank", osszeg:133680},
-{nev:"Állami Bank", osszeg:100827},
-{nev:"Múzeum", osszeg:75550},
-{nev:"Bobcat", osszeg:20900},
-{nev:"Mosó", osszeg:250},
-{nev:"Craft", osszeg:250}
-];
 
-let adatok = JSON.parse(localStorage.getItem("rablasiDashboard")) || {
+const helyszinekLista = ["paleto","allami","muzeum","bobcat","moso","craft"];
+
+let adatok = JSON.parse(localStorage.getItem("hetiFizetesTrend")) || {
     hetKezdete: Date.now(),
-    helyszinek: helyszinekAlap.map(h=>({...h, resztvevok:1, rablasszam:1})),
-    archivum: []
+    archivum: [],
+    osszegek:{
+        paleto:0,
+        allami:0,
+        muzeum:0,
+        bobcat:0,
+        moso:0,
+        craft:0
+    },
+    tagok: [
+"Ugaros Turul (Bobi)","Yukito Osano (Neon)","Emily Mitsuko (Biskota)",
+"Vladimir Iwanow (Majom)","Todor Zsombor (Recsi)",
+"Daryl Dixon (Oroszlán)","Julian Alvarez (Szecska)",
+"Adam Taylor (Young)","Nemeth Andras (arpi)",
+"Enrico Martello (Apu)","Ádám Benjamin (Cowboy)",
+"Mateo Tavares Valesco (Kolbi)","Carl Jesus (Faszos)",
+"Noah Knight (Roberts)","David Smith (Szike)",
+"Nico Alvarez (Milka)","Miguel Alvarez (Raszta)",
+"Wells Jordan (Stone)","Williams Jackson (Easy)",
+"Jackson West (Kalap)","David Jackson (Kabát)"
+    ].map(n=>({
+        nev:n,
+        fizetett:false,
+        rablasok:{
+            paleto:0,
+            allami:0,
+            muzeum:0,
+            bobcat:0,
+            moso:0,
+            craft:0
+        }
+    }))
 };
 
-let chart, trendChart;
+let chart;
 
-function szamol(h){
-    return ((h.osszeg/2)/h.resztvevok)*0.82*h.rablasszam;
+function szamol(tag){
+
+    let osszes = 0;
+
+    helyszinekLista.forEach(hely=>{
+
+        let darab = tag.rablasok[hely];
+        if(darab > 0){
+
+            let resztvevok = adatok.tagok.filter(t => t.rablasok[hely] > 0).length;
+
+            if(resztvevok > 0){
+
+                let rablasOsszeg = adatok.osszegek[hely] || 0;
+                let osztando = rablasOsszeg / 2;
+                let egyResz = (osztando / resztvevok) * 0.82;
+
+                osszes += egyResz * darab;
+            }
+        }
+
+    });
+
+    return osszes;
 }
 
-function novelResztvevok(i,ertek){
-    adatok.helyszinek[i].resztvevok = Math.max(1, adatok.helyszinek[i].resztvevok+ertek);
+function novel(i, hely, ertek){
+    adatok.tagok[i].rablasok[hely] =
+        Math.max(0, adatok.tagok[i].rablasok[hely] + ertek);
     mentes();
 }
 
-function novelRablasszam(i,ertek){
-    adatok.helyszinek[i].rablasszam = Math.max(1, adatok.helyszinek[i].rablasszam+ertek);
+function osszegValtozas(hely, ertek){
+    adatok.osszegek[hely] = parseFloat(ertek) || 0;
     mentes();
 }
 
-function hetiLezaras(){
-    let hetiFizetes = adatok.helyszinek.map(h=>szamol(h));
-    adatok.archivum.push({datum:new Date(adatok.hetKezdete).toLocaleDateString(), fizetes:hetiFizetes});
-    // nullázás
-    adatok.helyszinek.forEach(h=>{h.resztvevok=1; h.rablasszam=1;});
-    adatok.hetKezdete=Date.now();
+function toggleFizetett(i){
+    adatok.tagok[i].fizetett = !adatok.tagok[i].fizetett;
     mentes();
 }
 
 function mentes(){
-    localStorage.setItem("rablasiDashboard",JSON.stringify(adatok));
+    localStorage.setItem("hetiFizetesTrend", JSON.stringify(adatok));
     render();
 }
 
 function render(){
-    let html="";
-    adatok.helyszinek.forEach((h,i)=>{
-        html+=`<div class="card">
-        <b>${h.nev}</b> — Alap összeg: $${h.osszeg}<br>
-        Résztvevők: <button onclick="novelResztvevok(${i},-1)">-</button> ${h.resztvevok} <button onclick="novelResztvevok(${i},1)">+</button><br>
-        Rablások száma: <button onclick="novelRablasszam(${i},-1)">-</button> ${h.rablasszam} <button onclick="novelRablasszam(${i},1)">+</button><br>
-        Fizetés: $${szamol(h).toFixed(2)}
-        </div>`;
+
+    let tagDiv = document.getElementById("tagok");
+    tagDiv.innerHTML = "";
+
+    let osszes = 0;
+    let grafLabels = [];
+    let grafData = [];
+
+    // ÖSSZEG INPUTOK
+    let osszegHTML = `<div class="card"><h3>Rablás összegek</h3>`;
+    helyszinekLista.forEach(hely=>{
+        osszegHTML += `
+        ${hely.toUpperCase()} összeg:
+        <input type="number"
+        value="${adatok.osszegek[hely]}"
+        onchange="osszegValtozas('${hely}',this.value)">
+        <br><br>`;
     });
-    document.getElementById("helyszinek").innerHTML=html;
+    osszegHTML += `</div>`;
 
-    // heti grafikon
+    tagDiv.innerHTML += osszegHTML;
+
+    adatok.tagok.forEach((tag,i)=>{
+
+        let fizu = szamol(tag);
+        osszes += fizu;
+
+        grafLabels.push(tag.nev);
+        grafData.push(fizu);
+
+        tagDiv.innerHTML += `
+        <div class="member">
+        <b>${tag.nev}</b><br>
+
+        Paleto:
+        <button onclick="novel(${i},'paleto',-1)">-</button>
+        ${tag.rablasok.paleto}
+        <button onclick="novel(${i},'paleto',1)">+</button>
+
+        Állami:
+        <button onclick="novel(${i},'allami',-1)">-</button>
+        ${tag.rablasok.allami}
+        <button onclick="novel(${i},'allami',1)">+</button>
+
+        Múzeum:
+        <button onclick="novel(${i},'muzeum',-1)">-</button>
+        ${tag.rablasok.muzeum}
+        <button onclick="novel(${i},'muzeum',1)">+</button>
+
+        Bobcat:
+        <button onclick="novel(${i},'bobcat',-1)">-</button>
+        ${tag.rablasok.bobcat}
+        <button onclick="novel(${i},'bobcat',1)">+</button>
+
+        Mosó:
+        <button onclick="novel(${i},'moso',-1)">-</button>
+        ${tag.rablasok.moso}
+        <button onclick="novel(${i},'moso',1)">+</button>
+
+        Craft:
+        <button onclick="novel(${i},'craft',-1)">-</button>
+        ${tag.rablasok.craft}
+        <button onclick="novel(${i},'craft',1)">+</button>
+
+        <br><br>
+        Fizetés: $${fizu.toFixed(2)}<br>
+
+        <button class="${tag.fizetett?'paid':'unpaid'}"
+        onclick="toggleFizetett(${i})">
+        ${tag.fizetett?'✅ Kifizetve':'❌ Nincs kifizetve'}
+        </button>
+
+        </div>
+        `;
+    });
+
+    document.getElementById("statisztika").innerHTML =
+        `<h3>Heti összes: $${osszes.toFixed(2)}</h3>`;
+
     if(chart) chart.destroy();
-    let ctx=document.getElementById("grafikon").getContext("2d");
-    chart=new Chart(ctx,{type:'bar', data:{
-        labels:adatok.helyszinek.map(h=>h.nev),
-        datasets:[{label:'Fizetés ($)', data:adatok.helyszinek.map(h=>szamol(h)), backgroundColor:'rgba(0,200,83,0.7)', borderColor:'rgba(0,200,83,1)', borderWidth:1}]
-    }, options:{responsive:true, scales:{y:{beginAtZero:true}}}});
 
-    // heti trend
-    if(trendChart) trendChart.destroy();
-    let hetLabels=adatok.archivum.map(h=>h.datum);
-    let datasets=adatok.helyszinek.map((h,j)=>({
-        label:h.nev,
-        data:adatok.archivum.map(arch=>arch.fizetes[j]),
-        borderColor:`hsl(${j*50%360},70%,50%)`,
-        fill:false,
-        tension:0.3
-    }));
-    let trendCtx=document.getElementById("trendGrafikon").getContext("2d");
-    trendChart=new Chart(trendCtx,{type:'line', data:{labels:hetLabels,datasets:datasets}, options:{responsive:true, scales:{y:{beginAtZero:true}}}});
-
-    // archívum
-    let arch="";
-    adatok.archivum.forEach(h=>{arch+=`<div>${h.datum} — $${h.fizetes.reduce((a,b)=>a+b,0).toFixed(2)}</div>`;});
-    document.getElementById("archivum").innerHTML=arch;
-}
-
-function exportPDF(){
-    const { jsPDF } = window.jspdf;
-    let pdf=new jsPDF('l','pt','a4');
-    pdf.setFontSize(16); pdf.text("Heti Fizetés Grafikon",40,30);
-    pdf.addImage(chart.toBase64Image(),'PNG',40,50,700,400);
-    pdf.save(`heti_fizetes_${new Date().toLocaleDateString()}.pdf`);
+    let ctx = document.getElementById("grafikon").getContext("2d");
+    chart = new Chart(ctx,{
+        type:'bar',
+        data:{
+            labels:grafLabels,
+            datasets:[{
+                label:'Fizetés ($)',
+                data:grafData
+            }]
+        },
+        options:{responsive:true, scales:{y:{beginAtZero:true}}}
+    });
 }
 
 render();
-</script>
 
-</body>
-</html>
+</script>
