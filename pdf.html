@@ -28,27 +28,23 @@ th, td{border:1px solid #000;padding:6px;text-align:center;}
 </table>
 
 <script>
-const hetiLog = JSON.parse(localStorage.getItem("hetiLogPDF")) || [];
-const tbody = document.getElementById("pdfTable");
+const hetiLog = JSON.parse(localStorage.getItem("hetiLogPDF"))||[];
+const tbody=document.getElementById("pdfTable");
 
-// Összeadja rablásonként a fizetéseket
-const osszesites = {};
+const osszesites={};
 hetiLog.forEach(entry=>{
 entry.adatok.forEach(t=>{
 if(!osszesites[t.nev]){
 osszesites[t.nev]={nev:t.nev, moso:0, craft:0, osszeg:0, fizetett:false, rablas:{paleto:false,allami:false,muzeum:false,bobcat:false}};
 }
-osszesites[t.nev].moso += t.moso;
-osszesites[t.nev].craft += t.craft;
-osszesites[t.nev].osszeg += t.osszeg;
-osszesites[t.nev].fizetett = osszesites[t.nev].fizetett || t.fizetett;
-Object.keys(t.rablas).forEach(k=>{
-osszesites[t.nev].rablas[k] = osszesites[t.nev].rablas[k] || t.rablas[k];
-});
+osszesites[t.nev].moso+=t.moso;
+osszesites[t.nev].craft+=t.craft;
+osszesites[t.nev].osszeg+=t.osszeg;
+osszesites[t.nev].fizetett=osszesites[t.nev].fizetett || t.fizetett;
+Object.keys(t.rablas).forEach(k=>osszesites[t.nev].rablas[k]=osszesites[t.nev].rablas[k]||t.rablas[k]);
 });
 });
 
-// Render
 Object.values(osszesites).forEach(t=>{
 let html=`<tr>
 <td>${t.nev}</td>
@@ -61,7 +57,7 @@ let html=`<tr>
 <td>${t.osszeg.toFixed(2)}</td>
 <td class="${t.fizetett?'green':'red'}">${t.fizetett?'✅':'❌'}</td>
 </tr>`;
-tbody.innerHTML += html;
+tbody.innerHTML+=html;
 });
 </script>
 </body>
