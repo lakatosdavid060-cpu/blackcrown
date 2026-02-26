@@ -3,57 +3,66 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Heti PDF</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<title>Heti PDF – Összesített</title>
 <style>
-body{font-family:Arial;background:#f0f0f0;color:#000;padding:15px;}
-table{border-collapse:collapse;width:100%;margin-bottom:15px;}
-th, td{border:1px solid #000;padding:5px;text-align:center;}
-button{padding:6px 10px;border:none;border-radius:6px;cursor:pointer;background:#38bdf8;color:black;font-weight:bold;margin-bottom:10px;}
+body{font-family:Arial;background:#0f172a;color:white;padding:15px;margin:0;}
+h2{color:#38bdf8;text-align:center;margin-bottom:15px;}
+table{border-collapse:collapse;width:100%;color:white;margin-bottom:15px;}
+th, td{border:1px solid #fff;padding:6px;text-align:center;font-size:14px;}
+.green{background:#16a34a;color:white;}
+.red{background:#dc2626;color:white;}
+button{padding:6px 10px;margin-bottom:10px;border:none;border-radius:6px;cursor:pointer;font-weight:bold;}
 </style>
 </head>
 <body>
 
-<h2>Heti Fizetés PDF</h2>
-<button onclick="letoltPDF()">📥 PDF letöltése</button>
-<div id="pdfContent"></div>
+<h2>📄 Heti Összesített Fizetés</h2>
+<button onclick="exportPDF()">📥 PDF Mentés</button>
 
+<table id="pdfTable">
+<thead>
+<tr>
+<th>Tag</th>
+<th>Paleto</th>
+<th>Állami</th>
+<th>Múzeum</th>
+<th>Bobcat</th>
+<th>Mosó</th>
+<th>Craft</th>
+<th>Összeg</th>
+<th>Kifizetve</th>
+</tr>
+</thead>
+<tbody id="pdfBody"></tbody>
+</table>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <script>
-const hetiLog = JSON.parse(localStorage.getItem("hetiLogPDF")) || [];
+// Betöltjük az összesített heti adatot
+const hetiOsszesites = JSON.parse(localStorage.getItem("hetiOsszesites")) || {};
 
+// Render
 function renderPDF(){
-  const container = document.getElementById("pdfContent");
-  if(hetiLog.length===0){
-    container.innerHTML="<p>Nincs mentett heti log.</p>";
-    return;
-  }
-
-  let html="";
-  hetiLog.forEach(d=>{
-    html += `<h3>${d.datum}</h3>
-      <table>
-      <tr>
-        <th>Tag</th><th>Rablások</th><th>Mosó</th><th>Craft</th><th>Összeg</th><th>Kifizetve</th>
-      </tr>`;
-    d.tagok.forEach(t=>{
-      html += `<tr>
-        <td>${t.nev}</td>
-        <td>${Object.keys(t.rablas).filter(r=>t.rablas[r]).join(', ')}</td>
-        <td>${t.moso}</td>
-        <td>${t.craft}</td>
-        <td>${t.osszeg.toFixed(2)}</td>
-        <td>${t.fizetett?'✅':'❌'}</td>
-      </tr>`;
-    });
-    html += `</table>`;
+  const tbody = document.getElementById("pdfBody");
+  tbody.innerHTML = "";
+  Object.values(hetiOsszesites).forEach(t=>{
+    tbody.innerHTML += `<tr>
+      <td>${t.nev}</td>
+      <td>${t.rablas.paleto?'✅':''}</td>
+      <td>${t.rablas.allami?'✅':''}</td>
+      <td>${t.rablas.muzeum?'✅':''}</td>
+      <td>${t.rablas.bobcat?'✅':''}</td>
+      <td>${t.moso}</td>
+      <td>${t.craft}</td>
+      <td>${t.osszeg.toFixed(2)}</td>
+      <td class="${t.fizetett?'green':'red'}">${t.fizetett?'✅':'❌'}</td>
+    </tr>`;
   });
-
-  container.innerHTML = html;
 }
 
-function letoltPDF(){
-  const elem = document.getElementById("pdfContent");
-  html2pdf().set({filename:'heti_fizetes.pdf', html2canvas:{scale:2}}).from(elem).save();
+function exportPDF(){
+  const element = document.getElementById("pdfTable");
+  html2pdf().set({margin:0.5,filename:'heti_fizetes.pdf',jsPDF:{orientation:'landscape'}}).from(element).save();
 }
 
 renderPDF();
