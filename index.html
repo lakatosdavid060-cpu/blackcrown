@@ -3,45 +3,45 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Heti Fizetés – Rablásonként</title>
+<title>Heti Fizetés – Rablásonkénti</title>
 <style>
 body{font-family:Arial;background:#0f172a;color:white;padding:15px;margin:0;}
 h2{color:#38bdf8;}
-button{padding:5px 10px;margin:2px;border:none;border-radius:6px;cursor:pointer;font-weight:bold;}
-table{border-collapse:collapse;width:100%;margin-top:10px;}
-th, td{border:1px solid #fff;padding:5px;text-align:center;font-size:14px;}
+button{padding:4px 8px;margin:2px;border:none;border-radius:6px;cursor:pointer;font-weight:bold;}
+.green{background:#16a34a;color:white;}
+.red{background:#dc2626;color:white;}
+table{border-collapse:collapse;width:100%;color:white;margin-top:10px;}
+th, td{border:1px solid #fff;padding:4px;text-align:center;font-size:14px;}
 input[type="number"]{width:80px;padding:4px;border-radius:6px;border:none;}
 .helpContent{display:none;background:#334155;color:white;padding:10px;border-radius:6px;margin-top:5px;line-height:1.4;}
 .icon-panel{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;}
 .icon-panel button{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6px;}
 .icon-panel span{font-size:18px;margin-bottom:3px;}
+ul{padding-left:20px;}
 </style>
 </head>
 <body>
 
-<h2>💰 Heti Fizetés – Rablásonként</h2>
+<h2>💰 Heti Fizetés – Rablásonkénti</h2>
 
 <div class="icon-panel">
   <button onclick="szamol()"><span>🧮</span>Számol</button>
-  <button onclick="naplozRablast()"><span>💾</span>Rablás naplózás</button>
+  <button onclick="naplozRablast()"><span>💾</span>Rablás naplózása</button>
   <button onclick="openPDF()"><span>📄</span>PDF</button>
   <button onclick="toggleHelp()"><span>ℹ️</span>Segítség</button>
   <button onclick="nullazHetiLog()"><span>♻️</span>Heti nullázás</button>
 </div>
 
 <div id="helpContent" class="helpContent">
-<h3>Használati útmutató – Heti összesítés rablásonként</h3>
+<h3>Használati útmutató – Részletes</h3>
 <ul>
-<li>Beírod minden rablás összegét a Paleto, Állami, Múzeum és Bobcat mezőkbe.</li>
-<li>Pipáld ki, ki vett részt a rabláson.</li>
-<li><b>Számol:</b> kiszámolja az összeg minden taghoz **csak azokon a rablásokon, amin részt vett**.</li>
-<li><b>Rablás fizetés formula:</b>
-<pre>
-((rablás összege ÷ 2) ÷ résztvevők száma) × 0.82 + Mosó*250 + Craft*250
-</pre></li>
-<li><b>Rablás naplózás:</b> menti a rablás állapotát a heti PDF-hez. Több rablást is naplózhatsz ugyanazon héten, minden taghoz csak az adott rablás összege számít.</li>
-<li><b>PDF:</b> megnyit egy új ablakot a naplózott heti állapottal. Nem tölt le automatikusan.</li>
-<li><b>Heti nullázás:</b> törli az összes heti adatot, így új hét kezdhető.</li>
+<li>Számol: Kiszámolja az aktuális rablások fizetését Mosó/Craft-tal együtt.</li>
+<li>Rablások jelölése: Pipáld be a résztvevőket minden rablásnál.</li>
+<li>Minden rablás külön kerül naplózásra.</li>
+<li>Heti összesítés a PDF-ben csak a tényleges rablások alapján számol.</li>
+<li>Mosó/Craft minden tagra külön összeadódik.</li>
+<li>PDF: új ablak nyílik, heti összesítés letölthető.</li>
+<li>Heti nullázás: teljes heti log törlése, új hét kezdhető.</li>
 </ul>
 </div>
 
@@ -51,6 +51,8 @@ Paletói $ <input type="number" id="paleto">
 Múzeum $ <input type="number" id="muzeum">
 Bobcat $ <input type="number" id="bobcat">
 </div>
+
+<div class="summary" id="summary"></div>
 
 <table>
 <thead>
@@ -75,35 +77,55 @@ const nevek=[
 "Henry Parker (Pufi)"
 ];
 
-let adatok = nevek.map(n=>({nev:n, moso:0, craft:0, fizetett:false, rablas:{paleto:false,allami:false,muzeum:false,bobcat:false}, osszeg:0}));
-let hetiLog = JSON.parse(localStorage.getItem("hetiLogPDF")) || [];
+let adatok = nevek.map(n=>({
+nev: n, moso:0, craft:0, fizetett:false, osszeg:0,
+rablas:{paleto:false,allami:false,muzeum:false,bobcat:false}
+}));
 
-// MOSÓ / CRAFT
+let hetiLog = JSON.parse(localStorage.getItem("hetiLog")) || [];
+let pdfWindow = null;
+
+// MOSÓ/CRAFT
 function addMoso(i){adatok[i].moso++; render();}
 function minusMoso(i){if(adatok[i].moso>0)adatok[i].moso--; render();}
 function addCraft(i){adatok[i].craft++; render();}
 function minusCraft(i){if(adatok[i].craft>0)adatok[i].craft--; render();}
+
+// TOGGLE
 function toggleRablas(i,t){adatok[i].rablas[t]=!adatok[i].rablas[t]; render();}
 function toggleFizetett(i){adatok[i].fizetett=!adatok[i].fizetett; render();}
 
-// SZÁMOLÁS – rablásonként
+// SZÁMOLÁS
 function szamol(){
-adatok.forEach(t=>t.osszeg=0);
-["paleto","allami","muzeum","bobcat"].forEach(r=>{
-let osszeg = +document.getElementById(r).value||0;
-let resztvevok = adatok.filter(t=>t.rablas[r]).length || 1;
+let paleto=+document.getElementById("paleto").value||0;
+let allami=+document.getElementById("allami").value||0;
+let muzeum=+document.getElementById("muzeum").value||0;
+let bobcat=+document.getElementById("bobcat").value||0;
+
+const cP=adatok.filter(x=>x.rablas.paleto).length||1;
+const cA=adatok.filter(x=>x.rablas.allami).length||1;
+const cM=adatok.filter(x=>x.rablas.muzeum).length||1;
+const cB=adatok.filter(x=>x.rablas.bobcat).length||1;
+
 adatok.forEach(t=>{
-if(t.rablas[r]) t.osszeg += (osszeg/2/resztvevok)*0.82;
+let resz=0;
+if(t.rablas.paleto) resz+=((paleto/2)/cP)*0.82;
+if(t.rablas.allami) resz+=((allami/2)/cA)*0.82;
+if(t.rablas.muzeum) resz+=((muzeum/2)/cM)*0.82;
+if(t.rablas.bobcat) resz+=((bobcat/2)/cB)*0.82;
+t.osszeg = resz + t.moso*250 + t.craft*250;
 });
-});
-adatok.forEach(t=>t.osszeg += t.moso*250 + t.craft*250);
 render();
 }
 
+// RENDER
 function render(){
-document.getElementById("tagokTable").innerHTML="";
+let total=adatok.reduce((sum,t)=>sum+t.osszeg,0);
+document.getElementById("summary").innerHTML="💵 Összes kiosztva: "+total.toFixed(2)+" $";
+
+let html="";
 adatok.forEach((t,i)=>{
-let html=`<tr>
+html+=`<tr>
 <td>${t.nev}</td>
 <td><input type="checkbox" ${t.rablas.paleto?'checked':''} onclick="toggleRablas(${i},'paleto')"></td>
 <td><input type="checkbox" ${t.rablas.allami?'checked':''} onclick="toggleRablas(${i},'allami')"></td>
@@ -114,29 +136,41 @@ let html=`<tr>
 <td>${t.osszeg.toFixed(2)}</td>
 <td><button class="${t.fizetett?'green':'red'}" onclick="toggleFizetett(${i})">${t.fizetett?'✅':'❌'}</button></td>
 </tr>`;
-document.getElementById("tagokTable").innerHTML += html;
 });
+document.getElementById("tagokTable").innerHTML=html;
 }
 
-// Rablás naplózása
+// NAPLÓZÁS RABLÁS
 function naplozRablast(){
 const datum = new Date().toISOString().slice(0,10);
-hetiLog.push({datum, adatok:JSON.parse(JSON.stringify(adatok))});
-localStorage.setItem("hetiLogPDF", JSON.stringify(hetiLog));
-alert("Rablás naplózva: " + datum);
+hetiLog.push({datum, tagok: JSON.parse(JSON.stringify(adatok))});
+localStorage.setItem("hetiLog", JSON.stringify(hetiLog));
+alert("Rablás naplózva: "+datum);
+if(pdfWindow && !pdfWindow.closed){ pdfWindow.location.reload(); }
 }
 
-// PDF
-function openPDF(){window.open("pdf.html","_blank");}
+// PDF megnyitás
+function openPDF(){
+localStorage.setItem("hetiLogPDF", JSON.stringify(hetiLog));
+pdfWindow = window.open("pdf.html","_blank");
+}
 
-// Segítség
-function toggleHelp(){const help=document.getElementById("helpContent"); help.style.display=help.style.display==="none"?"block":"none";}
+// Segítség lenyitható
+function toggleHelp(){
+const help = document.getElementById("helpContent");
+help.style.display = help.style.display==="none"?"block":"none";
+}
 
 // Heti nullázás
 function nullazHetiLog(){
-if(confirm("Biztosan törlöd az összes heti adatot?")){
-adatok.forEach(t=>{t.moso=0;t.craft=0;t.osszeg=0; Object.keys(t.rablas).forEach(k=>t.rablas[k]=false); t.fizetett=false;});
-hetiLog=[]; localStorage.removeItem("hetiLogPDF"); render();
-}}
+if(confirm("Biztosan törlöd a heti logot?")) {
+localStorage.removeItem("hetiLog");
+hetiLog=[];
+alert("A heti log törölve lett.");
+}
+}
+
 render();
 </script>
+</body>
+</html>
