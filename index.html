@@ -9,12 +9,12 @@
 body { font-family:Arial; background:#111827; color:white; padding:15px; }
 .card { background:#1f2937; padding:15px; border-radius:10px; margin-bottom:15px; }
 button { padding:5px 8px; margin:2px; border:none; border-radius:6px; cursor:pointer; }
-input { width:100px; padding:4px; border-radius:6px; border:none; }
+input { padding:4px; border-radius:6px; border:none; }
 .green { background:#16a34a; }
 .red { background:#dc2626; }
-.bank { background:#2563eb; color:white; }
 .moso { background:#9333ea; color:white; }
 .craft { background:#f59e0b; color:black; }
+label { margin-right:10px; font-size:13px; }
 </style>
 </head>
 <body>
@@ -26,7 +26,7 @@ Paletói $ <input type="number" id="paleto"><br><br>
 Állami $ <input type="number" id="allami"><br><br>
 Múzeum $ <input type="number" id="muzeum"><br><br>
 Bobcat $ <input type="number" id="bobcat"><br><br>
-Résztvevők száma: <input type="number" id="resztvevok" value="1"><br><br>
+
 <button onclick="szamol()">Számol</button>
 </div>
 
@@ -63,8 +63,19 @@ nev:n,
 moso:0,
 craft:0,
 fizetett:false,
-osszeg:0
+osszeg:0,
+rablas:{
+paleto:false,
+allami:false,
+muzeum:false,
+bobcat:false
+}
 }));
+
+function toggleRablas(i, tipus){
+adatok[i].rablas[tipus] = !adatok[i].rablas[tipus];
+render();
+}
 
 function szamol(){
 
@@ -72,14 +83,35 @@ let paleto = parseFloat(document.getElementById("paleto").value)||0;
 let allami = parseFloat(document.getElementById("allami").value)||0;
 let muzeum = parseFloat(document.getElementById("muzeum").value)||0;
 let bobcat = parseFloat(document.getElementById("bobcat").value)||0;
-let resztvevok = parseInt(document.getElementById("resztvevok").value)||1;
 
-let osszesRablas = paleto + allami + muzeum + bobcat;
-
-let alap = ((osszesRablas/2)/resztvevok)*0.82;
+// résztvevők számolása
+const countPaleto = adatok.filter(x=>x.rablas.paleto).length || 1;
+const countAllami = adatok.filter(x=>x.rablas.allami).length || 1;
+const countMuzeum = adatok.filter(x=>x.rablas.muzeum).length || 1;
+const countBobcat = adatok.filter(x=>x.rablas.bobcat).length || 1;
 
 adatok.forEach(t=>{
-t.osszeg = alap + (t.moso*250) + (t.craft*250);
+
+let reszesedes = 0;
+
+if(t.rablas.paleto){
+reszesedes += ((paleto/2)/countPaleto)*0.82;
+}
+
+if(t.rablas.allami){
+reszesedes += ((allami/2)/countAllami)*0.82;
+}
+
+if(t.rablas.muzeum){
+reszesedes += ((muzeum/2)/countMuzeum)*0.82;
+}
+
+if(t.rablas.bobcat){
+reszesedes += ((bobcat/2)/countBobcat)*0.82;
+}
+
+t.osszeg = reszesedes + (t.moso*250) + (t.craft*250);
+
 });
 
 render();
@@ -98,26 +130,8 @@ html+=`
 <div class="card">
 <b>${t.nev}</b><br><br>
 
-<button class="moso" onclick="addMoso(${i})">Mosó (+250)</button> ${t.moso}
-<button class="craft" onclick="addCraft(${i})">Craft (+250)</button> ${t.craft}
-
-<br><br>
-Összeg: <b>${t.osszeg.toFixed(2)} $</b><br><br>
-
-<button class="${t.fizetett?'green':'red'}" onclick="toggleFizetett(${i})">
-${t.fizetett?'✅ Kifizetve':'❌ Nincs kifizetve'}
-</button>
-
-</div>
-`;
-});
-
-document.getElementById("tagok").innerHTML = html;
-
-}
-
-render();
-
-</script>
-</body>
-</html>
+<b>Rablások:</b><br>
+<label><input type="checkbox" onclick="toggleRablas(${i},'paleto')" ${t.rablas.paleto?'checked':''}> Paleto</label>
+<label><input type="checkbox" onclick="toggleRablas(${i},'allami')" ${t.rablas.allami?'checked':''}> Állami</label>
+<label><input type="checkbox" onclick="toggleRablas(${i},'muzeum')" ${t.rablas.muzeum?'checked':''}> Múzeum</label>
+<label><input type="checkbox" onclick="
