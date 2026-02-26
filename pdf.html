@@ -15,7 +15,7 @@ th, td{border:1px solid #000;padding:6px;text-align:center;}
 </head>
 <body>
 
-<h2>💰 Heti Fizetés – Összesített PDF</h2>
+<h2>💰 Heti Fizetés – PDF</h2>
 
 <table>
 <thead>
@@ -28,8 +28,10 @@ th, td{border:1px solid #000;padding:6px;text-align:center;}
 </table>
 
 <script>
-let adatok = JSON.parse(localStorage.getItem("hetiLogPDF")) || [];
+let pdfLog = JSON.parse(localStorage.getItem("hetiLogPDF")) || {adatok: []};
+let adatok = pdfLog.adatok;
 const tbody = document.getElementById("pdfTable");
+
 adatok.forEach(t=>{
 let html = `<tr>
 <td>${t.nev}</td>
