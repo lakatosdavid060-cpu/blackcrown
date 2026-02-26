@@ -17,6 +17,8 @@ th, td{border:1px solid #fff;padding:4px;text-align:center;font-size:14px;}
 .icon-panel button{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6px;}
 .icon-panel span{font-size:18px;margin-bottom:3px;}
 input[type="number"]{width:80px;padding:4px;border-radius:6px;border:none;}
+ul{padding-left:20px;}
+code{background:#1e293b;padding:2px 4px;border-radius:4px;color:#fbbf24;}
 </style>
 </head>
 <body>
@@ -32,15 +34,37 @@ input[type="number"]{width:80px;padding:4px;border-radius:6px;border:none;}
 </div>
 
 <div id="helpContent" class="helpContent">
-<h3>Használati útmutató</h3>
+<h3>Használati útmutató – Részletesen</h3>
 <ul>
 <li><b>Számol:</b> Kiszámolja a tagok fizetését az aktuális rablások és Mosó/Craft alapján.</li>
 <li><b>Rablások jelölése:</b> Pipáld be a résztvevőket a Paleto, Állami, Múzeum, Bobcat rablásoknál.</li>
+<li><b>Rablás fizetés formula:</b>
+<pre>
+Fizetés résztvevőnként:
+((Teljes rablás összeg ÷ 2) ÷ Résztvevők száma) × 0.82
++ Mosó*250
++ Craft*250
+</pre>
+Példa: Paleto = 100000, 2 résztvevő
+1. 100000 ÷ 2 = 50000  
+2. 50000 ÷ 2 = 25000  
+3. 25000 × 0.82 = 20500  
++ Mosó és Craft hozzáadva
+</li>
 <li><b>Mosó/Craft +250:</b> Növeli a Mosó vagy Craft értéket 250$-ral. <b>−</b> csökkenti ugyanennyivel.</li>
 <li><b>❌ / ✅ Kifizetett:</b> Piros = nincs kifizetve, zöld = kifizetve.</li>
-<li><b>Naplózás:</b> Mentse a mai nap adatait a heti logba.</li>
-<li><b>PDF:</b> Új ablak nyílik, ahol PDF-et készíthetsz.</li>
-<li><b>Heti nullázás:</b> Törli az összes heti logot.</li>
+<li><b>Naplózás:</b> Mentse a mai nap adatait a heti logba.  
+A naplózott adatokat a PDF is használja.</li>
+<li><b>PDF:</b> Új ablakban nyílik, ahol a heti logot PDF formátumban mentheted.</li>
+<li><b>Heti nullázás:</b> Törli az összes heti logot, így új hét kezdhető.</li>
+<li><b>Tippek:</b>
+<ul>
+<li>Ha egy rablás során több tag vett részt, a rablás összege igazságosan oszlik el a résztvevők között.</li>
+<li>Mindig a résztvevőkre számol a 0.82 szorzót, nem a teljes rablásra.</li>
+<li>Mosó és Craft mindig +250$/gombként, hozzáadódik a rablás összegéhez.</li>
+<li>PDF gomb csak megnyitja az ablakot, nem tölti le automatikusan.</li>
+</ul>
+</li>
 </ul>
 </div>
 
