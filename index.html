@@ -8,9 +8,7 @@
 body{font-family:Arial;background:#0f172a;color:white;padding:15px;margin:0;}
 h2{color:#38bdf8;}
 button{padding:5px 10px;margin:2px;border:none;border-radius:6px;cursor:pointer;font-weight:bold;}
-.green{background:#16a34a;color:white;}
-.red{background:#dc2626;color:white;}
-table{border-collapse:collapse;width:100%;color:white;margin-top:10px;}
+table{border-collapse:collapse;width:100%;margin-top:10px;}
 th, td{border:1px solid #fff;padding:5px;text-align:center;font-size:14px;}
 input[type="number"]{width:80px;padding:4px;border-radius:6px;border:none;}
 .helpContent{display:none;background:#334155;color:white;padding:10px;border-radius:6px;margin-top:5px;line-height:1.4;}
@@ -34,16 +32,16 @@ input[type="number"]{width:80px;padding:4px;border-radius:6px;border:none;}
 <div id="helpContent" class="helpContent">
 <h3>Használati útmutató – Heti összesítés rablásonként</h3>
 <ul>
-<li>Beírod minden tag rablásait és Mosó/Craft értékeit.</li>
-<li>Minden rablás egy külön esemény – pipáld ki, ki vett részt.</li>
-<li>Számol gomb: kiszámolja a heti fizetést minden taghoz **csak a tényleges rablások alapján**.</li>
-<li>Rablás fizetés formula minden taghoz:
+<li>Beírod minden rablás összegét a Paleto, Állami, Múzeum és Bobcat mezőkbe.</li>
+<li>Pipáld ki, ki vett részt a rabláson.</li>
+<li><b>Számol:</b> kiszámolja az összeg minden taghoz **csak azokon a rablásokon, amin részt vett**.</li>
+<li><b>Rablás fizetés formula:</b>
 <pre>
 ((rablás összege ÷ 2) ÷ résztvevők száma) × 0.82 + Mosó*250 + Craft*250
 </pre></li>
-<li>Rablás naplózás: menti az aktuális rablás állapotát a heti PDF-hez.</li>
-<li>PDF gomb: új ablakban a naplózott heti állapotot mutatja.</li>
-<li>Heti nullázás: törli az összes heti adatot, így új hét kezdhető.</li>
+<li><b>Rablás naplózás:</b> menti a rablás állapotát a heti PDF-hez. Több rablást is naplózhatsz ugyanazon héten, minden taghoz csak az adott rablás összege számít.</li>
+<li><b>PDF:</b> megnyit egy új ablakot a naplózott heti állapottal. Nem tölt le automatikusan.</li>
+<li><b>Heti nullázás:</b> törli az összes heti adatot, így új hét kezdhető.</li>
 </ul>
 </div>
 
@@ -77,14 +75,10 @@ const nevek=[
 "Henry Parker (Pufi)"
 ];
 
-let adatok = nevek.map(n=>({
-nev: n, moso:0, craft:0, fizetett:false,
-rablas:{paleto:false,allami:false,muzeum:false,bobcat:false},
-osszeg:0
-}));
-
+let adatok = nevek.map(n=>({nev:n, moso:0, craft:0, fizetett:false, rablas:{paleto:false,allami:false,muzeum:false,bobcat:false}, osszeg:0}));
 let hetiLog = JSON.parse(localStorage.getItem("hetiLogPDF")) || [];
 
+// MOSÓ / CRAFT
 function addMoso(i){adatok[i].moso++; render();}
 function minusMoso(i){if(adatok[i].moso>0)adatok[i].moso--; render();}
 function addCraft(i){adatok[i].craft++; render();}
@@ -92,20 +86,17 @@ function minusCraft(i){if(adatok[i].craft>0)adatok[i].craft--; render();}
 function toggleRablas(i,t){adatok[i].rablas[t]=!adatok[i].rablas[t]; render();}
 function toggleFizetett(i){adatok[i].fizetett=!adatok[i].fizetett; render();}
 
-// SZÁMOLÁS – heti összesítés rablásonként
+// SZÁMOLÁS – rablásonként
 function szamol(){
 adatok.forEach(t=>t.osszeg=0);
-const rablasTomb = ["paleto","allami","muzeum","bobcat"];
-rablasTomb.forEach(r => {
+["paleto","allami","muzeum","bobcat"].forEach(r=>{
 let osszeg = +document.getElementById(r).value||0;
 let resztvevok = adatok.filter(t=>t.rablas[r]).length || 1;
 adatok.forEach(t=>{
 if(t.rablas[r]) t.osszeg += (osszeg/2/resztvevok)*0.82;
 });
 });
-adatok.forEach(t=>{
-t.osszeg += t.moso*250 + t.craft*250;
-});
+adatok.forEach(t=>t.osszeg += t.moso*250 + t.craft*250);
 render();
 }
 
@@ -127,34 +118,25 @@ document.getElementById("tagokTable").innerHTML += html;
 });
 }
 
-// Naplózás – rablásonként
+// Rablás naplózása
 function naplozRablast(){
 const datum = new Date().toISOString().slice(0,10);
-hetiLog.push({datum, adatok: JSON.parse(JSON.stringify(adatok))});
+hetiLog.push({datum, adatok:JSON.parse(JSON.stringify(adatok))});
 localStorage.setItem("hetiLogPDF", JSON.stringify(hetiLog));
 alert("Rablás naplózva: " + datum);
 }
 
-// PDF megnyitás
+// PDF
 function openPDF(){window.open("pdf.html","_blank");}
 
 // Segítség
-function toggleHelp(){
-const help = document.getElementById("helpContent");
-help.style.display = help.style.display==="none"?"block":"none";
-}
+function toggleHelp(){const help=document.getElementById("helpContent"); help.style.display=help.style.display==="none"?"block":"none";}
 
 // Heti nullázás
 function nullazHetiLog(){
 if(confirm("Biztosan törlöd az összes heti adatot?")){
-adatok.forEach(t=>{
-t.moso=0; t.craft=0; t.osszeg=0;
-Object.keys(t.rablas).forEach(k=>t.rablas[k]=false);
-t.fizetett=false;
-});
-hetiLog=[];
-localStorage.removeItem("hetiLogPDF");
-render();
+adatok.forEach(t=>{t.moso=0;t.craft=0;t.osszeg=0; Object.keys(t.rablas).forEach(k=>t.rablas[k]=false); t.fizetett=false;});
+hetiLog=[]; localStorage.removeItem("hetiLogPDF"); render();
 }}
 render();
 </script>
