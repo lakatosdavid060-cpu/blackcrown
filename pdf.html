@@ -3,62 +3,54 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Heti Fizetés PDF</title>
+<title>Heti Összesítés – Kompakt PDF</title>
 <style>
-body{font-family:Arial;color:#0f172a;padding:15px;margin:0;background:white;}
-h2{color:#0f172a;}
+body{font-family:Arial;background:white;color:black;padding:15px;margin:0;}
+h2{color:#1e293b;}
 table{border-collapse:collapse;width:100%;margin-top:10px;}
-th, td{border:1px solid #000;padding:6px;text-align:center;}
-.green{background:#16a34a;color:white;}
-.red{background:#dc2626;color:white;}
+th, td{border:1px solid #333;padding:6px;text-align:center;font-size:14px;}
+button{padding:6px 12px;margin:10px 0;border:none;border-radius:6px;background:#38bdf8;color:white;cursor:pointer;font-weight:bold;}
 </style>
 </head>
 <body>
 
-<h2>💰 Heti Fizetés – PDF</h2>
+<h2>💰 Heti Összesített Fizetés – Kompakt</h2>
+
+<button onclick="let opt={filename:'Heti_Kompakt_Osszesites.pdf'};html2pdf().set(opt).from(document.body).save();">
+📄 Letöltés PDF
+</button>
 
 <table>
 <thead>
 <tr>
-<th>Tag</th><th>Paleto</th><th>Állami</th><th>Múzeum</th><th>Bobcat</th>
-<th>Mosó</th><th>Craft</th><th>Összeg</th><th>Kifizetve</th>
+<th>Tag</th>
+<th>Heti Összeg</th>
+<th>Kifizetve</th>
 </tr>
 </thead>
 <tbody id="pdfTable"></tbody>
 </table>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <script>
-const hetiLog = JSON.parse(localStorage.getItem("hetiLogPDF"))||[];
-const tbody=document.getElementById("pdfTable");
+// Betöltjük a main.html-ben naplózott heti összesítést
+let hetiOsszites = JSON.parse(localStorage.getItem("hetiOsszesites")) || {};
 
-const osszesites={};
-hetiLog.forEach(entry=>{
-entry.adatok.forEach(t=>{
-if(!osszesites[t.nev]){
-osszesites[t.nev]={nev:t.nev, moso:0, craft:0, osszeg:0, fizetett:false, rablas:{paleto:false,allami:false,muzeum:false,bobcat:false}};
-}
-osszesites[t.nev].moso+=t.moso;
-osszesites[t.nev].craft+=t.craft;
-osszesites[t.nev].osszeg+=t.osszeg;
-osszesites[t.nev].fizetett=osszesites[t.nev].fizetett || t.fizetett;
-Object.keys(t.rablas).forEach(k=>osszesites[t.nev].rablas[k]=osszesites[t.nev].rablas[k]||t.rablas[k]);
-});
-});
-
-Object.values(osszesites).forEach(t=>{
-let html=`<tr>
+// Ha nincs adat, jelezzük
+if(Object.keys(hetiOsszites).length===0){
+  document.getElementById("pdfTable").innerHTML = "<tr><td colspan='3'>Nincs naplózott adat a héten.</td></tr>";
+} else {
+  let html="";
+  Object.values(hetiOsszites).forEach(t=>{
+    html+=`<tr>
 <td>${t.nev}</td>
-<td>${t.rablas.paleto?1:0}</td>
-<td>${t.rablas.allami?1:0}</td>
-<td>${t.rablas.muzeum?1:0}</td>
-<td>${t.rablas.bobcat?1:0}</td>
-<td>${t.moso}</td>
-<td>${t.craft}</td>
 <td>${t.osszeg.toFixed(2)}</td>
-<td class="${t.fizetett?'green':'red'}">${t.fizetett?'✅':'❌'}</td>
+<td>${t.fizetett ? "✅":"❌"}</td>
 </tr>`;
-tbody.innerHTML+=html;
-});
+  });
+  document.getElementById("pdfTable").innerHTML = html;
+}
 </script>
+
 </body>
 </html>
