@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PDF Export</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<style>
+body{font-family:Arial;background:#fff;color:#000;padding:15px;margin:0;}
+table, th, td{border:1px solid #000; border-collapse:collapse;}
+th, td{padding:5px;text-align:center;}
+th{background:#38bdf8;color:#000;}
+</style>
+</head>
+<body>
+<h2>💰 Heti Fizetés</h2>
+<div id="pdf-table"></div>
+
+<script>
+let adatok = JSON.parse(localStorage.getItem("hetiFizetesPDF") || "[]");
+if(adatok.length===0) document.getElementById("pdf-table").innerHTML="Nincs adat";
+
+let html = `<table style="width:100%;border-collapse:collapse;">
+<tr>
+<th>Név</th><th>Paleto</th><th>Állami</th><th>Múzeum</th><th>Bobcat</th>
+<th>Mosó</th><th>Craft</th><th>Összeg ($)</th><th>Kifizetve</th>
+</tr>`;
+
+adatok.forEach(t=>{
+  html+=`<tr>
+    <td>${t.nev}</td>
+    <td>${t.rablas.paleto?'✅':''}</td>
+    <td>${t.rablas.allami?'✅':''}</td>
+    <td>${t.rablas.muzeum?'✅':''}</td>
+    <td>${t.rablas.bobcat?'✅':''}</td>
+    <td>${t.moso}</td>
+    <td>${t.craft}</td>
+    <td>${t.osszeg.toFixed(2)}</td>
+    <td>${t.fizetett?'✅':'❌'}</td>
+  </tr>`;
+});
+html+='</table>';
+
+const pdfDiv = document.getElementById("pdf-table");
+pdfDiv.innerHTML = html;
+
+// Automatikus PDF generálás
+html2pdf().from(pdfDiv).set({
+  margin:0.5,
+  filename:'heti_fizetes.pdf',
+  jsPDF:{unit:'in', format:'letter', orientation:'landscape'},
+  html2canvas:{scale:2, backgroundColor:'#fff'}
+}).save();
+</script>
+</body>
+</html>
