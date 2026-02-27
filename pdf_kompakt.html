@@ -3,103 +3,133 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Heti PDF – Ultrakompakt + Top 5</title>
+<title>Heti Összesítés PDF</title>
+
 <style>
-body{font-family:Arial, sans-serif;background:white;color:black;padding:5px;margin:0;}
-h2{text-align:center;margin:5px 0;font-size:18px;}
-h3{margin:5px 0;font-size:14px;}
-#printBtn{padding:6px 12px;margin:10px 0;border:none;border-radius:6px;cursor:pointer;font-weight:bold;}
-table{border-collapse:collapse;width:100%;margin-top:5px;}
-th, td{border:1px solid #000;padding:3px;text-align:center;font-size:9px;}
-th{background:#eee;}
-ul{padding-left:20px;font-size:10px;margin:0;}
+body{
+  font-family: Arial, sans-serif;
+  background:white;
+  color:black;
+  margin:0;
+  padding:10px;
+}
+
+h2{
+  text-align:center;
+  margin:5px 0;
+}
+
+button{
+  padding:8px 14px;
+  border:none;
+  border-radius:6px;
+  cursor:pointer;
+  font-weight:bold;
+  margin-bottom:10px;
+}
+
+table{
+  border-collapse:collapse;
+  width:100%;
+}
+
+th, td{
+  border:1px solid #000;
+  padding:4px;
+  text-align:center;
+  font-size:11px;
+}
+
+th{
+  background:#eee;
+}
 </style>
 </head>
 <body>
 
-<h2>💰 Heti Összesítés – Ultrakompakt PDF</h2>
+<h2>Heti Összesítés</h2>
 
-<div id="topList">
-<h3>🏆 Top 5 fizetés</h3>
-<ul id="topUl"></ul>
-</div>
+<button onclick="generatePDF()">📄 PDF Letöltés</button>
 
-<button id="printBtn" onclick="generatePDF()">📄 PDF Letöltés</button>
-
-<table>
+<table id="hetiTable">
 <thead>
 <tr>
-<th>Tag</th><th>Paleto</th><th>Állami</th><th>Múzeum</th><th>Bobcat</th>
-<th>Mosó</th><th>Craft</th><th>Összeg</th><th>Kifizetve</th>
+<th>Tag</th>
+<th>Paleto</th>
+<th>Állami</th>
+<th>Múzeum</th>
+<th>Bobcat</th>
+<th>Mosó</th>
+<th>Craft</th>
+<th>Összeg</th>
+<th>Kifizetve</th>
 </tr>
 </thead>
-<tbody id="hetiTable"></tbody>
+<tbody></tbody>
 </table>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 
 <script>
-// Betöltés
+
+// Adatok betöltése
 let hetiOsszesites = JSON.parse(localStorage.getItem("hetiLogPDF")) || {};
-let tbody = document.getElementById("hetiTable");
-let topUl = document.getElementById("topUl");
+let tbody = document.querySelector("#hetiTable tbody");
 
-// Top 5 fizetés
-let topArray = Object.values(hetiOsszesites)
-  .sort((a,b)=>b.osszeg - a.osszeg)
-  .slice(0,5);
-topArray.forEach(t=>{
-  let li = document.createElement("li");
-  li.textContent = `${t.nev}: ${t.osszeg.toFixed(2)}$`;
-  topUl.appendChild(li);
-});
-
-// Teljes táblázat
+// Táblázat feltöltése
 for(let nev in hetiOsszesites){
   const t = hetiOsszesites[nev];
-  let row = `<tr>
-<td>${t.nev}</td>
-<td>${t.rablas.paleto?"✅":""}</td>
-<td>${t.rablas.allami?"✅":""}</td>
-<td>${t.rablas.muzeum?"✅":""}</td>
-<td>${t.rablas.bobcat?"✅":""}</td>
-<td>${t.moso}</td>
-<td>${t.craft}</td>
-<td>${t.osszeg.toFixed(2)}</td>
-<td>${t.fizetett?"✅":"❌"}</td>
-</tr>`;
+
+  let row = `
+  <tr>
+    <td>${t.nev}</td>
+    <td>${t.rablas.paleto ? "✔" : ""}</td>
+    <td>${t.rablas.allami ? "✔" : ""}</td>
+    <td>${t.rablas.muzeum ? "✔" : ""}</td>
+    <td>${t.rablas.bobcat ? "✔" : ""}</td>
+    <td>${t.moso}</td>
+    <td>${t.craft}</td>
+    <td>${t.osszeg.toFixed(2)}$</td>
+    <td>${t.fizetett ? "✔" : "X"}</td>
+  </tr>
+  `;
+
   tbody.innerHTML += row;
 }
 
+// PDF generálás – MINDIG 1 OLDAL
 function generatePDF(){
+
   const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({orientation:'landscape', unit:'pt', format:'a2'});
-  
-  doc.setFontSize(12);
-  doc.text("💰 Heti Összesítés – Ultrakompakt PDF", doc.internal.pageSize.getWidth()/2, 30, {align:'center'});
 
-  // Top 5
-  let topY = 50;
-  doc.setFontSize(10);
-  doc.text("🏆 Top 5 fizetés", 40, topY);
-  topArray.forEach((t,i)=>{
-    doc.text(`${i+1}. ${t.nev}: ${t.osszeg.toFixed(2)}$`, 60, topY + (i+1)*15);
+  const doc = new jsPDF({
+    orientation:'landscape',
+    unit:'pt',
+    format:'a2'
   });
 
-  // Teljes táblázat
+  const pageWidth = doc.internal.pageSize.getWidth();
+
+  doc.setFontSize(16);
+  doc.text("Heti Összesítés", pageWidth/2, 30, {align:'center'});
+
   doc.autoTable({
-    startY: topY + (topArray.length+2)*15,
-    html: 'table',
-    styles: {fontSize:9, cellPadding:2},
-    headStyles: {fillColor:[220,220,220], textColor:0, halign:'center'},
-    bodyStyles: {halign:'center'},
-    theme: 'grid',
-    pageBreak: 'auto'
+    html:'#hetiTable',
+    startY:50,
+    theme:'grid',
+    pageBreak:'avoid',          // <<< 1 oldal
+    styles:{
+      fontSize:8,               // kompakt
+      cellPadding:2,
+      overflow:'linebreak'
+    },
+    margin:{top:50,bottom:20}
   });
 
-  doc.save('heti_osszesites_ultrakompakt_top5.pdf');
+  doc.save("heti_osszesites_1lap.pdf");
 }
+
 </script>
 
 </body>
