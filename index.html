@@ -12,12 +12,11 @@ button{padding:4px 8px;margin:2px;border:none;border-radius:6px;cursor:pointer;f
 .red{background:#dc2626;color:white;}
 table{border-collapse:collapse;width:100%;color:white;margin-top:10px;}
 th, td{border:1px solid #fff;padding:4px;text-align:center;font-size:14px;}
-.helpContent{display:none;background:#334155;color:white;padding:10px;border-radius:6px;margin-top:5px;line-height:1.4;}
+.helpContent{display:none;background:#334155;color:white;padding:10px;border-radius:6px;margin-top:5px;}
 .icon-panel{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;}
 .icon-panel button{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6px;}
 .icon-panel span{font-size:18px;margin-bottom:3px;}
 input[type="number"]{width:80px;padding:4px;border-radius:6px;border:none;}
-ul{padding-left:20px;}
 </style>
 </head>
 <body>
@@ -34,17 +33,7 @@ ul{padding-left:20px;}
 </div>
 
 <div id="helpContent" class="helpContent">
-<h3>Használati útmutató – Részletesen</h3>
-<ul>
-<li><b>Számol:</b> Kiszámolja a tagok fizetését az aktuális rablások és Mosó/Craft alapján.</li>
-<li><b>Rablás fizetés formula:</b>
-<pre>
-((Teljes rablás összeg ÷ 2) ÷ Résztvevők száma) × 0.82
-+ Mosó*250
-+ Craft*250
-</pre>
-</li>
-</ul>
+((Teljes rablás összeg ÷ 2) ÷ Résztvevők száma) × 0.82 + Mosó*250 + Craft*250
 </div>
 
 <div style="margin-bottom:10px;">
@@ -68,8 +57,8 @@ Bobcat $ <input type="number" id="bobcat">
 
 <script>
 
-// ===== TAGOK =====
-const nevek=[
+// ===== EREDETI NEVEK =====
+const alapNevek=[
 "Ugaros Turul (Bobi)","Yukito Osano (Neon)","Emily Mitsuko (Biskota)",
 "Vladimir Iwanow (Majom)","Todor Zsombor (Recsi)","Daryl Dixon (Oroszlán)",
 "Julian Alvarez (Szecska)","Adam Taylor (Young)","Nemeth Andras (arpi)",
@@ -80,15 +69,22 @@ const nevek=[
 "Henry Parker (Pufi)"
 ];
 
-// ===== TAGLISTA BETÖLTÉS =====
-let adatok = JSON.parse(localStorage.getItem("tagLista")) || 
-nevek.map(n=>({
-nev:n, moso:0, craft:0, fizetett:false, osszeg:0,
+// ===== CSAK NEVEK BETÖLTÉSE =====
+let mentettNevek = JSON.parse(localStorage.getItem("tagLista"));
+let nevek = mentettNevek || alapNevek;
+
+let adatok = nevek.map(n=>({
+nev:n,
+moso:0,
+craft:0,
+fizetett:false,
+osszeg:0,
 rablas:{paleto:false,allami:false,muzeum:false,bobcat:false}
 }));
 
 function mentesTagLista(){
-localStorage.setItem("tagLista", JSON.stringify(adatok));
+const csakNevek = adatok.map(t=>t.nev);
+localStorage.setItem("tagLista", JSON.stringify(csakNevek));
 }
 
 let hetiLog = JSON.parse(localStorage.getItem("hetiLog")) || [];
@@ -96,14 +92,14 @@ let hetiOsszesites = JSON.parse(localStorage.getItem("hetiOsszesites")) || {};
 let pdfWindow = null;
 
 // ===== MOSÓ / CRAFT =====
-function addMoso(i){adatok[i].moso++; mentesTagLista(); render();}
-function minusMoso(i){if(adatok[i].moso>0)adatok[i].moso--; mentesTagLista(); render();}
-function addCraft(i){adatok[i].craft++; mentesTagLista(); render();}
-function minusCraft(i){if(adatok[i].craft>0)adatok[i].craft--; mentesTagLista(); render();}
+function addMoso(i){adatok[i].moso++; render();}
+function minusMoso(i){if(adatok[i].moso>0)adatok[i].moso--; render();}
+function addCraft(i){adatok[i].craft++; render();}
+function minusCraft(i){if(adatok[i].craft>0)adatok[i].craft--; render();}
 
 // ===== TOGGLE =====
-function toggleRablas(i,t){adatok[i].rablas[t]=!adatok[i].rablas[t]; mentesTagLista(); render();}
-function toggleFizetett(i){adatok[i].fizetett=!adatok[i].fizetett; mentesTagLista(); render();}
+function toggleRablas(i,t){adatok[i].rablas[t]=!adatok[i].rablas[t]; render();}
+function toggleFizetett(i){adatok[i].fizetett=!adatok[i].fizetett; render();}
 
 // ===== SZÁMOLÁS =====
 function szamol(){
@@ -172,7 +168,7 @@ render();
 }
 }
 
-// ===== EREDETI FUNKCIÓK ÉRINTETLEN =====
+// ===== EREDETI FUNKCIÓK =====
 function mentNap(){
 const datum=new Date().toISOString().slice(0,10);
 adatok.forEach(t=>{
