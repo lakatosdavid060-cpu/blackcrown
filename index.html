@@ -34,6 +34,10 @@ input[type="number"], input[type="password"]{width:120px;padding:4px;border-radi
 
 <h2>💰 Heti Fizetés</h2>
 
+<button onclick="logout()" style="background:#dc2626;color:white;padding:6px 12px;border:none;border-radius:6px;margin-bottom:10px;font-weight:bold;">
+🚪 Kilépés
+</button>
+
 <div class="icon-panel">
   <button onclick="szamol()">🧮 Számol</button>
   <button onclick="mentNap()">💾 Naplóz</button>
@@ -44,14 +48,12 @@ input[type="number"], input[type="password"]{width:120px;padding:4px;border-radi
 </div>
 
 <div id="helpContent" class="helpContent">
-<b>📌 Rendszer működése:</b><br><br>
-Fél rablás összeg / résztvevők × 0.82.<br>
+<b>Fél rablás / résztvevők × 0.82.</b><br>
 Mosás +250$<br>
 Craft +250$<br>
-Naplóz = heti PDF adatba ment.<br>
-Heti nullázás = PDF adat törlés.<br>
-Főmenü nullázás = aktuális nap törlés.<br>
-Admin nélkül semmi nem módosítható.
+Naplóz = heti PDF adat.<br>
+Heti nullázás = PDF törlés.<br>
+Főmenü nullázás = aktuális nap törlés.
 </div>
 
 <div style="margin-bottom:10px;">
@@ -95,9 +97,8 @@ const adatRef = ref(db, "aktualisAdatok");
 const hetiRef = ref(db, "hetiOsszesites");
 
 let admin=false;
-const ADMIN_JELSZO="ordog2026";
+const ADMIN_JELSZO="1234";
 
-/* LOGIN CHECK */
 document.addEventListener("DOMContentLoaded",()=>{
 if(localStorage.getItem("adminLogged")==="true"){
 admin=true;
@@ -114,6 +115,12 @@ document.getElementById("loginModal").style.display="none";
 }else{
 alert("Hibás jelszó!");
 }
+};
+
+window.logout=function(){
+admin=false;
+localStorage.removeItem("adminLogged");
+document.getElementById("loginModal").style.display="flex";
 };
 
 function adminCheck(){
@@ -258,4 +265,3 @@ document.getElementById("tagokTable").innerHTML=html;
 </script>
 </body>
 </html>
-
