@@ -3,100 +3,83 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Heti PDF – A2 Fekvő</title>
+<title>Heti PDF – Stabil autoTable</title>
 <style>
 body{font-family:Arial, sans-serif;background:white;color:black;padding:5px;margin:0;}
 h2{text-align:center;margin:5px 0;}
-table{border-collapse:collapse;width:100%;table-layout:fixed;}
-th, td{border:1px solid #000;padding:3px;text-align:center;white-space:nowrap;}
-th{background:#eee;}
-.summaryBox{border:1px solid #000;padding:5px;margin:5px 0;font-size:12px;}
 #printBtn{padding:6px 12px;margin:10px 0;border:none;border-radius:6px;cursor:pointer;font-weight:bold;}
 </style>
 </head>
 <body>
 
-<h2>💰 Heti Összesítés – Kompakt (A2)</h2>
-
-<div class="summaryBox" id="summaryBox">
-<h3>📊 Statisztika</h3>
-<ul id="summaryUl"></ul>
-</div>
-
-<table id="hetiTable">
-<thead>
-<tr>
-<th style="width:160px;">Tag</th>
-<th>Paleto</th><th>Állami</th><th>Múzeum</th><th>Bobcat</th>
-<th>Mosó</th><th>Craft</th><th>Összeg</th><th>Kifizetve</th>
-</tr>
-</thead>
-<tbody id="hetiTbody"></tbody>
-</table>
+<h2>💰 Heti Összesítés – Stabil PDF</h2>
 
 <button id="printBtn" onclick="generatePDF()">📄 PDF Letöltés</button>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+
 <script>
+const { jsPDF } = window.jspdf;
+
+// Betöltés a lokális heti összesítésből
 let hetiOsszesites = JSON.parse(localStorage.getItem("hetiLogPDF")) || {};
-let tbody = document.getElementById("hetiTbody");
-let summaryUl = document.getElementById("summaryUl");
 
-let totalOsszeg=0, totalMoso=0, totalCraft=0, totalRabl={paleto:0,allami:0,muzeum:0,bobcat:0};
-let tagCount = Object.keys(hetiOsszesites).length;
+// Táblázat adatok
+let columns = [
+  {header:"Tag", dataKey:"nev"},
+  {header:"Paleto", dataKey:"paleto"},
+  {header:"Állami", dataKey:"allami"},
+  {header:"Múzeum", dataKey:"muzeum"},
+  {header:"Bobcat", dataKey:"bobcat"},
+  {header:"Mosó", dataKey:"moso"},
+  {header:"Craft", dataKey:"craft"},
+  {header:"Összeg", dataKey:"osszeg"},
+  {header:"Kifizetve", dataKey:"fizetett"}
+];
 
-// Dinamikus betűméret – nagyon sok név esetén is olvasható
-let fontSize = 11;
-if(tagCount>50) fontSize = 10;
-if(tagCount>80) fontSize = 9;
+let rows = [];
 
 for(let nev in hetiOsszesites){
   const t = hetiOsszesites[nev];
-  totalOsszeg += t.osszeg;
-  totalMoso += t.moso;
-  totalCraft += t.craft;
-  if(t.rablas.paleto) totalRabl.paleto++;
-  if(t.rablas.allami) totalRabl.allami++;
-  if(t.rablas.muzeum) totalRabl.muzeum++;
-  if(t.rablas.bobcat) totalRabl.bobcat++;
-
-  let row = document.createElement("tr");
-  row.style.fontSize = fontSize + "px";
-  row.innerHTML = `<td>${t.nev}</td>
-<td>${t.rablas.paleto?"✅":""}</td>
-<td>${t.rablas.allami?"✅":""}</td>
-<td>${t.rablas.muzeum?"✅":""}</td>
-<td>${t.rablas.bobcat?"✅":""}</td>
-<td>${t.moso}</td>
-<td>${t.craft}</td>
-<td>${t.osszeg.toFixed(2)}</td>
-<td>${t.fizetett?"✅":"❌"}</td>`;
-  tbody.appendChild(row);
+  rows.push({
+    nev: t.nev,
+    paleto: t.rablas.paleto?"✅":"",
+    allami: t.rablas.allami?"✅":"",
+    muzeum: t.rablas.muzeum?"✅":"",
+    bobcat: t.rablas.bobcat?"✅":"",
+    moso: t.moso,
+    craft: t.craft,
+    osszeg: t.osszeg.toFixed(2),
+    fizetett: t.fizetett?"✅":"❌"
+  });
 }
-
-summaryUl.innerHTML = `
-<li>Összes Paleto rablás: ${totalRabl.paleto}</li>
-<li>Összes Állami rablás: ${totalRabl.allami}</li>
-<li>Összes Múzeum rablás: ${totalRabl.muzeum}</li>
-<li>Összes Bobcat rablás: ${totalRabl.bobcat}</li>
-<li>Összes Mosó: ${totalMoso}</li>
-<li>Összes Craft: ${totalCraft}</li>
-<li>Összes kiosztott pénz: ${totalOsszeg.toFixed(2)}$</li>
-<li>Átlagos fizetés tagonként: ${(tagCount? totalOsszeg/tagCount:0).toFixed(2)}$</li>
-`;
 
 function generatePDF(){
   let btn = document.getElementById("printBtn");
-  btn.style.display = "none"; // Gomb ne legyen a PDF-ben
+  btn.style.display = "none";
 
-  html2pdf().set({
-    margin:0.15,
-    filename:'heti_osszesites_A2.pdf',
-    html2canvas:{scale:3},
-    jsPDF:{unit:'in', format:'a2', orientation:'landscape'}
-  }).from(document.body).save().then(()=>{
-    btn.style.display = "inline-block";
+  const doc = new jsPDF({orientation:'landscape', unit:'pt', format:'a2'});
+  
+  doc.setFontSize(14);
+  doc.text("💰 Heti Összesítés – Stabil PDF", doc.internal.pageSize.getWidth()/2, 30, {align:'center'});
+  
+  doc.autoTable({
+    startY: 50,
+    head: [columns.map(c=>c.header)],
+    body: rows.map(r => columns.map(c=>r[c.dataKey])),
+    styles: {fontSize:10, cellPadding:4},
+    headStyles: {fillColor:[220,220,220], textColor:0, halign:'center'},
+    bodyStyles: {halign:'center'},
+    didDrawPage: function (data) {
+      // Ha sok lap lesz, a fejléc újra rajzolódik automatikusan
+    },
+    margin: {top: 50, left: 20, right: 20, bottom:20},
+    pageBreak: 'auto'
   });
+
+  doc.save('heti_osszesites_stabil.pdf');
+  btn.style.display = "inline-block";
 }
 </script>
 
