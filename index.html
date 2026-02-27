@@ -21,14 +21,18 @@ input[type="number"], input[type="password"]{width:120px;padding:4px;border-radi
 </head>
 <body>
 
-<h2>💰 Heti Fizetés</h2>
-
-<div style="margin-bottom:10px;">
-  <input type="password" id="adminPass" placeholder="Admin jelszó">
-  <button onclick="adminLogin()">🔐 Belépés</button>
-  <button onclick="adminLogout()">🚪 Kilépés</button>
-  <span id="adminStatus" style="margin-left:10px;color:#f87171;">Nincs belépve</span>
+<!-- LOGIN MODAL -->
+<div id="loginModal" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);display:flex;align-items:center;justify-content:center;z-index:9999;">
+  <div style="background:#1e293b;padding:25px;border-radius:10px;text-align:center;width:300px;">
+    <h3 style="margin-top:0;">🔐 Admin Bejelentkezés</h3>
+    <input type="password" id="modalPass" placeholder="Jelszó" style="width:100%;padding:8px;border-radius:6px;border:none;margin-bottom:10px;">
+    <button onclick="modalLogin()" style="width:100%;padding:8px;background:#16a34a;color:white;border:none;border-radius:6px;font-weight:bold;">
+    Belépés
+    </button>
+  </div>
 </div>
+
+<h2>💰 Heti Fizetés</h2>
 
 <div class="icon-panel">
   <button onclick="szamol()">🧮 Számol</button>
@@ -40,54 +44,14 @@ input[type="number"], input[type="password"]{width:120px;padding:4px;border-radi
 </div>
 
 <div id="helpContent" class="helpContent">
-
-<b>📌 Rendszer működése részletesen:</b><br><br>
-
-<b>1️⃣ Rablások elszámolása</b><br>
-• A megadott rablás összegének fele kerül kiosztásra.<br>
-• Ez a fél összeg elosztásra kerül azok között, akiknél pipa van.<br>
-• Az így kapott rész megszorzódik 0.82-vel (levonás).<br><br>
-
-Képlet:<br>
-(Teljes összeg ÷ 2) ÷ Résztvevők száma × 0.82<br><br>
-
-<b>2️⃣ Mosás</b><br>
-Minden +250 gomb 250$-t ad hozzá a tag végösszegéhez.<br><br>
-
-<b>3️⃣ Craft</b><br>
-Minden craft szintén +250$-t ad.<br><br>
-
-<b>4️⃣ Számol</b><br>
-Az aktuális pipák és bevitt rablás összegek alapján kiszámolja az egyéni végösszegeket.<br><br>
-
-<b>5️⃣ Naplóz</b><br>
-Az aktuális főmenü adatait hozzáadja a heti összesítéshez (PDF adat).<br>
-A főmenü nem törlődik.<br><br>
-
-<b>6️⃣ PDF</b><br>
-A heti összesített adatokat nyitja meg külön oldalon nyomtatáshoz.<br><br>
-
-<b>7️⃣ Heti nullázás</b><br>
-Törli a heti összesített adatokat (PDF adat).<br>
-A főmenüt nem érinti.<br><br>
-
-<b>8️⃣ Főmenü nullázás</b><br>
-Törli az aktuális főmenü adatait:<br>
-– Pipák<br>
-– Mosás<br>
-– Craft<br>
-– Összeg<br>
-– Kifizetett állapot<br>
-A heti PDF adat megmarad.<br><br>
-
-<b>9️⃣ Kifizetve gomb</b><br>
-Zöld = Kifizetve<br>
-Piros = Nincs kifizetve<br><br>
-
-<b>🔐 Admin mód</b><br>
-Minden módosítás csak admin belépés után működik.<br>
-A belépés frissítés után is megmarad.<br>
-
+<b>📌 Rendszer működése:</b><br><br>
+Fél rablás összeg / résztvevők × 0.82.<br>
+Mosás +250$<br>
+Craft +250$<br>
+Naplóz = heti PDF adatba ment.<br>
+Heti nullázás = PDF adat törlés.<br>
+Főmenü nullázás = aktuális nap törlés.<br>
+Admin nélkül semmi nem módosítható.
 </div>
 
 <div style="margin-bottom:10px;">
@@ -133,36 +97,24 @@ const hetiRef = ref(db, "hetiOsszesites");
 let admin=false;
 const ADMIN_JELSZO="1234";
 
+/* LOGIN CHECK */
 document.addEventListener("DOMContentLoaded",()=>{
-if(localStorage.getItem("adminLogged")==="true"){admin=true;}
-updateAdminUI();
+if(localStorage.getItem("adminLogged")==="true"){
+admin=true;
+document.getElementById("loginModal").style.display="none";
+}
 });
 
-window.adminLogin=function(){
-const pass=document.getElementById("adminPass").value;
+window.modalLogin=function(){
+const pass=document.getElementById("modalPass").value;
 if(pass===ADMIN_JELSZO){
 admin=true;
 localStorage.setItem("adminLogged","true");
-updateAdminUI();
-}else alert("Hibás jelszó");
-};
-
-window.adminLogout=function(){
-admin=false;
-localStorage.removeItem("adminLogged");
-updateAdminUI();
-};
-
-function updateAdminUI(){
-const status=document.getElementById("adminStatus");
-if(admin){
-status.innerHTML="✅ Admin mód";
-status.style.color="#4ade80";
+document.getElementById("loginModal").style.display="none";
 }else{
-status.innerHTML="Nincs belépve";
-status.style.color="#f87171";
+alert("Hibás jelszó!");
 }
-}
+};
 
 function adminCheck(){
 if(!admin){alert("Admin jogosultság szükséges!");return false;}
@@ -304,6 +256,5 @@ document.getElementById("tagokTable").innerHTML=html;
 }
 
 </script>
-
 </body>
 </html>
