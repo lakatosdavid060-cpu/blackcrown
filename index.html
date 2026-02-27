@@ -16,27 +16,27 @@ th, td{border:1px solid #fff;padding:4px;text-align:center;font-size:14px;}
 .helpContent{display:none;background:#334155;color:white;padding:12px;border-radius:6px;margin-top:5px;line-height:1.5;}
 .icon-panel{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;}
 .icon-panel button{flex:1;padding:6px;}
-input[type="number"], input[type="password"]{width:120px;padding:4px;border-radius:6px;border:none;}
+input[type="number"], input[type="password"], input[type="text"]{width:120px;padding:4px;border-radius:6px;border:none;}
 </style>
 </head>
 <body>
 
-<!-- LOGIN MODAL -->
 <div id="loginModal" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);display:flex;align-items:center;justify-content:center;z-index:9999;">
   <div style="background:#1e293b;padding:25px;border-radius:10px;text-align:center;width:300px;">
     <h3 style="margin-top:0;">🔐 Admin Bejelentkezés</h3>
     <input type="password" id="modalPass" placeholder="Jelszó" style="width:100%;padding:8px;border-radius:6px;border:none;margin-bottom:10px;">
-    <button onclick="modalLogin()" style="width:100%;padding:8px;background:#16a34a;color:white;border:none;border-radius:6px;font-weight:bold;">
-    Belépés
-    </button>
+    <button onclick="modalLogin()" style="width:100%;padding:8px;background:#16a34a;color:white;border:none;border-radius:6px;font-weight:bold;">Belépés</button>
   </div>
 </div>
 
 <h2>💰 Heti Fizetés</h2>
 
-<button onclick="logout()" style="background:#dc2626;color:white;padding:6px 12px;border:none;border-radius:6px;margin-bottom:10px;font-weight:bold;">
-🚪 Kilépés
-</button>
+<button onclick="logout()" style="background:#dc2626;color:white;padding:6px 12px;border:none;border-radius:6px;margin-bottom:10px;font-weight:bold;">🚪 Kilépés</button>
+
+<div style="margin-bottom:10px;">
+<input type="text" id="ujTagNev" placeholder="Új tag neve" style="width:180px;">
+<button onclick="ujTag()" class="green">➕ Hozzáadás</button>
+</div>
 
 <div class="icon-panel">
   <button onclick="szamol()">🧮 Számol</button>
@@ -47,17 +47,11 @@ input[type="number"], input[type="password"]{width:120px;padding:4px;border-radi
   <button onclick="nullazFoMenu()">🧹 Főmenü nullázás</button>
 </div>
 
-<!-- KIBŐVÍTETT SEGÍTSÉG -->
 <div id="helpContent" class="helpContent">
 
 <h3>📘 Teljes működés</h3>
 
 <b>🔹 Rablás számítás:</b><br>
-A megadott rablás összege feleződik.<br>
-A felezett összeg elosztódik az adott rablásban résztvevők között.<br>
-Az így kapott rész megszorzódik 0.82-vel.<br><br>
-
-Képlet:<br>
 (Teljes összeg ÷ 2) ÷ Résztvevők × 0.82<br><br>
 
 <b>🔹 Mosás:</b><br>
@@ -81,14 +75,9 @@ Törli a heti logot.<br><br>
 <b>🔹 Főmenü nullázás:</b><br>
 Törli az aktuális napi adatokat.<br><br>
 
-<b>🔹 Kifizetve:</b><br>
-Zöld = kifizetve<br>
-Piros = nincs kifizetve<br><br>
-
 <b>🔐 Admin rendszer:</b><br>
-Bejelentkezés szükséges.<br>
 Frissítés után bent maradsz.<br>
-Kilépés teljesen kijelentkeztet.<br>
+Kilépés teljes kijelentkeztet.<br>
 
 </div>
 
@@ -105,7 +94,7 @@ Bobcat $ <input type="number" id="bobcat">
 <thead>
 <tr>
 <th>Tag</th><th>Paleto</th><th>Állami</th><th>Múzeum</th><th>Bobcat</th>
-<th>Mosó</th><th>Craft</th><th>Összeg</th><th>Kifizetve</th>
+<th>Mosó</th><th>Craft</th><th>Összeg</th><th>Kifizetve</th><th>Törlés</th>
 </tr>
 </thead>
 <tbody id="tagokTable"></tbody>
@@ -148,9 +137,7 @@ if(pass===ADMIN_JELSZO){
 admin=true;
 localStorage.setItem("adminLogged","true");
 document.getElementById("loginModal").style.display="none";
-}else{
-alert("Hibás jelszó!");
-}
+}else alert("Hibás jelszó!");
 };
 
 window.logout=function(){
@@ -164,16 +151,14 @@ if(!admin){alert("Admin jogosultság szükséges!");return false;}
 return true;
 }
 
-const nevek=[
-"Ugaros Turul (Bobi)","Yukito Osano (Neon)","Emily Mitsuko (Biskota)",
+const nevek=[ "Ugaros Turul (Bobi)","Yukito Osano (Neon)","Emily Mitsuko (Biskota)",
 "Vladimir Iwanow (Majom)","Todor Zsombor (Recsi)","Daryl Dixon (Oroszlán)",
 "Julian Alvarez (Szecska)","Adam Taylor (Young)","Nemeth Andras (arpi)",
 "Enrico Martello (Apu)","Ádám Benjamin (Cowboy)","Mateo Tavares Valesco (Kolbi)",
 "Carl Jesus (Faszos)","Noah Knight (Roberts)","David Smith (Szike)",
 "Nico Alvarez (Milka)","Miguel Alvarez (Raszta)","Wells Jordan (Stone)",
 "Williams Jackson (Easy)","Jackson West (Kalap)","David Jackson (Kabát)",
-"Henry Parker (Pufi)"
-];
+"Henry Parker (Pufi)" ];
 
 let adatok=[];
 let hetiOsszesites={};
@@ -195,6 +180,24 @@ if(s.exists()) hetiOsszesites=s.val();
 });
 
 function mentes(){ set(adatRef,adatok); }
+
+window.ujTag=function(){
+if(!adminCheck())return;
+const nev=document.getElementById("ujTagNev").value.trim();
+if(!nev){alert("Adj meg nevet!");return;}
+adatok.push({nev:nev,moso:0,craft:0,fizetett:false,osszeg:0,
+rablas:{paleto:false,allami:false,muzeum:false,bobcat:false}});
+mentes();render();
+document.getElementById("ujTagNev").value="";
+};
+
+window.torolTag=function(index){
+if(!adminCheck())return;
+if(confirm("Biztos törlöd ezt a tagot?")){
+adatok.splice(index,1);
+mentes();render();
+}
+};
 
 window.addMoso=i=>{if(!adminCheck())return;adatok[i].moso++;mentes();render();}
 window.minusMoso=i=>{if(!adminCheck())return;if(adatok[i].moso>0)adatok[i].moso--;mentes();render();}
@@ -224,8 +227,7 @@ if(t.rablas.muzeum)resz+=((muzeum/2)/cM)*0.82;
 if(t.rablas.bobcat)resz+=((bobcat/2)/cB)*0.82;
 t.osszeg=resz+t.moso*250+t.craft*250;
 });
-mentes();
-render();
+mentes();render();
 };
 
 window.mentNap=function(){
@@ -260,14 +262,10 @@ window.nullazFoMenu=function(){
 if(!adminCheck())return;
 if(confirm("Biztos nullázod az aktuális főmenüt?")){
 adatok.forEach(t=>{
-t.moso=0;
-t.craft=0;
-t.osszeg=0;
-t.fizetett=false;
+t.moso=0;t.craft=0;t.osszeg=0;t.fizetett=false;
 t.rablas={paleto:false,allami:false,muzeum:false,bobcat:false};
 });
-mentes();
-render();
+mentes();render();
 alert("Főmenü nullázva.");
 }
 };
@@ -293,6 +291,7 @@ html+=`<tr>
 <td><button onclick="minusCraft(${i})">−</button><button onclick="addCraft(${i})">+250</button> ${t.craft}</td>
 <td>${t.osszeg.toFixed(2)}</td>
 <td><button class="${t.fizetett?'green':'red'}" onclick="toggleFizetett(${i})">${t.fizetett?'✅':'❌'}</button></td>
+<td><button class="red" onclick="torolTag(${i})">❌</button></td>
 </tr>`;
 });
 document.getElementById("tagokTable").innerHTML=html;
