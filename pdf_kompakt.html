@@ -13,7 +13,7 @@ tr{page-break-inside: avoid;}
 th, td{border:1px solid #000;padding:3px;text-align:center;white-space:nowrap;font-size:11px;}
 th{background:#eee;}
 .summaryBox{border:1px solid #000;padding:5px;margin:5px 0;font-size:12px;}
-button{display:none;} /* PDF-nél nem kell gomb */
+#printBtn{padding:6px 12px;margin:10px 0;border:none;border-radius:6px;cursor:pointer;font-weight:bold;}
 </style>
 </head>
 <body>
@@ -36,6 +36,10 @@ button{display:none;} /* PDF-nél nem kell gomb */
 <tbody id="hetiTbody"></tbody>
 </table>
 
+<!-- PDF letöltés gomb -->
+<button id="printBtn" onclick="generatePDF()">📄 PDF Letöltés</button>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <script>
 // Betöltés
 let hetiOsszesites = JSON.parse(localStorage.getItem("hetiLogPDF")) || {};
@@ -45,7 +49,7 @@ let summaryUl = document.getElementById("summaryUl");
 let totalOsszeg=0, totalMoso=0, totalCraft=0, totalRabl={paleto:0,allami:0,muzeum:0,bobcat:0};
 let tagCount = Object.keys(hetiOsszesites).length;
 
-// Dinamikus betűméret (maximális sorokhoz)
+// Dinamikus betűméret
 let fontSize = 11;
 if(tagCount>25) fontSize = 10;
 if(tagCount>35) fontSize = 9;
@@ -87,6 +91,23 @@ summaryUl.innerHTML = `
 <li>Összes kiosztott pénz: ${totalOsszeg.toFixed(2)}$</li>
 <li>Átlagos fizetés tagonként: ${(tagCount? totalOsszeg/tagCount:0).toFixed(2)}$</li>
 `;
+
+// PDF generálás
+function generatePDF(){
+  // Gombot ideiglenesen elrejtjük, hogy ne jelenjen meg a PDF-ben
+  let btn = document.getElementById("printBtn");
+  btn.style.display = "none";
+
+  let opt = {
+    margin:0.3,
+    filename:'heti_osszesites.pdf',
+    html2canvas:{scale:2},
+    jsPDF:{unit:'in', format:'letter', orientation:'portrait'}
+  };
+  html2pdf().set(opt).from(document.body).save().then(()=>{
+    btn.style.display = "inline-block"; // visszaállítjuk a gombot
+  });
+}
 </script>
 
 </body>
