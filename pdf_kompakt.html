@@ -6,56 +6,27 @@
 <title>Heti Összesítés</title>
 
 <style>
-body{
-  font-family: Arial, sans-serif;
-  margin:0;
-  padding:10px;
-}
-
-h2{
-  text-align:center;
-  margin:5px 0;
-}
-
-button{
-  padding:8px 14px;
-  border:none;
-  border-radius:6px;
-  cursor:pointer;
-  font-weight:bold;
-  margin-bottom:10px;
-}
-
-table{
-  border-collapse:collapse;
-  width:100%;
-}
-
-th, td{
-  border:1px solid #000;
-  padding:3px;
-  text-align:center;
-}
-
-th{
-  background:#eee;
-}
+body{font-family:Arial;margin:0;padding:10px;}
+h2{text-align:center;margin:5px 0;}
+button{padding:8px 14px;border:none;border-radius:6px;cursor:pointer;font-weight:bold;margin-bottom:10px;}
+table{border-collapse:collapse;width:100%;}
+th, td{border:1px solid #000;padding:4px;text-align:center;font-size:13px;}
+th{background:#eee;}
 </style>
 </head>
 <body>
 
 <h2>Heti Összesítés</h2>
-
 <button onclick="generatePDF()">📄 PDF Letöltés</button>
 
 <table id="hetiTable">
 <thead>
 <tr>
 <th>Tag</th>
-<th>Paleto</th>
-<th>Állami</th>
-<th>Múzeum</th>
-<th>Bobcat</th>
+<th>Paleto db</th>
+<th>Állami db</th>
+<th>Múzeum db</th>
+<th>Bobcat db</th>
 <th>Mosó</th>
 <th>Craft</th>
 <th>Összeg</th>
@@ -65,34 +36,66 @@ th{
 <tbody></tbody>
 </table>
 
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBgbixws2rf6VdqjQATVwZsKg0lgiqy0xI",
+  authDomain: "ordog-fizetes.firebaseapp.com",
+  databaseURL: "https://ordog-fizetes-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "ordog-fizetes",
+  storageBucket: "ordog-fizetes.firebasestorage.app",
+  messagingSenderId: "672089263660",
+  appId: "1:672089263660:web:70086de26402ceb3464b89"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const hetiRef = ref(db,"hetiOsszesites");
+
+const tbody = document.querySelector("#hetiTable tbody");
+
+onValue(hetiRef, snapshot => {
+
+  tbody.innerHTML = "";
+
+  if(snapshot.exists()){
+
+    const data = snapshot.val();
+
+    for(let nev in data){
+
+      const t = data[nev];
+
+      let row = `
+      <tr>
+        <td>${t.nev}</td>
+        <td>${t.rablas?.paleto || 0}</td>
+        <td>${t.rablas?.allami || 0}</td>
+        <td>${t.rablas?.muzeum || 0}</td>
+        <td>${t.rablas?.bobcat || 0}</td>
+        <td>${t.moso || 0}</td>
+        <td>${t.craft || 0}</td>
+        <td>${Number(t.osszeg || 0).toFixed(2)}$</td>
+        <td>${t.fizetett ? "✔" : "X"}</td>
+      </tr>
+      `;
+
+      tbody.innerHTML += row;
+    }
+
+  }
+
+});
+
+</script>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 
 <script>
-
-// Adatok betöltése
-let hetiOsszesites = JSON.parse(localStorage.getItem("hetiLogPDF")) || {};
-let tbody = document.querySelector("#hetiTable tbody");
-
-for(let nev in hetiOsszesites){
-  const t = hetiOsszesites[nev];
-
-  let row = `
-  <tr>
-    <td>${t.nev}</td>
-    <td>${t.rablas.paleto ? "✔" : ""}</td>
-    <td>${t.rablas.allami ? "✔" : ""}</td>
-    <td>${t.rablas.muzeum ? "✔" : ""}</td>
-    <td>${t.rablas.bobcat ? "✔" : ""}</td>
-    <td>${t.moso}</td>
-    <td>${t.craft}</td>
-    <td>${t.osszeg.toFixed(2)}$</td>
-    <td>${t.fizetett ? "✔" : "X"}</td>
-  </tr>
-  `;
-
-  tbody.innerHTML += row;
-}
 
 function generatePDF(){
 
@@ -109,38 +112,12 @@ function generatePDF(){
   doc.setFontSize(14);
   doc.text("Heti Összesítés", pageWidth/2, 30, {align:'center'});
 
-  // Sorok száma
-  const rowCount = document.querySelectorAll("#hetiTable tbody tr").length;
-
-  // Automatikus betűméret logika
-  let fontSize;
-
-  if(rowCount <= 25){
-      fontSize = 11;
-  } else if(rowCount <= 32){
-      fontSize = 9;
-  } else if(rowCount <= 40){
-      fontSize = 8;
-  } else {
-      fontSize = 7;
-  }
-
   doc.autoTable({
     html:'#hetiTable',
     startY:45,
     theme:'grid',
-    pageBreak:'avoid',
-    styles:{
-      fontSize:fontSize,
-      cellPadding:2,
-      overflow:'linebreak'
-    },
-    margin:{
-      left:20,
-      right:20,
-      top:45,
-      bottom:20
-    }
+    styles:{fontSize:9,cellPadding:2},
+    margin:{left:20,right:20}
   });
 
   doc.save("heti_osszesites.pdf");
