@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Heti PDF – Stabil autoTable</title>
+<title>Heti PDF – Több lapos</title>
 <style>
 body{font-family:Arial, sans-serif;background:white;color:black;padding:5px;margin:0;}
 h2{text-align:center;margin:5px 0;}
@@ -12,7 +12,7 @@ h2{text-align:center;margin:5px 0;}
 </head>
 <body>
 
-<h2>💰 Heti Összesítés – Stabil PDF</h2>
+<h2>💰 Heti Összesítés – Több lapos PDF</h2>
 
 <button id="printBtn" onclick="generatePDF()">📄 PDF Letöltés</button>
 
@@ -62,8 +62,8 @@ function generatePDF(){
   const doc = new jsPDF({orientation:'landscape', unit:'pt', format:'a2'});
   
   doc.setFontSize(14);
-  doc.text("💰 Heti Összesítés – Stabil PDF", doc.internal.pageSize.getWidth()/2, 30, {align:'center'});
-  
+  doc.text("💰 Heti Összesítés – Több lapos PDF", doc.internal.pageSize.getWidth()/2, 30, {align:'center'});
+
   doc.autoTable({
     startY: 50,
     head: [columns.map(c=>c.header)],
@@ -71,14 +71,11 @@ function generatePDF(){
     styles: {fontSize:10, cellPadding:4},
     headStyles: {fillColor:[220,220,220], textColor:0, halign:'center'},
     bodyStyles: {halign:'center'},
-    didDrawPage: function (data) {
-      // Ha sok lap lesz, a fejléc újra rajzolódik automatikusan
-    },
-    margin: {top: 50, left: 20, right: 20, bottom:20},
-    pageBreak: 'auto'
+    margin: {top:50, left:20, right:20, bottom:20},
+    pageBreak: 'auto', // automatikusan több lapra osztja
   });
 
-  doc.save('heti_osszesites_stabil.pdf');
+  doc.save('heti_osszesites_tobb_lapos.pdf');
   btn.style.display = "inline-block";
 }
 </script>
