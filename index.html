@@ -47,13 +47,49 @@ input[type="number"], input[type="password"]{width:120px;padding:4px;border-radi
   <button onclick="nullazFoMenu()">🧹 Főmenü nullázás</button>
 </div>
 
+<!-- KIBŐVÍTETT SEGÍTSÉG -->
 <div id="helpContent" class="helpContent">
-<b>Fél rablás / résztvevők × 0.82.</b><br>
-Mosás +250$<br>
-Craft +250$<br>
-Naplóz = heti PDF adat.<br>
-Heti nullázás = PDF törlés.<br>
-Főmenü nullázás = aktuális nap törlés.
+
+<h3>📘 Teljes működés</h3>
+
+<b>🔹 Rablás számítás:</b><br>
+A megadott rablás összege feleződik.<br>
+A felezett összeg elosztódik az adott rablásban résztvevők között.<br>
+Az így kapott rész megszorzódik 0.82-vel.<br><br>
+
+Képlet:<br>
+(Teljes összeg ÷ 2) ÷ Résztvevők × 0.82<br><br>
+
+<b>🔹 Mosás:</b><br>
+Minden +250 gomb 250$-t ad hozzá.<br><br>
+
+<b>🔹 Craft:</b><br>
+Minden +250 gomb 250$-t ad hozzá.<br><br>
+
+<b>🔹 Számol:</b><br>
+Újraszámolja az aktuális adatokat.<br><br>
+
+<b>🔹 Naplóz:</b><br>
+Az aktuális adatokat hozzáadja a heti összesítéshez.<br><br>
+
+<b>🔹 PDF:</b><br>
+A heti adatokat külön oldalon nyitja meg.<br><br>
+
+<b>🔹 Heti nullázás:</b><br>
+Törli a heti logot.<br><br>
+
+<b>🔹 Főmenü nullázás:</b><br>
+Törli az aktuális napi adatokat.<br><br>
+
+<b>🔹 Kifizetve:</b><br>
+Zöld = kifizetve<br>
+Piros = nincs kifizetve<br><br>
+
+<b>🔐 Admin rendszer:</b><br>
+Bejelentkezés szükséges.<br>
+Frissítés után bent maradsz.<br>
+Kilépés teljesen kijelentkeztet.<br>
+
 </div>
 
 <div style="margin-bottom:10px;">
@@ -97,7 +133,7 @@ const adatRef = ref(db, "aktualisAdatok");
 const hetiRef = ref(db, "hetiOsszesites");
 
 let admin=false;
-const ADMIN_JELSZO="ordog2026";
+const ADMIN_JELSZO="1234";
 
 document.addEventListener("DOMContentLoaded",()=>{
 if(localStorage.getItem("adminLogged")==="true"){
@@ -120,7 +156,7 @@ alert("Hibás jelszó!");
 window.logout=function(){
 admin=false;
 localStorage.removeItem("adminLogged");
-document.getElementById("loginModal").style.display="flex";
+location.reload();
 };
 
 function adminCheck(){
@@ -265,4 +301,3 @@ document.getElementById("tagokTable").innerHTML=html;
 </script>
 </body>
 </html>
-
