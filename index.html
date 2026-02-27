@@ -33,6 +33,11 @@ ul{padding-left:20px;}
   <button onclick="ujTagHozzaadas()"><span>➕</span>Új tag</button>
 </div>
 
+<div id="helpContent" class="helpContent">
+<h3>Használati útmutató</h3>
+(Rablás összege ÷ 2 ÷ résztvevők száma) × 0,82 + (Mosó × 250) + (Craft × 250)
+</div>
+
 <div style="margin-bottom:10px;">
 Paletói $ <input type="number" id="paleto">
 Állami $ <input type="number" id="allami">
@@ -60,10 +65,12 @@ Bobcat $ <input type="number" id="bobcat">
 <tbody id="tagokTable"></tbody>
 </table>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
 <script>
 
-// ===== KEZDŐ TAGOK =====
-const alapNevek=[
+// ===== EREDETI NEVEK =====
+const nevek=[
 "Ugaros Turul (Bobi)","Yukito Osano (Neon)","Emily Mitsuko (Biskota)",
 "Vladimir Iwanow (Majom)","Todor Zsombor (Recsi)","Daryl Dixon (Oroszlán)",
 "Julian Alvarez (Szecska)","Adam Taylor (Young)","Nemeth Andras (arpi)",
@@ -74,36 +81,33 @@ const alapNevek=[
 "Henry Parker (Pufi)"
 ];
 
-// ===== ADATOK BETÖLTÉSE =====
-let adatok = JSON.parse(localStorage.getItem("tagLista"));
+// ===== TAGLISTA BETÖLTÉS (HOZZÁADOTT RÉSZ) =====
+let adatok = JSON.parse(localStorage.getItem("tagLista")) 
+|| nevek.map(n=>({
+nev: n, moso:0, craft:0, fizetett:false, osszeg:0,
+rablas:{paleto:false,allami:false,muzeum:false,bobcat:false}
+}));
 
-if(!adatok){
-  adatok = alapNevek.map(n=>({
-    nev:n,
-    moso:0,
-    craft:0,
-    fizetett:false,
-    osszeg:0,
-    rablas:{paleto:false,allami:false,muzeum:false,bobcat:false}
-  }));
+function mentesTagLista(){
+localStorage.setItem("tagLista", JSON.stringify(adatok));
 }
 
-// ===== MENTÉS FUNKCIÓ =====
-function mentes(){
-  localStorage.setItem("tagLista", JSON.stringify(adatok));
-}
+// ===== EREDETI HETI ADATOK =====
+let hetiLog = JSON.parse(localStorage.getItem("hetiLog")) || [];
+let hetiOsszesites = JSON.parse(localStorage.getItem("hetiOsszesites")) || {};
+let pdfWindow = null;
 
 // ===== MOSÓ / CRAFT =====
-function addMoso(i){adatok[i].moso++; mentes(); render();}
-function minusMoso(i){if(adatok[i].moso>0)adatok[i].moso--; mentes(); render();}
-function addCraft(i){adatok[i].craft++; mentes(); render();}
-function minusCraft(i){if(adatok[i].craft>0)adatok[i].craft--; mentes(); render();}
+function addMoso(i){adatok[i].moso++; mentesTagLista(); render();}
+function minusMoso(i){if(adatok[i].moso>0)adatok[i].moso--; mentesTagLista(); render();}
+function addCraft(i){adatok[i].craft++; mentesTagLista(); render();}
+function minusCraft(i){if(adatok[i].craft>0)adatok[i].craft--; mentesTagLista(); render();}
 
 // ===== TOGGLE =====
-function toggleRablas(i,t){adatok[i].rablas[t]=!adatok[i].rablas[t]; mentes(); render();}
-function toggleFizetett(i){adatok[i].fizetett=!adatok[i].fizetett; mentes(); render();}
+function toggleRablas(i,t){adatok[i].rablas[t]=!adatok[i].rablas[t]; mentesTagLista(); render();}
+function toggleFizetett(i){adatok[i].fizetett=!adatok[i].fizetett; mentesTagLista(); render();}
 
-// ===== SZÁMOLÁS =====
+// ===== SZÁMOLÁS (ÉRINTETLEN) =====
 function szamol(){
 let paleto=+document.getElementById("paleto").value||0;
 let allami=+document.getElementById("allami").value||0;
@@ -123,8 +127,6 @@ if(t.rablas.muzeum) resz+=((muzeum/2)/cM)*0.82;
 if(t.rablas.bobcat) resz+=((bobcat/2)/cB)*0.82;
 t.osszeg = resz + t.moso*250 + t.craft*250;
 });
-
-mentes();
 render();
 }
 
@@ -155,24 +157,19 @@ document.getElementById("tagokTable").innerHTML=html;
 function ujTagHozzaadas(){
 const nev=prompt("Add meg az új tag nevét:");
 if(!nev) return;
-
 adatok.push({
-nev:nev,
-moso:0,
-craft:0,
-fizetett:false,
-osszeg:0,
+nev: nev, moso:0, craft:0, fizetett:false, osszeg:0,
 rablas:{paleto:false,allami:false,muzeum:false,bobcat:false}
 });
-mentes();
+mentesTagLista();
 render();
 }
 
-// ===== TAG TÖRLÉS =====
+// ===== TÖRLÉS =====
 function tagTorles(index){
 if(confirm("Biztosan törlöd ezt a tagot?")){
 adatok.splice(index,1);
-mentes();
+mentesTagLista();
 render();
 }
 }
