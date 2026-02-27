@@ -6,23 +6,50 @@
 <title>Heti PDF – Összesítés</title>
 <style>
 body{font-family:Arial;background:white;color:black;padding:15px;margin:0;}
-h2{color:#111;margin-bottom:15px;}
-table{border-collapse:collapse;width:100%;margin-top:10px;}
+h2{color:#111;margin-bottom:10px;}
+p, li{font-size:14px;line-height:1.4;}
+ul{padding-left:20px;}
+table{border-collapse:collapse;width:100%;margin-top:15px;}
 th, td{border:1px solid #000;padding:6px;text-align:center;font-size:14px;}
 th{background:#eee;}
 button{padding:6px 12px;margin:10px 0;border:none;border-radius:6px;cursor:pointer;font-weight:bold;}
+.summaryBox{border:1px solid #000;padding:10px;margin:10px 0;}
+.topList{margin-top:15px;font-size:14px;}
 </style>
 </head>
 <body>
 
-<h2>💰 Heti Összesítés</h2>
+<h2>💡 Fizetés számítása – részletesen</h2>
+<p>Minden rablásból származó fizetés résztvevőnként így alakul:</p>
+<ul>
+<li>Teljes rablás összege (pl. Paleto: 160 000$)</li>
+<li>Család részesedés: <code>Teljes összeg ÷ 2</code></li>
+<li>Résztvevők száma: osszuk el a résztvevőkre</li>
+<li>Szorzó 0,82 a résztvevőre</li>
+<li>Mosó/Craft hozzáadása</li>
+<li>Csak a rabláson részt vevők kapnak részesedést</li>
+</ul>
+
+<p><b>Heti összesítés:</b> minden nap rögzített rablásból származó összeg összeadódik, Mosó/Craft is hozzáadódik.</p>
+<p><b>Kifizetett státusz:</b> ✅ kifizetve, ❌ nincs kifizetve</p>
+
+<div class="summaryBox" id="summaryBox">
+<h3>📊 Heti összesítő statisztika</h3>
+<ul id="summaryUl"></ul>
+</div>
+
+<div class="topList" id="topList">
+<h3>🏆 Heti top fizetések</h3>
+<ul id="topUl"></ul>
+</div>
 
 <button onclick="let opt={margin:0.5, filename:'heti_osszesites.pdf', html2canvas:{scale:2}, jsPDF:{unit:'in', format:'letter', orientation:'landscape'}}; html2pdf().set(opt).from(document.body).save();">📄 PDF Letöltés</button>
 
 <table>
 <thead>
 <tr>
-<th>Tag</th><th>Paleto</th><th>Állami</th><th>Múzeum</th><th>Bobcat</th><th>Mosó</th><th>Craft</th><th>Összeg</th><th>Kifizetve</th>
+<th>Tag</th><th>Paleto</th><th>Állami</th><th>Múzeum</th><th>Bobcat</th>
+<th>Mosó</th><th>Craft</th><th>Összeg</th><th>Kifizetve</th>
 </tr>
 </thead>
 <tbody id="hetiTable"></tbody>
@@ -33,9 +60,24 @@ button{padding:6px 12px;margin:10px 0;border:none;border-radius:6px;cursor:point
 // Betöltés
 let hetiOsszesites = JSON.parse(localStorage.getItem("hetiLogPDF")) || {};
 let tbody = document.getElementById("hetiTable");
+let topUl = document.getElementById("topUl");
+let summaryUl = document.getElementById("summaryUl");
 
+let totalOsszeg = 0, totalMoso=0, totalCraft=0;
+let totalRabl = {paleto:0, allami:0, muzeum:0, bobcat:0};
+let tagCount = Object.keys(hetiOsszesites).length;
+
+// Táblázat feltöltése
 for(let nev in hetiOsszesites){
   const t = hetiOsszesites[nev];
+  totalOsszeg += t.osszeg;
+  totalMoso += t.moso;
+  totalCraft += t.craft;
+  if(t.rablas.paleto) totalRabl.paleto++;
+  if(t.rablas.allami) totalRabl.allami++;
+  if(t.rablas.muzeum) totalRabl.muzeum++;
+  if(t.rablas.bobcat) totalRabl.bobcat++;
+
   let row = `<tr>
 <td>${t.nev}</td>
 <td>${t.rablas.paleto? "✅" : ""}</td>
@@ -49,6 +91,26 @@ for(let nev in hetiOsszesites){
 </tr>`;
   tbody.innerHTML += row;
 }
+
+// Heti top 5 fizetés
+let topArray = Object.values(hetiOsszesites).sort((a,b)=>b.osszeg - a.osszeg).slice(0,5);
+topArray.forEach(t=>{
+  let li = document.createElement("li");
+  li.textContent = `${t.nev}: ${t.osszeg.toFixed(2)}$`;
+  topUl.appendChild(li);
+});
+
+// Heti összesítő statisztika
+summaryUl.innerHTML = `
+<li>Összes Paleto rablás: ${totalRabl.paleto}</li>
+<li>Összes Állami rablás: ${totalRabl.allami}</li>
+<li>Összes Múzeum rablás: ${totalRabl.muzeum}</li>
+<li>Összes Bobcat rablás: ${totalRabl.bobcat}</li>
+<li>Összes Mosó: ${totalMoso}</li>
+<li>Összes Craft: ${totalCraft}</li>
+<li>Összes kiosztott pénz: ${totalOsszeg.toFixed(2)}$</li>
+<li>Átlagos fizetés tagonként: ${(tagCount? totalOsszeg/tagCount:0).toFixed(2)}$</li>
+`;
 </script>
 
 </body>
