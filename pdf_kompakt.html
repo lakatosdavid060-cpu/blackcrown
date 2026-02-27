@@ -6,17 +6,47 @@
 <title>Heti Összesítés</title>
 
 <style>
-body{font-family:Arial;margin:0;padding:10px;}
-h2{text-align:center;margin:5px 0;}
-button{padding:8px 14px;border:none;border-radius:6px;cursor:pointer;font-weight:bold;margin-bottom:10px;}
-table{border-collapse:collapse;width:100%;}
-th, td{border:1px solid #000;padding:4px;text-align:center;font-size:13px;}
-th{background:#eee;}
+body{
+  font-family: Arial, sans-serif;
+  margin:0;
+  padding:10px;
+}
+
+h2{
+  text-align:center;
+  margin:5px 0;
+}
+
+button{
+  padding:8px 14px;
+  border:none;
+  border-radius:6px;
+  cursor:pointer;
+  font-weight:bold;
+  margin-bottom:10px;
+}
+
+table{
+  border-collapse:collapse;
+  width:100%;
+}
+
+th, td{
+  border:1px solid #000;
+  padding:4px;
+  text-align:center;
+  font-size:13px;
+}
+
+th{
+  background:#eee;
+}
 </style>
 </head>
 <body>
 
 <h2>Heti Összesítés</h2>
+
 <button onclick="generatePDF()">📄 PDF Letöltés</button>
 
 <table id="hetiTable">
@@ -36,6 +66,7 @@ th{background:#eee;}
 <tbody></tbody>
 </table>
 
+<!-- Firebase -->
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -69,13 +100,19 @@ onValue(hetiRef, snapshot => {
 
       const t = data[nev];
 
+      // 🔥 BOOLEAN → SZÁM KONVERTÁLÁS
+      const paleto  = typeof t.rablas?.paleto === "number" ? t.rablas.paleto : (t.rablas?.paleto ? 1 : 0);
+      const allami  = typeof t.rablas?.allami === "number" ? t.rablas.allami : (t.rablas?.allami ? 1 : 0);
+      const muzeum  = typeof t.rablas?.muzeum === "number" ? t.rablas.muzeum : (t.rablas?.muzeum ? 1 : 0);
+      const bobcat  = typeof t.rablas?.bobcat === "number" ? t.rablas.bobcat : (t.rablas?.bobcat ? 1 : 0);
+
       let row = `
       <tr>
         <td>${t.nev}</td>
-        <td>${t.rablas?.paleto || 0}</td>
-        <td>${t.rablas?.allami || 0}</td>
-        <td>${t.rablas?.muzeum || 0}</td>
-        <td>${t.rablas?.bobcat || 0}</td>
+        <td>${paleto}</td>
+        <td>${allami}</td>
+        <td>${muzeum}</td>
+        <td>${bobcat}</td>
         <td>${t.moso || 0}</td>
         <td>${t.craft || 0}</td>
         <td>${Number(t.osszeg || 0).toFixed(2)}$</td>
@@ -92,6 +129,7 @@ onValue(hetiRef, snapshot => {
 
 </script>
 
+<!-- PDF -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 
@@ -116,8 +154,14 @@ function generatePDF(){
     html:'#hetiTable',
     startY:45,
     theme:'grid',
-    styles:{fontSize:9,cellPadding:2},
-    margin:{left:20,right:20}
+    styles:{
+      fontSize:9,
+      cellPadding:2
+    },
+    margin:{
+      left:20,
+      right:20
+    }
   });
 
   doc.save("heti_osszesites.pdf");
