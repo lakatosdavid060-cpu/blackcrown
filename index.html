@@ -13,7 +13,7 @@ button{padding:4px 8px;margin:2px;border:none;border-radius:6px;cursor:pointer;f
 .red{background:#dc2626;color:white;}
 table{border-collapse:collapse;width:100%;color:white;margin-top:10px;}
 th, td{border:1px solid #fff;padding:4px;text-align:center;font-size:14px;}
-.helpContent{display:none;background:#334155;color:white;padding:10px;border-radius:6px;margin-top:5px;}
+.helpContent{display:none;background:#334155;color:white;padding:12px;border-radius:6px;margin-top:5px;line-height:1.5;}
 .icon-panel{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;}
 .icon-panel button{flex:1;padding:6px;}
 input[type="number"], input[type="password"]{width:120px;padding:4px;border-radius:6px;border:none;}
@@ -23,7 +23,6 @@ input[type="number"], input[type="password"]{width:120px;padding:4px;border-radi
 
 <h2>💰 Heti Fizetés</h2>
 
-<!-- ADMIN -->
 <div style="margin-bottom:10px;">
   <input type="password" id="adminPass" placeholder="Admin jelszó">
   <button onclick="adminLogin()">🔐 Belépés</button>
@@ -41,7 +40,54 @@ input[type="number"], input[type="password"]{width:120px;padding:4px;border-radi
 </div>
 
 <div id="helpContent" class="helpContent">
-((Teljes összeg ÷ 2) ÷ Résztvevők száma) × 0.82 + Mosó×250 + Craft×250
+
+<b>📌 Rendszer működése részletesen:</b><br><br>
+
+<b>1️⃣ Rablások elszámolása</b><br>
+• A megadott rablás összegének fele kerül kiosztásra.<br>
+• Ez a fél összeg elosztásra kerül azok között, akiknél pipa van.<br>
+• Az így kapott rész megszorzódik 0.82-vel (levonás).<br><br>
+
+Képlet:<br>
+(Teljes összeg ÷ 2) ÷ Résztvevők száma × 0.82<br><br>
+
+<b>2️⃣ Mosás</b><br>
+Minden +250 gomb 250$-t ad hozzá a tag végösszegéhez.<br><br>
+
+<b>3️⃣ Craft</b><br>
+Minden craft szintén +250$-t ad.<br><br>
+
+<b>4️⃣ Számol</b><br>
+Az aktuális pipák és bevitt rablás összegek alapján kiszámolja az egyéni végösszegeket.<br><br>
+
+<b>5️⃣ Naplóz</b><br>
+Az aktuális főmenü adatait hozzáadja a heti összesítéshez (PDF adat).<br>
+A főmenü nem törlődik.<br><br>
+
+<b>6️⃣ PDF</b><br>
+A heti összesített adatokat nyitja meg külön oldalon nyomtatáshoz.<br><br>
+
+<b>7️⃣ Heti nullázás</b><br>
+Törli a heti összesített adatokat (PDF adat).<br>
+A főmenüt nem érinti.<br><br>
+
+<b>8️⃣ Főmenü nullázás</b><br>
+Törli az aktuális főmenü adatait:<br>
+– Pipák<br>
+– Mosás<br>
+– Craft<br>
+– Összeg<br>
+– Kifizetett állapot<br>
+A heti PDF adat megmarad.<br><br>
+
+<b>9️⃣ Kifizetve gomb</b><br>
+Zöld = Kifizetve<br>
+Piros = Nincs kifizetve<br><br>
+
+<b>🔐 Admin mód</b><br>
+Minden módosítás csak admin belépés után működik.<br>
+A belépés frissítés után is megmarad.<br>
+
 </div>
 
 <div style="margin-bottom:10px;">
@@ -68,8 +114,6 @@ Bobcat $ <input type="number" id="bobcat">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
-/* FIREBASE */
-
 const firebaseConfig = {
   apiKey: "AIzaSyBgbixws2rf6VdqjQATVwZsKg0lgiqy0xI",
   authDomain: "ordog-fizetes.firebaseapp.com",
@@ -86,15 +130,11 @@ const db = getDatabase(app);
 const adatRef = ref(db, "aktualisAdatok");
 const hetiRef = ref(db, "hetiOsszesites");
 
-/* ADMIN */
-
 let admin=false;
 const ADMIN_JELSZO="1234";
 
 document.addEventListener("DOMContentLoaded",()=>{
-if(localStorage.getItem("adminLogged")==="true"){
-admin=true;
-}
+if(localStorage.getItem("adminLogged")==="true"){admin=true;}
 updateAdminUI();
 });
 
@@ -129,8 +169,6 @@ if(!admin){alert("Admin jogosultság szükséges!");return false;}
 return true;
 }
 
-/* TAGOK */
-
 const nevek=[
 "Ugaros Turul (Bobi)","Yukito Osano (Neon)","Emily Mitsuko (Biskota)",
 "Vladimir Iwanow (Majom)","Todor Zsombor (Recsi)","Daryl Dixon (Oroszlán)",
@@ -144,8 +182,6 @@ const nevek=[
 
 let adatok=[];
 let hetiOsszesites={};
-
-/* FIREBASE SYNC */
 
 onValue(adatRef,s=>{
 if(s.exists()) adatok=s.val();
@@ -164,8 +200,6 @@ if(s.exists()) hetiOsszesites=s.val();
 });
 
 function mentes(){ set(adatRef,adatok); }
-
-/* FUNKCIÓK */
 
 window.addMoso=i=>{if(!adminCheck())return;adatok[i].moso++;mentes();render();}
 window.minusMoso=i=>{if(!adminCheck())return;if(adatok[i].moso>0)adatok[i].moso--;mentes();render();}
@@ -227,8 +261,6 @@ alert("Heti log törölve.");
 }
 };
 
-/* ✅ HOZZÁADOTT FŐMENÜ NULLÁZÁS */
-
 window.nullazFoMenu=function(){
 if(!adminCheck())return;
 if(confirm("Biztos nullázod az aktuális főmenüt?")){
@@ -237,12 +269,7 @@ t.moso=0;
 t.craft=0;
 t.osszeg=0;
 t.fizetett=false;
-t.rablas={
-paleto:false,
-allami:false,
-muzeum:false,
-bobcat:false
-};
+t.rablas={paleto:false,allami:false,muzeum:false,bobcat:false};
 });
 mentes();
 render();
