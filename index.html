@@ -32,20 +32,6 @@ ul{padding-left:20px;}
   <button onclick="nullazHetiLog()"><span>♻️</span>Heti nullázás</button>
 </div>
 
-  <!-- TAG KEZELÉS -->
-<div style="margin-top:10px;">
-<input type="text" id="ujTagNev" placeholder="Új tag neve">
-<button class="blue" onclick="ujTag()">➕ Hozzáadás</button>
-
-<input type="text" id="regiNev" placeholder="Régi név">
-<input type="text" id="ujNev" placeholder="Új név">
-<button class="orange" onclick="frissitTag()">✏️ Frissítés</button>
-
-<input type="text" id="torolNev" placeholder="Törlendő név">
-<button class="red" onclick="torolTag()">❌ Törlés</button>
-</div>
-
-  
 <div id="helpContent" class="helpContent">
 <h3>Használati útmutató – Részletesen</h3>
 <ul>
@@ -109,45 +95,6 @@ let hetiLog = JSON.parse(localStorage.getItem("hetiLog")) || [];
 let hetiOsszesites = JSON.parse(localStorage.getItem("hetiOsszesites")) || {};
 let pdfWindow = null;
 
-  // ===== TAG HOZZÁADÁS =====
-function ujTag(){
-let nev=document.getElementById("ujTagNev").value.trim();
-if(!nev) return alert("Adj meg nevet!");
-if(adatok.some(t=>t.nev===nev)) return alert("Már létezik!");
-
-adatok.push({
-nev:nev,moso:0,craft:0,fizetett:false,osszeg:0,
-rablas:{paleto:false,allami:false,muzeum:false,bobcat:false}
-});
-
-mentTagLista();
-render();
-}
-
-// ===== TAG TÖRLÉS =====
-function torolTag(){
-let nev=document.getElementById("torolNev").value.trim();
-if(!nev) return alert("Adj meg nevet!");
-
-adatok=adatok.filter(t=>t.nev!==nev);
-
-delete hetiOsszesites[nev];
-
-mentTagLista();
-localStorage.setItem("hetiOsszesites",JSON.stringify(hetiOsszesites));
-render();
-}
-
-// ===== TAG FRISSÍTÉS =====
-function frissitTag(){
-let regi=document.getElementById("regiNev").value.trim();
-let uj=document.getElementById("ujNev").value.trim();
-if(!regi||!uj) return alert("Töltsd ki mindkét mezőt!");
-
-let tag=adatok.find(t=>t.nev===regi);
-if(!tag) return alert("Nincs ilyen név!");
-
-tag.nev=uj
 // MOSÓ / CRAFT
 function addMoso(i){adatok[i].moso++; render();}
 function minusMoso(i){if(adatok[i].moso>0)adatok[i].moso--; render();}
@@ -158,10 +105,6 @@ function minusCraft(i){if(adatok[i].craft>0)adatok[i].craft--; render();}
 function toggleRablas(i,t){adatok[i].rablas[t]=!adatok[i].rablas[t]; render();}
 function toggleFizetett(i){adatok[i].fizetett=!adatok[i].fizetett; render();}
 
-  // ===== TAG LISTA MENTÉS =====
-function mentTagLista(){
-localStorage.setItem("tagLista",JSON.stringify(adatok.map(t=>({nev:t.nev}))));
-  
 // SZÁMOLÁS
 function szamol(){
 let paleto=+document.getElementById("paleto").value||0;
@@ -275,4 +218,3 @@ render();
 
 </body>
 </html>
-
