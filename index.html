@@ -23,6 +23,7 @@ input[type="number"], input[type="password"]{width:120px;padding:4px;border-radi
 
 <h2>💰 Heti Fizetés</h2>
 
+<!-- ADMIN -->
 <div style="margin-bottom:10px;">
   <input type="password" id="adminPass" placeholder="Admin jelszó">
   <button onclick="adminLogin()">🔐 Belépés</button>
@@ -35,8 +36,8 @@ input[type="number"], input[type="password"]{width:120px;padding:4px;border-radi
   <button onclick="mentNap()">💾 Naplóz</button>
   <button onclick="openPDF()">📄 PDF</button>
   <button onclick="toggleHelp()">ℹ️ Segítség</button>
-  <button onclick="nullazFoMenu()">🧹 Főmenü nullázás</button>
   <button onclick="nullazHetiLog()">♻️ Heti nullázás</button>
+  <button onclick="nullazFoMenu()">🧹 Főmenü nullázás</button>
 </div>
 
 <div id="helpContent" class="helpContent">
@@ -67,6 +68,8 @@ Bobcat $ <input type="number" id="bobcat">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
+/* FIREBASE */
+
 const firebaseConfig = {
   apiKey: "AIzaSyBgbixws2rf6VdqjQATVwZsKg0lgiqy0xI",
   authDomain: "ordog-fizetes.firebaseapp.com",
@@ -82,6 +85,8 @@ const db = getDatabase(app);
 
 const adatRef = ref(db, "aktualisAdatok");
 const hetiRef = ref(db, "hetiOsszesites");
+
+/* ADMIN */
 
 let admin=false;
 const ADMIN_JELSZO="1234";
@@ -124,6 +129,8 @@ if(!admin){alert("Admin jogosultság szükséges!");return false;}
 return true;
 }
 
+/* TAGOK */
+
 const nevek=[
 "Ugaros Turul (Bobi)","Yukito Osano (Neon)","Emily Mitsuko (Biskota)",
 "Vladimir Iwanow (Majom)","Todor Zsombor (Recsi)","Daryl Dixon (Oroszlán)",
@@ -137,6 +144,8 @@ const nevek=[
 
 let adatok=[];
 let hetiOsszesites={};
+
+/* FIREBASE SYNC */
 
 onValue(adatRef,s=>{
 if(s.exists()) adatok=s.val();
@@ -156,29 +165,14 @@ if(s.exists()) hetiOsszesites=s.val();
 
 function mentes(){ set(adatRef,adatok); }
 
-window.nullazFoMenu=function(){
-if(!adminCheck())return;
-if(confirm("Biztos nullázod az aktuális hetet?")){
-adatok.forEach(t=>{
-t.moso=0;
-t.craft=0;
-t.osszeg=0;
-t.fizetett=false;
-t.rablas={paleto:false,allami:false,muzeum:false,bobcat:false};
-});
-mentes();
-render();
-}
-};
+/* FUNKCIÓK */
 
-window.nullazHetiLog=function(){
-if(!adminCheck())return;
-if(confirm("Biztos törlöd a heti PDF adatokat?")){
-hetiOsszesites={};
-set(hetiRef,{});
-alert("Heti log törölve.");
-}
-};
+window.addMoso=i=>{if(!adminCheck())return;adatok[i].moso++;mentes();render();}
+window.minusMoso=i=>{if(!adminCheck())return;if(adatok[i].moso>0)adatok[i].moso--;mentes();render();}
+window.addCraft=i=>{if(!adminCheck())return;adatok[i].craft++;mentes();render();}
+window.minusCraft=i=>{if(!adminCheck())return;if(adatok[i].craft>0)adatok[i].craft--;mentes();render();}
+window.toggleRablas=(i,t)=>{if(!adminCheck())return;adatok[i].rablas[t]=!adatok[i].rablas[t];mentes();render();}
+window.toggleFizetett=i=>{if(!adminCheck())return;adatok[i].fizetett=!adatok[i].fizetett;mentes();render();}
 
 window.szamol=function(){
 if(!adminCheck())return;
@@ -205,6 +199,62 @@ mentes();
 render();
 };
 
+window.mentNap=function(){
+if(!adminCheck())return;
+adatok.forEach(t=>{
+if(!hetiOsszesites[t.nev])hetiOsszesites[t.nev]={...t};
+else{
+hetiOsszesites[t.nev].moso+=t.moso;
+hetiOsszesites[t.nev].craft+=t.craft;
+hetiOsszesites[t.nev].osszeg+=t.osszeg;
+}
+});
+set(hetiRef,hetiOsszesites);
+alert("Naplózva.");
+};
+
+window.openPDF=function(){
+localStorage.setItem("hetiLogPDF",JSON.stringify(hetiOsszesites));
+window.open("pdf_kompakt.html","_blank");
+};
+
+window.nullazHetiLog=function(){
+if(!adminCheck())return;
+if(confirm("Biztos törlöd?")){
+hetiOsszesites={};
+set(hetiRef,{});
+alert("Heti log törölve.");
+}
+};
+
+/* ✅ HOZZÁADOTT FŐMENÜ NULLÁZÁS */
+
+window.nullazFoMenu=function(){
+if(!adminCheck())return;
+if(confirm("Biztos nullázod az aktuális főmenüt?")){
+adatok.forEach(t=>{
+t.moso=0;
+t.craft=0;
+t.osszeg=0;
+t.fizetett=false;
+t.rablas={
+paleto:false,
+allami:false,
+muzeum:false,
+bobcat:false
+};
+});
+mentes();
+render();
+alert("Főmenü nullázva.");
+}
+};
+
+window.toggleHelp=function(){
+const help=document.getElementById("helpContent");
+help.style.display=help.style.display==="none"?"block":"none";
+};
+
 function render(){
 let total=adatok.reduce((s,t)=>s+t.osszeg,0);
 document.getElementById("summary").innerHTML="💵 Összes kiosztva: "+total.toFixed(2)+" $";
@@ -217,17 +267,14 @@ html+=`<tr>
 <td><input type="checkbox" ${t.rablas.allami?'checked':''} onclick="toggleRablas(${i},'allami')"></td>
 <td><input type="checkbox" ${t.rablas.muzeum?'checked':''} onclick="toggleRablas(${i},'muzeum')"></td>
 <td><input type="checkbox" ${t.rablas.bobcat?'checked':''} onclick="toggleRablas(${i},'bobcat')"></td>
-<td>${t.moso}</td>
-<td>${t.craft}</td>
+<td><button onclick="minusMoso(${i})">−</button><button onclick="addMoso(${i})">+250</button> ${t.moso}</td>
+<td><button onclick="minusCraft(${i})">−</button><button onclick="addCraft(${i})">+250</button> ${t.craft}</td>
 <td>${t.osszeg.toFixed(2)}</td>
 <td><button class="${t.fizetett?'green':'red'}" onclick="toggleFizetett(${i})">${t.fizetett?'✅':'❌'}</button></td>
 </tr>`;
 });
 document.getElementById("tagokTable").innerHTML=html;
 }
-
-window.toggleRablas=(i,t)=>{if(!adminCheck())return;adatok[i].rablas[t]=!adatok[i].rablas[t];mentes();render();}
-window.toggleFizetett=i=>{if(!adminCheck())return;adatok[i].fizetett=!adatok[i].fizetett;mentes();render();}
 
 </script>
 
