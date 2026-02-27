@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Heti Fizetés – Kompakt</title>
-
 <style>
 body{font-family:Arial;background:#0f172a;color:white;padding:15px;margin:0;}
 h2{color:#38bdf8;}
@@ -13,29 +12,45 @@ button{padding:4px 8px;margin:2px;border:none;border-radius:6px;cursor:pointer;f
 .red{background:#dc2626;color:white;}
 table{border-collapse:collapse;width:100%;color:white;margin-top:10px;}
 th, td{border:1px solid #fff;padding:4px;text-align:center;font-size:14px;}
-.helpContent{display:none;background:#334155;padding:10px;border-radius:6px;margin-top:5px;}
+.helpContent{display:none;background:#334155;color:white;padding:10px;border-radius:6px;margin-top:5px;line-height:1.4;}
 .icon-panel{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;}
-.icon-panel button{flex:1;}
-input[type="number"],input{padding:4px;border-radius:6px;border:none;}
+.icon-panel button{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6px;}
+.icon-panel span{font-size:18px;margin-bottom:3px;}
+input[type="number"]{width:80px;padding:4px;border-radius:6px;border:none;}
+ul{padding-left:20px;}
 </style>
 </head>
-
 <body>
 
 <h2>💰 Heti Fizetés – Kompakt</h2>
 
 <div class="icon-panel">
-<button onclick="szamol()">🧮 Számol</button>
-<button onclick="mentNap()">💾 Naplóz</button>
-<button onclick="openPDF()">📄 PDF</button>
-<button onclick="toggleHelp()">ℹ️ Segítség</button>
-<button onclick="nullazHetiLog()">♻️ Heti nullázás</button>
+  <button onclick="szamol()"><span>🧮</span>Számol</button>
+  <button onclick="mentNap()"><span>💾</span>Naplóz</button>
+  <button onclick="openPDF()"><span>📄</span>PDF</button>
+  <button onclick="toggleHelp()"><span>ℹ️</span>Segítség</button>
+  <button onclick="nullazHetiLog()"><span>♻️</span>Heti nullázás</button>
 </div>
 
-<!-- ✅ ÚJ TAG -->
-<div style="margin-bottom:10px;">
-<input id="ujTagNev" placeholder="Új tag neve">
-<button onclick="ujTagHozzaad()">➕ Új tag</button>
+<div id="helpContent" class="helpContent">
+<h3>Használati útmutató – Részletesen</h3>
+<ul>
+<li><b>Számol:</b> Kiszámolja a tagok fizetését az aktuális rablások és Mosó/Craft alapján.</li>
+<li><b>Rablások jelölése:</b> Pipáld be a résztvevőket a Paleto, Állami, Múzeum, Bobcat rablásoknál.</li>
+<li><b>Rablás fizetés formula:</b>
+<pre>
+Fizetés résztvevőnként:
+((Teljes rablás összeg ÷ 2) ÷ Résztvevők száma) × 0.82
++ Mosó*250
++ Craft*250
+</pre>
+</li>
+<li><b>Mosó/Craft +250:</b> Növeli a Mosó vagy Craft értéket 250$-ral. <b>−</b> csökkenti ugyanennyivel.</li>
+<li><b>❌ / ✅ Kifizetett:</b> Piros = nincs kifizetve, zöld = kifizetve.</li>
+<li><b>Naplózás:</b> Mentse a mai nap adatait a heti logba, és frissíti a heti összesítést.</li>
+<li><b>PDF:</b> Új ablakban nyílik, ahol a heti összesített logot PDF formátumban mentheted. Mindig friss adatot lát.</li>
+<li><b>Heti nullázás:</b> Törli az összes heti logot, így új hét kezdhető.</li>
+</ul>
 </div>
 
 <div style="margin-bottom:10px;">
@@ -45,24 +60,22 @@ Múzeum $ <input type="number" id="muzeum">
 Bobcat $ <input type="number" id="bobcat">
 </div>
 
-<div id="summary"></div>
+<div class="summary" id="summary"></div>
 
 <table>
 <thead>
 <tr>
-<th>Tag</th><th>Paleto</th><th>Állami</th><th>Múzeum</th>
-<th>Bobcat</th><th>Mosó</th><th>Craft</th>
-<th>Összeg</th><th>Kifizetve</th>
+<th>Tag</th><th>Paleto</th><th>Állami</th><th>Múzeum</th><th>Bobcat</th>
+<th>Mosó</th><th>Craft</th><th>Összeg</th><th>Kifizetve</th>
 </tr>
 </thead>
 <tbody id="tagokTable"></tbody>
 </table>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <script>
-
-// ================= TAGOK =================
-
-let alapNevek=[
+// Tagok
+const nevek=[
 "Ugaros Turul (Bobi)","Yukito Osano (Neon)","Emily Mitsuko (Biskota)",
 "Vladimir Iwanow (Majom)","Todor Zsombor (Recsi)","Daryl Dixon (Oroszlán)",
 "Julian Alvarez (Szecska)","Adam Taylor (Young)","Nemeth Andras (arpi)",
@@ -73,57 +86,31 @@ let alapNevek=[
 "Henry Parker (Pufi)"
 ];
 
-let nevek =
-JSON.parse(localStorage.getItem("tagok")) || alapNevek;
-
-localStorage.setItem("tagok",JSON.stringify(nevek));
-
 let adatok = nevek.map(n=>({
-nev:n,moso:0,craft:0,fizetett:false,osszeg:0,
+nev: n, moso:0, craft:0, fizetett:false, osszeg:0,
 rablas:{paleto:false,allami:false,muzeum:false,bobcat:false}
 }));
 
-// ================= ÚJ TAG =================
+let hetiLog = JSON.parse(localStorage.getItem("hetiLog")) || [];
+let hetiOsszesites = JSON.parse(localStorage.getItem("hetiOsszesites")) || {};
+let pdfWindow = null;
 
-function ujTagHozzaad(){
-let nev=document.getElementById("ujTagNev").value.trim();
-if(!nev)return;
+// MOSÓ / CRAFT
+function addMoso(i){adatok[i].moso++; render();}
+function minusMoso(i){if(adatok[i].moso>0)adatok[i].moso--; render();}
+function addCraft(i){adatok[i].craft++; render();}
+function minusCraft(i){if(adatok[i].craft>0)adatok[i].craft--; render();}
 
-nevek.push(nev);
-localStorage.setItem("tagok",JSON.stringify(nevek));
-location.reload();
-}
+// TOGGLE
+function toggleRablas(i,t){adatok[i].rablas[t]=!adatok[i].rablas[t]; render();}
+function toggleFizetett(i){adatok[i].fizetett=!adatok[i].fizetett; render();}
 
-// ================= TÖRLÉS =================
-
-function tagTorol(i){
-if(!confirm("Tag törlése?"))return;
-
-nevek.splice(i,1);
-localStorage.setItem("tagok",JSON.stringify(nevek));
-location.reload();
-}
-
-// ================= MOSÓ/CRAFT =================
-
-function addMoso(i){adatok[i].moso++;render();}
-function minusMoso(i){if(adatok[i].moso>0)adatok[i].moso--;render();}
-function addCraft(i){adatok[i].craft++;render();}
-function minusCraft(i){if(adatok[i].craft>0)adatok[i].craft--;render();}
-
-// ================= TOGGLE =================
-
-function toggleRablas(i,t){adatok[i].rablas[t]=!adatok[i].rablas[t];render();}
-function toggleFizetett(i){adatok[i].fizetett=!adatok[i].fizetett;render();}
-
-// ================= SZÁMOL =================
-
+// SZÁMOLÁS
 function szamol(){
-
-let paleto=+paleto.value||0;
-let allami=+allami.value||0;
-let muzeum=+muzeum.value||0;
-let bobcat=+bobcat.value||0;
+let paleto=+document.getElementById("paleto").value||0;
+let allami=+document.getElementById("allami").value||0;
+let muzeum=+document.getElementById("muzeum").value||0;
+let bobcat=+document.getElementById("bobcat").value||0;
 
 const cP=adatok.filter(x=>x.rablas.paleto).length||1;
 const cA=adatok.filter(x=>x.rablas.allami).length||1;
@@ -136,73 +123,98 @@ if(t.rablas.paleto) resz+=((paleto/2)/cP)*0.82;
 if(t.rablas.allami) resz+=((allami/2)/cA)*0.82;
 if(t.rablas.muzeum) resz+=((muzeum/2)/cM)*0.82;
 if(t.rablas.bobcat) resz+=((bobcat/2)/cB)*0.82;
-t.osszeg=resz+t.moso*250+t.craft*250;
+t.osszeg = resz + t.moso*250 + t.craft*250;
 });
-
 render();
 }
 
-// ================= RENDER =================
-
+// RENDER
 function render(){
-
-let total=adatok.reduce((s,t)=>s+t.osszeg,0);
-summary.innerHTML="💵 Összes kiosztva: "+total.toFixed(2)+" $";
+let total=adatok.reduce((sum,t)=>sum+t.osszeg,0);
+document.getElementById("summary").innerHTML="💵 Összes kiosztva: "+total.toFixed(2)+" $";
 
 let html="";
-
 adatok.forEach((t,i)=>{
-html+=`
-<tr>
-<td>${t.nev}
-<button class="red" onclick="tagTorol(${i})">❌</button>
-</td>
-
-<td><input type="checkbox" ${t.rablas.paleto?'checked':''}
-onclick="toggleRablas(${i},'paleto')"></td>
-
-<td><input type="checkbox" ${t.rablas.allami?'checked':''}
-onclick="toggleRablas(${i},'allami')"></td>
-
-<td><input type="checkbox" ${t.rablas.muzeum?'checked':''}
-onclick="toggleRablas(${i},'muzeum')"></td>
-
-<td><input type="checkbox" ${t.rablas.bobcat?'checked':''}
-onclick="toggleRablas(${i},'bobcat')"></td>
-
-<td>
-<button onclick="minusMoso(${i})">−</button>
-<button onclick="addMoso(${i})">+250</button>
-${t.moso}
-</td>
-
-<td>
-<button onclick="minusCraft(${i})">−</button>
-<button onclick="addCraft(${i})">+250</button>
-${t.craft}
-</td>
-
+html+=`<tr>
+<td>${t.nev}</td>
+<td><input type="checkbox" ${t.rablas.paleto?'checked':''} onclick="toggleRablas(${i},'paleto')"></td>
+<td><input type="checkbox" ${t.rablas.allami?'checked':''} onclick="toggleRablas(${i},'allami')"></td>
+<td><input type="checkbox" ${t.rablas.muzeum?'checked':''} onclick="toggleRablas(${i},'muzeum')"></td>
+<td><input type="checkbox" ${t.rablas.bobcat?'checked':''} onclick="toggleRablas(${i},'bobcat')"></td>
+<td><button onclick="minusMoso(${i})">−</button><button onclick="addMoso(${i})">+250</button> ${t.moso}</td>
+<td><button onclick="minusCraft(${i})">−</button><button onclick="addCraft(${i})">+250</button> ${t.craft}</td>
 <td>${t.osszeg.toFixed(2)}</td>
-
-<td>
-<button class="${t.fizetett?'green':'red'}"
-onclick="toggleFizetett(${i})">
-${t.fizetett?'✅':'❌'}
-</button>
-</td>
+<td><button class="${t.fizetett?'green':'red'}" onclick="toggleFizetett(${i})">${t.fizetett?'✅':'❌'}</button></td>
 </tr>`;
 });
-
-tagokTable.innerHTML=html;
+document.getElementById("tagokTable").innerHTML=html;
 }
 
-function mentNap(){}
-function openPDF(){}
-function toggleHelp(){}
-function nullazHetiLog(){localStorage.clear();location.reload();}
+// Naplózás + heti összesítés
+function mentNap(){
+const datum = new Date().toISOString().slice(0,10);
+
+// Összesítés frissítése – minden taghoz összeadva
+adatok.forEach(t => {
+if (!hetiOsszesites[t.nev]) {
+hetiOsszesites[t.nev] = {
+nev: t.nev,
+moso: t.moso,
+craft: t.craft,
+osszeg: t.osszeg,
+fizetett: t.fizetett,
+rablas: {...t.rablas}
+};
+} else {
+hetiOsszesites[t.nev].moso += t.moso;
+hetiOsszesites[t.nev].craft += t.craft;
+hetiOsszesites[t.nev].osszeg += t.osszeg;
+hetiOsszesites[t.nev].fizetett = hetiOsszesites[t.nev].fizetett || t.fizetett;
+Object.keys(t.rablas).forEach(k => {
+hetiOsszesites[t.nev].rablas[k] = hetiOsszesites[t.nev].rablas[k] || t.rablas[k];
+});
+}
+});
+
+// Naplózás mentése
+hetiLog.push({datum, tagok: JSON.parse(JSON.stringify(adatok))});
+localStorage.setItem("hetiLog", JSON.stringify(hetiLog));
+localStorage.setItem("hetiOsszesites", JSON.stringify(hetiOsszesites));
+
+alert("Rablás naplózva és heti összesítés frissítve: "+datum);
+
+// PDF frissítés, ha nyitva
+if (pdfWindow && !pdfWindow.closed) {
+pdfWindow.location.reload();
+}
+}
+
+// PDF gomb
+function openPDF(){
+localStorage.setItem("hetiLogPDF", JSON.stringify(hetiOsszesites));
+pdfWindow = window.open("pdf_kompakt.html","_blank");
+}
+
+// Segítség
+function toggleHelp(){
+const help = document.getElementById("helpContent");
+help.style.display = help.style.display==="none"?"block":"none";
+}
+
+// Heti nullázás
+function nullazHetiLog(){
+if(confirm("Biztosan törlöd a heti PDF logot?")) {
+localStorage.removeItem("hetiLog");
+localStorage.removeItem("hetiLogPDF");
+localStorage.removeItem("hetiOsszesites");
+hetiLog = [];
+hetiOsszesites = {};
+alert("A heti log törölve lett.");
+}
+}
 
 render();
-
 </script>
+
 </body>
 </html>
