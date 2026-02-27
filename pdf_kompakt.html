@@ -8,24 +8,23 @@
 body{font-family:Arial, sans-serif;background:white;color:black;padding:15px;margin:0;}
 h2{margin-bottom:10px;}
 table{border-collapse:collapse;width:100%;table-layout:fixed;}
-tr{page-break-inside: avoid;} /* ne vágja félbe a sorokat */
-th, td{border:1px solid #000;padding:4px;text-align:center;font-size:12px;white-space:nowrap;}
+tr{page-break-inside: avoid;}
+th, td{border:1px solid #000;padding:4px;text-align:center;white-space:nowrap;}
 th{background:#eee;}
 .summaryBox{border:1px solid #000;padding:10px;margin:10px 0;}
-ul{padding-left:20px;font-size:14px;}
 button{padding:6px 12px;margin:10px 0;border:none;border-radius:6px;cursor:pointer;font-weight:bold;}
 </style>
 </head>
 <body>
 
-<h2>💰 Heti Összesítés</h2>
+<h2>💰 Heti Összesítés – Kompakt</h2>
 
 <div class="summaryBox" id="summaryBox">
 <h3>📊 Statisztika</h3>
 <ul id="summaryUl"></ul>
 </div>
 
-<table>
+<table id="hetiTable">
 <thead>
 <tr>
 <th style="width:180px;">Tag</th>
@@ -33,22 +32,28 @@ button{padding:6px 12px;margin:10px 0;border:none;border-radius:6px;cursor:point
 <th>Mosó</th><th>Craft</th><th>Összeg</th><th>Kifizetve</th>
 </tr>
 </thead>
-<tbody id="hetiTable"></tbody>
+<tbody id="hetiTbody"></tbody>
 </table>
 
 <button onclick="let opt={margin:0.5, filename:'heti_osszesites.pdf', html2canvas:{scale:2}, jsPDF:{unit:'in', format:'letter', orientation:'landscape'}}; html2pdf().set(opt).from(document.body).save();">📄 PDF Letöltés</button>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <script>
-// Betöltés
 let hetiOsszesites = JSON.parse(localStorage.getItem("hetiLogPDF")) || {};
-let tbody = document.getElementById("hetiTable");
+let tbody = document.getElementById("hetiTbody");
 let summaryUl = document.getElementById("summaryUl");
 
 let totalOsszeg=0, totalMoso=0, totalCraft=0, totalRabl={paleto:0,allami:0,muzeum:0,bobcat:0};
 let tagCount = Object.keys(hetiOsszesites).length;
 
-// Táblázat feltöltése
+// Dinamikus betűméret
+let fontSize = 12;
+if(tagCount>20) fontSize = 11;
+if(tagCount>30) fontSize = 10;
+if(tagCount>40) fontSize = 9;
+if(tagCount>50) fontSize = 8;
+
+// Táblázat sorok
 for(let nev in hetiOsszesites){
   const t = hetiOsszesites[nev];
   totalOsszeg += t.osszeg;
@@ -59,18 +64,18 @@ for(let nev in hetiOsszesites){
   if(t.rablas.muzeum) totalRabl.muzeum++;
   if(t.rablas.bobcat) totalRabl.bobcat++;
 
-  let row = `<tr>
-<td>${t.nev}</td>
-<td>${t.rablas.paleto? "✅" : ""}</td>
-<td>${t.rablas.allami? "✅" : ""}</td>
-<td>${t.rablas.muzeum? "✅" : ""}</td>
-<td>${t.rablas.bobcat? "✅" : ""}</td>
+  let row = document.createElement("tr");
+  row.style.fontSize = fontSize + "px";
+  row.innerHTML = `<td>${t.nev}</td>
+<td>${t.rablas.paleto?"✅":""}</td>
+<td>${t.rablas.allami?"✅":""}</td>
+<td>${t.rablas.muzeum?"✅":""}</td>
+<td>${t.rablas.bobcat?"✅":""}</td>
 <td>${t.moso}</td>
 <td>${t.craft}</td>
 <td>${t.osszeg.toFixed(2)}</td>
-<td>${t.fizetett? "✅":"❌"}</td>
-</tr>`;
-  tbody.innerHTML += row;
+<td>${t.fizetett?"✅":"❌"}</td>`;
+  tbody.appendChild(row);
 }
 
 // Heti összesítő statisztika
