@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Heti Fizetés – Kompakt</title>
+<title>Heti Fizetés</title>
 
 <style>
 body{font-family:Arial;background:#0f172a;color:white;padding:15px;margin:0;}
@@ -21,9 +21,9 @@ input[type="number"], input[type="password"]{width:120px;padding:4px;border-radi
 </head>
 <body>
 
-<h2>💰 Heti Fizetés – Kompakt</h2>
+<h2>💰 Heti Fizetés</h2>
 
-<!-- ADMIN BELÉPÉS -->
+<!-- ADMIN -->
 <div style="margin-bottom:10px;">
   <input type="password" id="adminPass" placeholder="Admin jelszó">
   <button onclick="adminLogin()">🔐 Belépés</button>
@@ -40,7 +40,7 @@ input[type="number"], input[type="password"]{width:120px;padding:4px;border-radi
 </div>
 
 <div id="helpContent" class="helpContent">
-((Teljes összeg ÷ 2) ÷ Résztvevők száma) × 0.82 + Mosó*250 + Craft*250
+((Teljes összeg ÷ 2) ÷ Résztvevők száma) × 0.82 + Mosó×250 + Craft×250
 </div>
 
 <div style="margin-bottom:10px;">
@@ -67,7 +67,7 @@ Bobcat $ <input type="number" id="bobcat">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
-/* ================= FIREBASE ================= */
+/* FIREBASE */
 
 const firebaseConfig = {
   apiKey: "AIzaSyBgbixws2rf6VdqjQATVwZsKg0lgiqy0xI",
@@ -85,29 +85,50 @@ const db = getDatabase(app);
 const adatRef = ref(db, "aktualisAdatok");
 const hetiRef = ref(db, "hetiOsszesites");
 
-/* ================= ADMIN ================= */
+/* ADMIN */
 
-let admin = false;
-const ADMIN_JELSZO = "1234";
+let admin=false;
+const ADMIN_JELSZO="1234";
 
-window.adminLogin = function(){
-  const pass = document.getElementById("adminPass").value;
-  if(pass === ADMIN_JELSZO){
-    admin = true;
-    document.getElementById("adminStatus").innerHTML="✅ Admin mód";
-    document.getElementById("adminStatus").style.color="#4ade80";
-  } else {
-    alert("Hibás jelszó");
-  }
+document.addEventListener("DOMContentLoaded",()=>{
+if(localStorage.getItem("adminLogged")==="true"){
+admin=true;
+}
+updateAdminUI();
+});
+
+window.adminLogin=function(){
+const pass=document.getElementById("adminPass").value;
+if(pass===ADMIN_JELSZO){
+admin=true;
+localStorage.setItem("adminLogged","true");
+updateAdminUI();
+}else alert("Hibás jelszó");
 };
 
-window.adminLogout = function(){
-  admin = false;
-  document.getElementById("adminStatus").innerHTML="Nincs belépve";
-  document.getElementById("adminStatus").style.color="#f87171";
+window.adminLogout=function(){
+admin=false;
+localStorage.removeItem("adminLogged");
+updateAdminUI();
 };
 
-/* ================= TAGOK ================= */
+function updateAdminUI(){
+const status=document.getElementById("adminStatus");
+if(admin){
+status.innerHTML="✅ Admin mód";
+status.style.color="#4ade80";
+}else{
+status.innerHTML="Nincs belépve";
+status.style.color="#f87171";
+}
+}
+
+function adminCheck(){
+if(!admin){alert("Admin jogosultság szükséges!");return false;}
+return true;
+}
+
+/* TAGOK */
 
 const nevek=[
 "Ugaros Turul (Bobi)","Yukito Osano (Neon)","Emily Mitsuko (Biskota)",
@@ -122,9 +143,8 @@ const nevek=[
 
 let adatok=[];
 let hetiOsszesites={};
-let pdfWindow=null;
 
-/* ================= FIREBASE SYNC ================= */
+/* FIREBASE SYNC */
 
 onValue(adatRef,s=>{
 if(s.exists()) adatok=s.val();
@@ -144,22 +164,17 @@ if(s.exists()) hetiOsszesites=s.val();
 
 function mentes(){ set(adatRef,adatok); }
 
-/* ================= FUNKCIÓK ================= */
+/* FUNKCIÓK */
 
-function adminCheck(){
-if(!admin){ alert("Admin jogosultság szükséges!"); return false; }
-return true;
-}
-
-window.addMoso=i=>{ if(!adminCheck()) return; adatok[i].moso++;mentes();render();}
-window.minusMoso=i=>{ if(!adminCheck()) return; if(adatok[i].moso>0)adatok[i].moso--;mentes();render();}
-window.addCraft=i=>{ if(!adminCheck()) return; adatok[i].craft++;mentes();render();}
-window.minusCraft=i=>{ if(!adminCheck()) return; if(adatok[i].craft>0)adatok[i].craft--;mentes();render();}
-window.toggleRablas=(i,t)=>{ if(!adminCheck()) return; adatok[i].rablas[t]=!adatok[i].rablas[t];mentes();render();}
-window.toggleFizetett=i=>{ if(!adminCheck()) return; adatok[i].fizetett=!adatok[i].fizetett;mentes();render();}
+window.addMoso=i=>{if(!adminCheck())return;adatok[i].moso++;mentes();render();}
+window.minusMoso=i=>{if(!adminCheck())return;if(adatok[i].moso>0)adatok[i].moso--;mentes();render();}
+window.addCraft=i=>{if(!adminCheck())return;adatok[i].craft++;mentes();render();}
+window.minusCraft=i=>{if(!adminCheck())return;if(adatok[i].craft>0)adatok[i].craft--;mentes();render();}
+window.toggleRablas=(i,t)=>{if(!adminCheck())return;adatok[i].rablas[t]=!adatok[i].rablas[t];mentes();render();}
+window.toggleFizetett=i=>{if(!adminCheck())return;adatok[i].fizetett=!adatok[i].fizetett;mentes();render();}
 
 window.szamol=function(){
-if(!adminCheck()) return;
+if(!adminCheck())return;
 
 let paleto=+document.getElementById("paleto").value||0;
 let allami=+document.getElementById("allami").value||0;
@@ -173,10 +188,10 @@ const cB=adatok.filter(x=>x.rablas.bobcat).length||1;
 
 adatok.forEach(t=>{
 let resz=0;
-if(t.rablas.paleto) resz+=((paleto/2)/cP)*0.82;
-if(t.rablas.allami) resz+=((allami/2)/cA)*0.82;
-if(t.rablas.muzeum) resz+=((muzeum/2)/cM)*0.82;
-if(t.rablas.bobcat) resz+=((bobcat/2)/cB)*0.82;
+if(t.rablas.paleto)resz+=((paleto/2)/cP)*0.82;
+if(t.rablas.allami)resz+=((allami/2)/cA)*0.82;
+if(t.rablas.muzeum)resz+=((muzeum/2)/cM)*0.82;
+if(t.rablas.bobcat)resz+=((bobcat/2)/cB)*0.82;
 t.osszeg=resz+t.moso*250+t.craft*250;
 });
 mentes();
@@ -184,10 +199,9 @@ render();
 };
 
 window.mentNap=function(){
-if(!adminCheck()) return;
-
+if(!adminCheck())return;
 adatok.forEach(t=>{
-if(!hetiOsszesites[t.nev]) hetiOsszesites[t.nev]={...t};
+if(!hetiOsszesites[t.nev])hetiOsszesites[t.nev]={...t};
 else{
 hetiOsszesites[t.nev].moso+=t.moso;
 hetiOsszesites[t.nev].craft+=t.craft;
@@ -195,17 +209,17 @@ hetiOsszesites[t.nev].osszeg+=t.osszeg;
 }
 });
 set(hetiRef,hetiOsszesites);
-alert("Naplózva Firebase-be.");
+alert("Naplózva.");
 };
 
 window.openPDF=function(){
-localStorage.setItem("hetiLogPDF", JSON.stringify(hetiOsszesites));
-pdfWindow=window.open("pdf_kompakt.html","_blank");
+localStorage.setItem("hetiLogPDF",JSON.stringify(hetiOsszesites));
+window.open("pdf_kompakt.html","_blank");
 };
 
 window.nullazHetiLog=function(){
-if(!adminCheck()) return;
-if(confirm("Biztos törlöd a heti adatokat?")){
+if(!adminCheck())return;
+if(confirm("Biztos törlöd?")){
 hetiOsszesites={};
 set(hetiRef,{});
 alert("Heti log törölve.");
