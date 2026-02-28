@@ -29,6 +29,7 @@ button{
 table{
   border-collapse:collapse;
   width:100%;
+  margin-bottom:20px;
 }
 
 th, td{
@@ -41,6 +42,10 @@ th, td{
 th{
   background:#eee;
 }
+
+.top1{background:#ffe066;}
+.top2{background:#e5e7eb;}
+.top3{background:#fcd34d;}
 </style>
 </head>
 <body>
@@ -66,6 +71,21 @@ th{
 <tbody></tbody>
 </table>
 
+<h2>🏆 Top Keresők</h2>
+
+<table id="topTable">
+<thead>
+<tr>
+<th>Helyezés</th>
+<th>Tag</th>
+<th>Összeg</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+
+<h3 id="totalSummary"></h3>
+
 <!-- Firebase -->
 <script type="module">
 
@@ -87,26 +107,39 @@ const db = getDatabase(app);
 const hetiRef = ref(db,"hetiOsszesites");
 
 const tbody = document.querySelector("#hetiTable tbody");
+const topBody = document.querySelector("#topTable tbody");
+const totalSummary = document.getElementById("totalSummary");
 
 onValue(hetiRef, snapshot => {
 
   tbody.innerHTML = "";
+  topBody.innerHTML = "";
+  totalSummary.innerHTML = "";
 
   if(snapshot.exists()){
 
     const data = snapshot.val();
+    let lista = [];
+    let teljesOsszeg = 0;
 
     for(let nev in data){
 
       const t = data[nev];
 
-      // 🔥 BOOLEAN → SZÁM KONVERTÁLÁS
-      const paleto  = typeof t.rablas?.paleto === "number" ? t.rablas.paleto : (t.rablas?.paleto ? 1 : 0);
-      const allami  = typeof t.rablas?.allami === "number" ? t.rablas.allami : (t.rablas?.allami ? 1 : 0);
-      const muzeum  = typeof t.rablas?.muzeum === "number" ? t.rablas.muzeum : (t.rablas?.muzeum ? 1 : 0);
-      const bobcat  = typeof t.rablas?.bobcat === "number" ? t.rablas.bobcat : (t.rablas?.bobcat ? 1 : 0);
+      const paleto  = t.rablas?.paleto || 0;
+      const allami  = t.rablas?.allami || 0;
+      const muzeum  = t.rablas?.muzeum || 0;
+      const bobcat  = t.rablas?.bobcat || 0;
 
-      let row = `
+      const osszeg = Number(t.osszeg || 0);
+      teljesOsszeg += osszeg;
+
+      lista.push({
+        nev: t.nev,
+        osszeg: osszeg
+      });
+
+      tbody.innerHTML += `
       <tr>
         <td>${t.nev}</td>
         <td>${paleto}</td>
@@ -115,16 +148,36 @@ onValue(hetiRef, snapshot => {
         <td>${bobcat}</td>
         <td>${t.moso || 0}</td>
         <td>${t.craft || 0}</td>
-        <td>${Number(t.osszeg || 0).toFixed(2)}$</td>
+        <td>${osszeg.toFixed(2)}$</td>
         <td>${t.fizetett ? "✔" : "X"}</td>
       </tr>
       `;
-
-      tbody.innerHTML += row;
     }
 
-  }
+    // 🔥 TOP LISTA
+    lista.sort((a,b)=>b.osszeg-a.osszeg);
 
+    lista.forEach((t,index)=>{
+
+      let medal = "";
+      let rowClass = "";
+
+      if(index===0){ medal="🥇"; rowClass="top1"; }
+      else if(index===1){ medal="🥈"; rowClass="top2"; }
+      else if(index===2){ medal="🥉"; rowClass="top3"; }
+
+      topBody.innerHTML += `
+      <tr class="${rowClass}">
+        <td>${medal || (index+1)}</td>
+        <td>${t.nev}</td>
+        <td>${t.osszeg.toFixed(2)}$</td>
+      </tr>
+      `;
+    });
+
+    totalSummary.innerHTML =
+      "💰 Heti teljes kiosztás: <b>" + teljesOsszeg.toFixed(2) + "$</b>";
+  }
 });
 
 </script>
@@ -154,14 +207,20 @@ function generatePDF(){
     html:'#hetiTable',
     startY:45,
     theme:'grid',
-    styles:{
-      fontSize:9,
-      cellPadding:2
-    },
-    margin:{
-      left:20,
-      right:20
-    }
+    styles:{ fontSize:9, cellPadding:2 },
+    margin:{ left:20, right:20 }
+  });
+
+  doc.addPage();
+
+  doc.text("Top Keresők", pageWidth/2, 30, {align:'center'});
+
+  doc.autoTable({
+    html:'#topTable',
+    startY:45,
+    theme:'grid',
+    styles:{ fontSize:11, cellPadding:4 },
+    margin:{ left:120, right:120 }
   });
 
   doc.save("heti_osszesites.pdf");
