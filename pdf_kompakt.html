@@ -6,43 +6,12 @@
 <title>Heti Összesítés</title>
 
 <style>
-body{
-  font-family: Arial, sans-serif;
-  margin:0;
-  padding:10px;
-}
-
-h2{
-  text-align:center;
-  margin:5px 0;
-}
-
-button{
-  padding:8px 14px;
-  border:none;
-  border-radius:6px;
-  cursor:pointer;
-  font-weight:bold;
-  margin-bottom:10px;
-}
-
-table{
-  border-collapse:collapse;
-  width:100%;
-  margin-bottom:20px;
-}
-
-th, td{
-  border:1px solid #000;
-  padding:4px;
-  text-align:center;
-  font-size:13px;
-}
-
-th{
-  background:#eee;
-}
-
+body{font-family:Arial;margin:0;padding:10px;}
+h2{text-align:center;margin:5px 0;}
+button{padding:8px 14px;border:none;border-radius:6px;cursor:pointer;font-weight:bold;margin-bottom:10px;}
+table{border-collapse:collapse;width:100%;margin-bottom:20px;}
+th, td{border:1px solid #000;padding:4px;text-align:center;font-size:13px;}
+th{background:#eee;}
 .top1{background:#ffe066;}
 .top2{background:#e5e7eb;}
 .top3{background:#fcd34d;}
@@ -58,10 +27,6 @@ th{
 <thead>
 <tr>
 <th>Tag</th>
-<th>Paleto db</th>
-<th>Állami db</th>
-<th>Múzeum db</th>
-<th>Bobcat db</th>
 <th>Mosó</th>
 <th>Craft</th>
 <th>Összeg</th>
@@ -86,7 +51,6 @@ th{
 
 <h3 id="totalSummary"></h3>
 
-<!-- Firebase -->
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -112,77 +76,58 @@ const totalSummary = document.getElementById("totalSummary");
 
 onValue(hetiRef, snapshot => {
 
-  tbody.innerHTML = "";
-  topBody.innerHTML = "";
-  totalSummary.innerHTML = "";
+  tbody.innerHTML="";
+  topBody.innerHTML="";
+  totalSummary.innerHTML="";
 
   if(snapshot.exists()){
 
-    const data = snapshot.val();
-    let lista = [];
-    let teljesOsszeg = 0;
+    const data=snapshot.val();
+    let lista=[];
+    let teljesOsszeg=0;
 
     for(let nev in data){
 
-      const t = data[nev];
+      const t=data[nev];
+      const osszeg=Number(t.osszeg||0);
+      teljesOsszeg+=osszeg;
 
-      const paleto  = t.rablas?.paleto || 0;
-      const allami  = t.rablas?.allami || 0;
-      const muzeum  = t.rablas?.muzeum || 0;
-      const bobcat  = t.rablas?.bobcat || 0;
+      lista.push({nev:t.nev,osszeg:osszeg});
 
-      const osszeg = Number(t.osszeg || 0);
-      teljesOsszeg += osszeg;
-
-      lista.push({
-        nev: t.nev,
-        osszeg: osszeg
-      });
-
-      tbody.innerHTML += `
+      tbody.innerHTML+=`
       <tr>
         <td>${t.nev}</td>
-        <td>${paleto}</td>
-        <td>${allami}</td>
-        <td>${muzeum}</td>
-        <td>${bobcat}</td>
-        <td>${t.moso || 0}</td>
-        <td>${t.craft || 0}</td>
+        <td>${t.moso||0}</td>
+        <td>${t.craft||0}</td>
         <td>${osszeg.toFixed(2)}$</td>
-        <td>${t.fizetett ? "✔" : "X"}</td>
-      </tr>
-      `;
+        <td>${t.fizetett?"✔":"X"}</td>
+      </tr>`;
     }
 
-    // 🔥 TOP LISTA
     lista.sort((a,b)=>b.osszeg-a.osszeg);
 
     lista.forEach((t,index)=>{
-
-      let medal = "";
-      let rowClass = "";
-
+      let medal="";
+      let rowClass="";
       if(index===0){ medal="🥇"; rowClass="top1"; }
       else if(index===1){ medal="🥈"; rowClass="top2"; }
       else if(index===2){ medal="🥉"; rowClass="top3"; }
 
-      topBody.innerHTML += `
+      topBody.innerHTML+=`
       <tr class="${rowClass}">
         <td>${medal || (index+1)}</td>
         <td>${t.nev}</td>
         <td>${t.osszeg.toFixed(2)}$</td>
-      </tr>
-      `;
+      </tr>`;
     });
 
-    totalSummary.innerHTML =
-      "💰 Heti teljes kiosztás: <b>" + teljesOsszeg.toFixed(2) + "$</b>";
+    totalSummary.innerHTML=
+      "💰 Heti teljes kiosztás: <b>"+teljesOsszeg.toFixed(2)+"$</b>";
   }
 });
 
 </script>
 
-<!-- PDF -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 
@@ -191,39 +136,28 @@ onValue(hetiRef, snapshot => {
 function generatePDF(){
 
   const { jsPDF } = window.jspdf;
-
-  const doc = new jsPDF({
-    orientation:'landscape',
-    unit:'pt',
-    format:'a4'
-  });
-
+  const doc = new jsPDF({orientation:'landscape',unit:'pt',format:'a4'});
   const pageWidth = doc.internal.pageSize.getWidth();
 
   doc.setFontSize(14);
   doc.text("Heti Összesítés", pageWidth/2, 30, {align:'center'});
 
-  const table = document.querySelectorAll("#hetiTable tbody tr");
-
-  let bodyData = [];
+  const table=document.querySelectorAll("#hetiTable tbody tr");
+  let bodyData=[];
 
   table.forEach(row=>{
-    const cells = row.querySelectorAll("td");
+    const cells=row.querySelectorAll("td");
     bodyData.push([
       cells[0].textContent,
       cells[1].textContent,
       cells[2].textContent,
       cells[3].textContent,
-      cells[4].textContent,
-      cells[5].textContent,
-      cells[6].textContent,
-      cells[7].textContent,
-      cells[8].textContent
+      cells[4].textContent
     ]);
   });
 
   doc.autoTable({
-    head:[["Tag","Paleto","Állami","Múzeum","Bobcat","Mosó","Craft","Összeg","Kifizetve"]],
+    head:[["Tag","Mosó","Craft","Összeg","Kifizetve"]],
     body:bodyData,
     startY:45,
     theme:'grid',
