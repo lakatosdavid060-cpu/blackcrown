@@ -11,17 +11,7 @@ body{
     color:white;
     padding:20px;
 }
-
-h1{
-    text-align:center;
-    color:#00ff88;
-}
-
-.section-title{
-    margin-top:25px;
-    font-size:20px;
-}
-
+h1{text-align:center;color:#00ff88;}
 .container{
     max-width:900px;
     margin:auto;
@@ -29,7 +19,6 @@ h1{
     padding:20px;
     border-radius:12px;
 }
-
 select,input,button{
     width:100%;
     padding:10px;
@@ -37,18 +26,12 @@ select,input,button{
     border-radius:6px;
     border:none;
 }
-
-button{
-    background:#00aa55;
-    color:white;
-    cursor:pointer;
-    font-weight:bold;
-}
-
-button:hover{
-    opacity:0.9;
-}
-
+button{cursor:pointer;font-weight:bold;}
+.add{background:#00aa55;color:white;}
+.join{background:#007bff;color:white;margin-top:5px;}
+.leave{background:#666;color:white;margin-top:5px;}
+.activate{background:orange;margin-top:5px;}
+.delete{background:darkred;margin-top:5px;color:white;}
 .card{
     background:#2b2b2b;
     padding:12px;
@@ -56,20 +39,18 @@ button:hover{
     border-radius:8px;
     border-left:5px solid #00ff88;
 }
-
 .active-card{
     background:#3b0000;
     border-left:5px solid red;
 }
-
-.delete{
-    background:darkred;
+.members{
+    font-size:14px;
     margin-top:6px;
+    color:#ccc;
 }
-
-.activate{
-    background:orange;
-    margin-top:6px;
+.section-title{
+    margin-top:25px;
+    font-size:20px;
 }
 </style>
 </head>
@@ -80,7 +61,7 @@ button:hover{
 
 <div class="container">
 
-<select id="name">
+<select id="currentUser">
 <option>Ugaros Turul (Bobi)</option>
 <option>Yukito Osano (Neon)</option>
 <option>Emily Mitsuko (Biskota)</option>
@@ -115,20 +96,19 @@ button:hover{
 
 <input type="time" id="time">
 
-<button onclick="addPlan()">Hozzáadás</button>
+<button class="add" onclick="createRoom()">Szoba létrehozása</button>
 
-<div class="section-title">🔴 MOST AKTÍV RABLÁS</div>
-<div id="activePlans"></div>
+<div class="section-title">🔴 AKTÍV SZOBA</div>
+<div id="activeRooms"></div>
 
 <div class="section-title">📋 TERVEZETT</div>
-<div id="plans"></div>
+<div id="rooms"></div>
 
 </div>
 
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
-
 import {
   getFirestore,
   collection,
@@ -137,9 +117,10 @@ import {
   updateDoc,
   deleteDoc,
   doc,
+  arrayUnion,
+  arrayRemove,
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
-
 
 const firebaseConfig = {
   apiKey: "AIzaSyBgbixws2rf6VdqjQATVwZsKg0lgiqy0xI",
@@ -147,56 +128,81 @@ const firebaseConfig = {
   projectId: "ordog-fizetes",
   storageBucket: "ordog-fizetes.firebasestorage.app",
   messagingSenderId: "672089263660",
-  appId: "1:672089263660:web:58091123de7a1b08464b89",
-  measurementId: "G-7V5S02EDKP"
+  appId: "1:672089263660:web:58091123de7a1b08464b89"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-
-// ➕ Új rablás hozzáadása
-window.addPlan = async () => {
-
-  const name = document.getElementById("name").value;
+window.createRoom = async () => {
+  const user = document.getElementById("currentUser").value;
   const location = document.getElementById("location").value;
   const time = document.getElementById("time").value;
 
-  await addDoc(collection(db,"plans"),{
-      name,
+  await addDoc(collection(db,"rooms"),{
+      leader:user,
       location,
       time,
       active:false,
+      members:[user],
       created: serverTimestamp()
   });
-
 };
 
+onSnapshot(collection(db,"rooms"), snapshot => {
 
-// 🔴 Élő frissítés
-onSnapshot(collection(db,"plans"), snapshot => {
-
-  const activeContainer=document.getElementById("activePlans");
-  const container=document.getElementById("plans");
+  const activeContainer=document.getElementById("activeRooms");
+  const container=document.getElementById("rooms");
 
   activeContainer.innerHTML="";
   container.innerHTML="";
 
   snapshot.forEach(item=>{
     const data=item.data();
-    const div=document.createElement("div");
+    const id=item.id;
+    const currentUser=document.getElementById("currentUser").value;
 
+    const div=document.createElement("div");
     div.className=data.active ? "card active-card" : "card";
 
     div.innerHTML=`
-      <strong>${data.name}</strong><br>
+      <strong>Vezető: ${data.leader}</strong><br>
       📍 ${data.location}<br>
       🕒 ${data.time || "nincs idő"}<br>
-      ${!data.active ? `<button class="activate"
-      onclick="activatePlan('${item.id}')">Aktívra tesz</button>` : ""}
-      <button class="delete"
-      onclick="deletePlan('${item.id}')">Törlés</button>
+      <div class="members">👥 ${data.members.join(", ")}</div>
     `;
+
+    if(!data.members.includes(currentUser)){
+      const joinBtn=document.createElement("button");
+      joinBtn.className="join";
+      joinBtn.innerText="Csatlakozom";
+      joinBtn.onclick=()=>joinRoom(id,currentUser);
+      div.appendChild(joinBtn);
+    }
+
+    if(data.members.includes(currentUser) && currentUser!==data.leader){
+      const leaveBtn=document.createElement("button");
+      leaveBtn.className="leave";
+      leaveBtn.innerText="Kilépés";
+      leaveBtn.onclick=()=>leaveRoom(id,currentUser);
+      div.appendChild(leaveBtn);
+    }
+
+    if(currentUser===data.leader && !data.active){
+      const actBtn=document.createElement("button");
+      actBtn.className="activate";
+      actBtn.innerText="Aktívra tesz";
+      actBtn.onclick=()=>activateRoom(id);
+      div.appendChild(actBtn);
+    }
+
+    if(currentUser===data.leader){
+      const delBtn=document.createElement("button");
+      delBtn.className="delete";
+      delBtn.innerText="Törlés";
+      delBtn.onclick=()=>deleteRoom(id);
+      div.appendChild(delBtn);
+    }
 
     if(data.active){
       activeContainer.appendChild(div);
@@ -208,18 +214,26 @@ onSnapshot(collection(db,"plans"), snapshot => {
 
 });
 
+window.joinRoom = async(id,user)=>{
+  await updateDoc(doc(db,"rooms",id),{
+    members: arrayUnion(user)
+  });
+};
 
-// 🔥 Aktívra tesz
-window.activatePlan = async(id)=>{
-  await updateDoc(doc(db,"plans",id),{
+window.leaveRoom = async(id,user)=>{
+  await updateDoc(doc(db,"rooms",id),{
+    members: arrayRemove(user)
+  });
+};
+
+window.activateRoom = async(id)=>{
+  await updateDoc(doc(db,"rooms",id),{
     active:true
   });
 };
 
-
-// ❌ Törlés
-window.deletePlan = async(id)=>{
-  await deleteDoc(doc(db,"plans",id));
+window.deleteRoom = async(id)=>{
+  await deleteDoc(doc(db,"rooms",id));
 };
 
 </script>
