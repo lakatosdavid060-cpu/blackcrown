@@ -1,1 +1,251 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Heti Fizetés</title>
 
+<style>
+body{font-family:Arial;background:#0f172a;color:white;padding:15px;margin:0;}
+h2{color:#38bdf8;}
+button{padding:4px 8px;margin:2px;border:none;border-radius:6px;cursor:pointer;font-weight:bold;}
+.green{background:#16a34a;color:white;}
+.red{background:#dc2626;color:white;}
+table{border-collapse:collapse;width:100%;color:white;margin-top:10px;}
+th, td{border:1px solid #fff;padding:4px;text-align:center;font-size:14px;}
+input{width:140px;padding:4px;border-radius:6px;border:none;}
+.icon-panel{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;}
+.icon-panel button{flex:1;padding:6px;}
+</style>
+</head>
+<body>
+
+<div id="loginModal" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);display:flex;align-items:center;justify-content:center;z-index:9999;">
+  <div style="background:#1e293b;padding:25px;border-radius:10px;text-align:center;width:300px;">
+    <h3>🔐 Admin Bejelentkezés</h3>
+    <input type="password" id="modalPass" placeholder="Jelszó">
+    <button onclick="modalLogin()" class="green" style="width:100%;margin-top:10px;">Belépés</button>
+  </div>
+</div>
+
+<h2>💰 Heti Fizetés</h2>
+<button onclick="logout()" class="red" style="margin-bottom:10px;">🚪 Kilépés</button>
+
+<div style="margin-bottom:10px;">
+<input type="text" id="ujTagNev" placeholder="Új tag neve">
+<button onclick="ujTag()" class="green">➕ Hozzáadás</button>
+</div>
+
+<div class="icon-panel">
+<button onclick="szamol()">🧮 Számol</button>
+<button onclick="mentNap()">💾 Naplóz</button>
+<button onclick="openPDF()">📄 PDF</button>
+<button onclick="nullazHeti()">♻️ Heti nullázás</button>
+<button onclick="nullazFo()">🧹 Főmenü nullázás</button>
+</div>
+
+<div style="margin-bottom:10px;">
+Rablás $ <input type="number" id="rablas">
+</div>
+
+<div id="summary"></div>
+
+<table>
+<thead>
+<tr>
+<th>Tag</th>
+<th>Rablás</th>
+<th>Mosó</th>
+<th>Craft</th>
+<th>Összeg</th>
+<th>Kifizetve</th>
+<th>Törlés</th>
+</tr>
+</thead>
+<tbody id="tabla"></tbody>
+</table>
+
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBgbixws2rf6VdqjQATVwZsKg0lgiqy0xI",
+  authDomain: "ordog-fizetes.firebaseapp.com",
+  databaseURL: "https://ordog-fizetes-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "ordog-fizetes",
+  storageBucket: "ordog-fizetes.firebasestorage.app",
+  messagingSenderId: "672089263660",
+  appId: "1:672089263660:web:70086de26402ceb3464b89"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const adatRef = ref(db, "aktualisAdatok");
+const hetiRef = ref(db, "hetiOsszesites");
+
+const ADMIN_JELSZO="1234";
+let admin=false;
+let adatok=[];
+let heti={};
+
+const alapNevek=[
+"Ugaros Turul (Bobi)","Yukito Osano (Neon)","Emily Mitsuko (Biskota)",
+"Vladimir Iwanow (Majom)","Todor Zsombor (Recsi)","Daryl Dixon (Oroszlán)",
+"Julian Alvarez (Szecska)","Adam Taylor (Young)","Nemeth Andras (arpi)",
+"Enrico Martello (Apu)","Ádám Benjamin (Cowboy)","Mateo Tavares Valesco (Kolbi)",
+"Carl Jesus (Faszos)","Noah Knight (Roberts)","David Smith (Szike)",
+"Nico Alvarez (Milka)","Miguel Alvarez (Raszta)","Wells Jordan (Stone)",
+"Williams Jackson (Easy)","Jackson West (Kalap)","David Jackson (Kabát)",
+"Henry Parker (Pufi)"
+];
+
+document.addEventListener("DOMContentLoaded",()=>{
+if(localStorage.getItem("adminLogged")==="true"){
+admin=true;
+document.getElementById("loginModal").style.display="none";
+}
+});
+
+window.modalLogin=function(){
+if(document.getElementById("modalPass").value===ADMIN_JELSZO){
+admin=true;
+localStorage.setItem("adminLogged","true");
+document.getElementById("loginModal").style.display="none";
+}else alert("Hibás jelszó!");
+};
+
+window.logout=function(){
+localStorage.removeItem("adminLogged");
+location.reload();
+};
+
+function adminCheck(){
+if(!admin){alert("Admin kell!");return false;}
+return true;
+}
+
+onValue(adatRef,s=>{
+if(s.exists()){
+adatok=s.val();
+}else{
+adatok=alapNevek.map(n=>({
+nev:n,moso:0,craft:0,rablas:false,osszeg:0,fizetett:false
+}));
+set(adatRef,adatok);
+}
+render();
+});
+
+onValue(hetiRef,s=>{
+if(s.exists()) heti=s.val();
+});
+
+function save(){ set(adatRef,adatok); }
+
+window.openPDF=function(){
+localStorage.setItem("hetiLogPDF",JSON.stringify(heti));
+window.open("pdf_kompakt.html","_blank");
+};
+
+window.szamol=function(){
+if(!adminCheck())return;
+let osszeg=+document.getElementById("rablas").value||0;
+const reszt=adatok.filter(t=>t.rablas).length||1;
+
+adatok.forEach(t=>{
+let resz=0;
+if(t.rablas) resz=((osszeg/2)/reszt)*0.82;
+t.osszeg=resz+(t.moso*250)+(t.craft*250);
+});
+save();render();
+};
+
+window.mentNap=function(){
+if(!adminCheck())return;
+adatok.forEach(t=>{
+if(!heti[t.nev]){
+heti[t.nev]={nev:t.nev,moso:t.moso,craft:t.craft,osszeg:t.osszeg,fizetett:t.fizetett};
+}else{
+heti[t.nev].moso+=t.moso;
+heti[t.nev].craft+=t.craft;
+heti[t.nev].osszeg+=t.osszeg;
+heti[t.nev].fizetett=t.fizetett;
+}
+});
+set(hetiRef,heti);
+alert("Naplózva.");
+};
+
+window.nullazHeti=function(){
+if(!adminCheck())return;
+if(confirm("Heti törlés?")){
+heti={};
+set(hetiRef,{});
+alert("Törölve.");
+}
+};
+
+window.nullazFo=function(){
+if(!adminCheck())return;
+if(confirm("Főmenü nullázás?")){
+adatok.forEach(t=>{
+t.moso=0;t.craft=0;t.rablas=false;t.osszeg=0;t.fizetett=false;
+});
+save();render();
+}
+};
+
+window.ujTag=function(){
+if(!adminCheck())return;
+const nev=document.getElementById("ujTagNev").value.trim();
+if(!nev)return alert("Adj meg nevet!");
+adatok.push({nev,moso:0,craft:0,rablas:false,osszeg:0,fizetett:false});
+save();render();
+document.getElementById("ujTagNev").value="";
+};
+
+window.torolTag=i=>{
+if(!adminCheck())return;
+if(confirm("Biztos törlöd?")){
+adatok.splice(i,1);
+save();render();
+}
+};
+
+window.toggleRablas=i=>{
+if(!adminCheck())return;
+adatok[i].rablas=!adatok[i].rablas;
+save();render();
+};
+
+window.addMoso=i=>{if(!adminCheck())return;adatok[i].moso++;save();render();}
+window.minusMoso=i=>{if(!adminCheck())return;if(adatok[i].moso>0)adatok[i].moso--;save();render();}
+window.addCraft=i=>{if(!adminCheck())return;adatok[i].craft++;save();render();}
+window.minusCraft=i=>{if(!adminCheck())return;if(adatok[i].craft>0)adatok[i].craft--;save();render();}
+window.toggleFiz=i=>{if(!adminCheck())return;adatok[i].fizetett=!adatok[i].fizetett;save();render();}
+
+function render(){
+let total=adatok.reduce((s,t)=>s+t.osszeg,0);
+document.getElementById("summary").innerHTML="💵 Összes kiosztva: "+total.toFixed(2)+" $";
+
+let html="";
+adatok.forEach((t,i)=>{
+html+=`
+<tr>
+<td>${t.nev}</td>
+<td><input type="checkbox" ${t.rablas?'checked':''} onclick="toggleRablas(${i})"></td>
+<td><button onclick="minusMoso(${i})">−</button><button onclick="addMoso(${i})">+250</button> ${t.moso}</td>
+<td><button onclick="minusCraft(${i})">−</button><button onclick="addCraft(${i})">+250</button> ${t.craft}</td>
+<td>${t.osszeg.toFixed(2)}</td>
+<td><button class="${t.fizetett?'green':'red'}" onclick="toggleFiz(${i})">${t.fizetett?'✅':'❌'}</button></td>
+<td><button class="red" onclick="torolTag(${i})">❌</button></td>
+</tr>`;
+});
+document.getElementById("tabla").innerHTML=html;
+}
+
+</script>
+</body>
+</html>
