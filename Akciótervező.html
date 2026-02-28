@@ -2,34 +2,98 @@
 <html lang="hu">
 <head>
 <meta charset="UTF-8">
-<title>GTA RP Akció Terem</title>
+<title>GTA RP Rablás Panel</title>
 
 <style>
-body{font-family:Arial;background:#0e0e0e;color:white;padding:20px;}
-h1{text-align:center;color:#00ff88;}
-.container{max-width:900px;margin:auto;background:#1c1c1c;padding:20px;border-radius:12px;}
-select,input,button{width:100%;padding:10px;margin:6px 0;border-radius:6px;border:none;}
-button{cursor:pointer;font-weight:bold;}
-.add{background:#00aa55;color:white;}
-.join{background:#007bff;color:white;margin-top:5px;}
-.leave{background:#666;color:white;margin-top:5px;}
-.activate{background:orange;margin-top:5px;}
-.delete{background:darkred;margin-top:5px;color:white;}
-.card{background:#2b2b2b;padding:12px;margin-top:10px;border-radius:8px;border-left:5px solid #00ff88;}
-.active-card{background:#3b0000;border-left:5px solid red;}
-.members{font-size:14px;margin-top:6px;color:#ccc;}
-.section-title{margin-top:25px;font-size:20px;}
+body{
+  font-family:Arial;
+  background:#0e0e0e;
+  color:white;
+  padding:20px;
+}
+h1{
+  text-align:center;
+  color:#00ff88;
+}
+.container{
+  max-width:1100px;
+  margin:auto;
+  background:#1c1c1c;
+  padding:20px;
+  border-radius:12px;
+}
+select,input,button{
+  width:100%;
+  padding:10px;
+  margin:6px 0;
+  border-radius:6px;
+  border:none;
+}
+button{
+  cursor:pointer;
+  font-weight:bold;
+}
+.admin-btn{background:#ff4444;color:white;}
+.join{background:#007bff;color:white;}
+.leave{background:#666;color:white;}
+.activate{background:orange;}
+.card{
+  background:#2b2b2b;
+  padding:12px;
+  margin-top:10px;
+  border-radius:8px;
+  border-left:5px solid #00ff88;
+}
+.active-card{
+  border-left:5px solid red;
+}
+.members{
+  font-size:14px;
+  margin-top:6px;
+  color:#ccc;
+}
+.hidden{display:none;}
+.section{margin-top:25px;}
+.member-item{
+  background:#2b2b2b;
+  padding:6px;
+  margin:4px 0;
+  border-radius:6px;
+}
+hr{margin:20px 0;border:1px solid #333;}
 </style>
 </head>
 
 <body>
 
-<h1>💰 GTA RP Akció Terem</h1>
+<h1>💰 GTA RP Rablás Rendszer</h1>
 
 <div class="container">
 
+<button onclick="adminLogin()">👑 Admin</button>
+
+<div id="adminPanel" class="hidden">
+
+<h3>ADMIN PANEL</h3>
+
+<input type="text" id="newMemberName" placeholder="Új tag neve">
+<button class="admin-btn" onclick="addMember()">Tag hozzáadása</button>
+
+<h4>Tag törlés</h4>
+<select id="deleteMemberSelect"></select>
+<button class="admin-btn" onclick="deleteMember()">Tag törlése</button>
+
+<h4>📋 Jelenlegi tagok</h4>
+<div id="memberList"></div>
+
+</div>
+
+<hr>
+
+<h3>👤 Aktuális játékos</h3>
 <select id="currentUser"></select>
 
+<h3>🏦 Új rablás létrehozása</h3>
 <select id="location">
 <option>Állami Bank</option>
 <option>Paleto Bank</option>
@@ -40,14 +104,17 @@ button{cursor:pointer;font-weight:bold;}
 </select>
 
 <input type="time" id="time">
+<button onclick="createRoom()">Szoba létrehozása</button>
 
-<button class="add" onclick="createRoom()">Szoba létrehozása</button>
-
-<div class="section-title">🔴 AKTÍV SZOBA</div>
+<div class="section">
+<h3>🔴 Aktív rablások</h3>
 <div id="activeRooms"></div>
+</div>
 
-<div class="section-title">📋 TERVEZETT</div>
+<div class="section">
+<h3>📋 Tervezett rablások</h3>
 <div id="rooms"></div>
+</div>
 
 </div>
 
@@ -63,10 +130,10 @@ import {
   deleteDoc,
   doc,
   arrayUnion,
-  arrayRemove,
-  serverTimestamp
+  arrayRemove
 } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
 
+/* 🔥 A TE FIREBASE PROJEKTED */
 const firebaseConfig = {
   apiKey: "AIzaSyBgbixws2rf6VdqjQATVwZsKg0lgiqy0xI",
   authDomain: "ordog-fizetes.firebaseapp.com",
@@ -76,61 +143,99 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-const names = [
-"Ugaros Turul (Bobi)","Yukito Osano (Neon)","Emily Mitsuko (Biskota)",
-"Vladimir Iwanow (Majom)","Todor Zsombor (Recsi)","Daryl Dixon (Oroszlán)",
-"Julian Alvarez (Szecska)","Adam Taylor (Young)","Nemeth Andras (arpi)",
-"Enrico Martello (Apu)","Ádám Benjamin (Cowboy)","Mateo Tavares Valesco (Kolbi)",
-"Carl Jesus (Faszos)","Noah Knight (Roberts)","David Smith (Szike)",
-"Nico Alvarez (Milka)","Miguel Alvarez (Raszta)","Wells Jordan (Stone)",
-"Williams Jackson (Easy)","Jackson West (Kalap)","David Jackson (Kabát)"
-];
+const userSelect = document.getElementById("currentUser");
+const deleteMemberSelect = document.getElementById("deleteMemberSelect");
 
-const userSelect=document.getElementById("currentUser");
-names.forEach(n=>{
-  const opt=document.createElement("option");
-  opt.value=n;
-  opt.innerText=n;
-  userSelect.appendChild(opt);
+let isAdmin = false;
+
+/* ================= ADMIN ================= */
+
+window.adminLogin = ()=>{
+  const pass = prompt("Admin jelszó:");
+  if(pass === "rpadmin123"){
+    isAdmin = true;
+    document.getElementById("adminPanel").classList.remove("hidden");
+    alert("Admin mód aktiválva");
+  }else{
+    alert("Hibás jelszó");
+  }
+};
+
+/* ================= TAGOK ================= */
+
+onSnapshot(collection(db,"members"), snapshot=>{
+  userSelect.innerHTML = "";
+  deleteMemberSelect.innerHTML = "";
+  document.getElementById("memberList").innerHTML = "";
+
+  snapshot.forEach(docSnap=>{
+    const name = docSnap.data().name;
+
+    const opt = document.createElement("option");
+    opt.value = name;
+    opt.innerText = name;
+    userSelect.appendChild(opt);
+
+    const opt2 = document.createElement("option");
+    opt2.value = docSnap.id;
+    opt2.innerText = name;
+    deleteMemberSelect.appendChild(opt2);
+
+    const div = document.createElement("div");
+    div.className="member-item";
+    div.innerText=name;
+    document.getElementById("memberList").appendChild(div);
+  });
 });
 
-let allRooms=[];
+window.addMember = async ()=>{
+  if(!isAdmin) return alert("Nem vagy admin!");
+  const name = document.getElementById("newMemberName").value;
+  if(!name) return alert("Adj meg nevet!");
+  await addDoc(collection(db,"members"),{ name });
+  document.getElementById("newMemberName").value="";
+};
 
-userSelect.addEventListener("change", renderRooms);
+window.deleteMember = async ()=>{
+  if(!isAdmin) return alert("Nem vagy admin!");
+  const id = deleteMemberSelect.value;
+  await deleteDoc(doc(db,"members",id));
+};
 
-window.createRoom = async () => {
-  const user = userSelect.value;
+/* ================= SZOBÁK ================= */
+
+window.createRoom = async ()=>{
+  const leader = userSelect.value;
   const location = document.getElementById("location").value;
   const time = document.getElementById("time").value;
 
+  if(!leader) return alert("Válassz játékost!");
+
   await addDoc(collection(db,"rooms"),{
-      leader:user,
-      location,
-      time,
-      active:false,
-      members:[user],
-      created: serverTimestamp()
+    leader,
+    location,
+    time,
+    members:[leader],
+    active:false
   });
 };
 
-onSnapshot(collection(db,"rooms"), snapshot => {
-  allRooms=[];
-  snapshot.forEach(doc=>allRooms.push({id:doc.id,...doc.data()}));
-  renderRooms();
-});
+onSnapshot(collection(db,"rooms"), snapshot=>{
+  const activeContainer = document.getElementById("activeRooms");
+  const container = document.getElementById("rooms");
 
-function renderRooms(){
-  const activeContainer=document.getElementById("activeRooms");
-  const container=document.getElementById("rooms");
   activeContainer.innerHTML="";
   container.innerHTML="";
-  const currentUser=userSelect.value;
 
-  allRooms.forEach(room=>{
-    const div=document.createElement("div");
-    div.className=room.active ? "card active-card":"card";
+  snapshot.forEach(docSnap=>{
+    const room = docSnap.data();
+    const id = docSnap.id;
+    const currentUser = userSelect.value;
 
-    div.innerHTML=`
+    const div = document.createElement("div");
+    div.className = room.active ? "card active-card":"card";
+
+    div.innerHTML = `
       <strong>Vezető: ${room.leader}</strong><br>
       📍 ${room.location}<br>
       🕒 ${room.time || "nincs idő"}<br>
@@ -140,8 +245,8 @@ function renderRooms(){
     if(!room.members.includes(currentUser)){
       const joinBtn=document.createElement("button");
       joinBtn.className="join";
-      joinBtn.innerText=`Csatlakozom (${currentUser})`;
-      joinBtn.onclick=()=>joinRoom(room.id,currentUser);
+      joinBtn.innerText="Csatlakozom";
+      joinBtn.onclick=()=>joinRoom(id,currentUser);
       div.appendChild(joinBtn);
     }
 
@@ -149,23 +254,23 @@ function renderRooms(){
       const leaveBtn=document.createElement("button");
       leaveBtn.className="leave";
       leaveBtn.innerText="Kilépés";
-      leaveBtn.onclick=()=>leaveRoom(room.id,currentUser);
+      leaveBtn.onclick=()=>leaveRoom(id,currentUser);
       div.appendChild(leaveBtn);
     }
 
-    if(currentUser===room.leader && !room.active){
-      const actBtn=document.createElement("button");
-      actBtn.className="activate";
-      actBtn.innerText="Aktívra tesz";
-      actBtn.onclick=()=>activateRoom(room.id);
-      div.appendChild(actBtn);
+    if(currentUser===room.leader){
+      const activateBtn=document.createElement("button");
+      activateBtn.className="activate";
+      activateBtn.innerText="Aktívra tesz";
+      activateBtn.onclick=()=>activateRoom(id);
+      div.appendChild(activateBtn);
     }
 
-    if(currentUser===room.leader){
+    if(currentUser===room.leader || isAdmin){
       const delBtn=document.createElement("button");
-      delBtn.className="delete";
+      delBtn.className="admin-btn";
       delBtn.innerText="Törlés";
-      delBtn.onclick=()=>deleteRoom(room.id);
+      delBtn.onclick=()=>deleteRoom(id);
       div.appendChild(delBtn);
     }
 
@@ -174,18 +279,19 @@ function renderRooms(){
     } else {
       container.appendChild(div);
     }
+
   });
-}
+});
 
 window.joinRoom = async(id,user)=>{
   await updateDoc(doc(db,"rooms",id),{
-    members: arrayUnion(user)
+    members:arrayUnion(user)
   });
 };
 
 window.leaveRoom = async(id,user)=>{
   await updateDoc(doc(db,"rooms",id),{
-    members: arrayRemove(user)
+    members:arrayRemove(user)
   });
 };
 
