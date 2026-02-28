@@ -2,310 +2,365 @@
 <html lang="hu">
 <head>
 <meta charset="UTF-8">
-<title>GTA RP Rablás Panel</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Heti Fizetés</title>
 
 <style>
-body{
-  font-family:Arial;
-  background:#0e0e0e;
-  color:white;
-  padding:20px;
-}
-h1{
-  text-align:center;
-  color:#00ff88;
-}
-.container{
-  max-width:1100px;
-  margin:auto;
-  background:#1c1c1c;
-  padding:20px;
-  border-radius:12px;
-}
-select,input,button{
-  width:100%;
-  padding:10px;
-  margin:6px 0;
-  border-radius:6px;
-  border:none;
-}
-button{
-  cursor:pointer;
-  font-weight:bold;
-}
-.admin-btn{background:#ff4444;color:white;}
-.join{background:#007bff;color:white;}
-.leave{background:#666;color:white;}
-.activate{background:orange;}
-.card{
-  background:#2b2b2b;
-  padding:12px;
-  margin-top:10px;
-  border-radius:8px;
-  border-left:5px solid #00ff88;
-}
-.active-card{
-  border-left:5px solid red;
-}
-.members{
-  font-size:14px;
-  margin-top:6px;
-  color:#ccc;
-}
-.hidden{display:none;}
-.section{margin-top:25px;}
-.member-item{
-  background:#2b2b2b;
-  padding:6px;
-  margin:4px 0;
-  border-radius:6px;
-}
-hr{margin:20px 0;border:1px solid #333;}
+body{font-family:Arial;background:#0f172a;color:white;padding:15px;margin:0;}
+h2{color:#38bdf8;}
+button{padding:4px 8px;margin:2px;border:none;border-radius:6px;cursor:pointer;font-weight:bold;}
+.green{background:#16a34a;color:white;}
+.red{background:#dc2626;color:white;}
+table{border-collapse:collapse;width:100%;color:white;margin-top:10px;}
+th, td{border:1px solid #fff;padding:4px;text-align:center;font-size:14px;}
+.helpContent{display:none;background:#334155;color:white;padding:12px;border-radius:6px;margin-top:5px;line-height:1.5;}
+.icon-panel{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;}
+.icon-panel button{flex:1;padding:6px;}
+input[type="number"], input[type="password"], input[type="text"]{width:120px;padding:4px;border-radius:6px;border:none;}
 </style>
 </head>
-
 <body>
 
-<h1>💰 GTA RP Rablás Rendszer</h1>
+<div id="loginModal" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);display:flex;align-items:center;justify-content:center;z-index:9999;">
+  <div style="background:#1e293b;padding:25px;border-radius:10px;text-align:center;width:300px;">
+    <h3 style="margin-top:0;">🔐 Admin Bejelentkezés</h3>
+    <input type="password" id="modalPass" placeholder="Jelszó" style="width:100%;padding:8px;border-radius:6px;border:none;margin-bottom:10px;">
+    <button onclick="modalLogin()" style="width:100%;padding:8px;background:#16a34a;color:white;border:none;border-radius:6px;font-weight:bold;">Belépés</button>
+  </div>
+</div>
 
-<div class="container">
+<h2>💰 Heti Fizetés</h2>
 
-<button onclick="adminLogin()">👑 Admin</button>
+<button onclick="logout()" style="background:#dc2626;color:white;padding:6px 12px;border:none;border-radius:6px;margin-bottom:10px;font-weight:bold;">🚪 Kilépés</button>
 
-<div id="adminPanel" class="hidden">
+<div style="margin-bottom:10px;">
+<input type="text" id="ujTagNev" placeholder="Új tag neve" style="width:180px;">
+<button onclick="ujTag()" class="green">➕ Hozzáadás</button>
+</div>
 
-<h3>ADMIN PANEL</h3>
+<div class="icon-panel">
+  <button onclick="szamol()">🧮 Számol</button>
+  <button onclick="mentNap()">💾 Naplóz</button>
+  <button onclick="openPDF()">📄 PDF</button>
+  <button onclick="toggleHelp()">ℹ️ Segítség</button>
+  <button onclick="nullazHetiLog()">♻️ Heti nullázás</button>
+  <button onclick="nullazFoMenu()">🧹 Főmenü nullázás</button>
+</div>
 
-<input type="text" id="newMemberName" placeholder="Új tag neve">
-<button class="admin-btn" onclick="addMember()">Tag hozzáadása</button>
+<div id="helpContent" class="helpContent">
 
-<h4>Tag törlés</h4>
-<select id="deleteMemberSelect"></select>
-<button class="admin-btn" onclick="deleteMember()">Tag törlése</button>
+<h3>📘 Teljes működés</h3>
 
-<h4>📋 Jelenlegi tagok</h4>
-<div id="memberList"></div>
+<b>🔹 Rablás számítás:</b><br>
+(Teljes összeg ÷ 2) ÷ Résztvevők × 0.82<br><br>
+
+<b>🔹 Mosás:</b><br>
+Minden +250 gomb 250$-t ad hozzá.<br><br>
+
+<b>🔹 Craft:</b><br>
+Minden +250 gomb 250$-t ad hozzá.<br><br>
+
+<b>🔹 Számol:</b><br>
+Újraszámolja az aktuális adatokat.<br><br>
+
+<b>🔹 Naplóz:</b><br>
+Az aktuális adatokat hozzáadja a heti összesítéshez.<br><br>
+
+<b>🔹 PDF:</b><br>
+A heti adatokat külön oldalon nyitja meg.<br><br>
+
+<b>🔹 Heti nullázás:</b><br>
+Törli a heti logot.<br><br>
+
+<b>🔹 Főmenü nullázás:</b><br>
+Törli az aktuális napi adatokat.<br><br>
+
+<b>🔐 Admin rendszer:</b><br>
+Frissítés után bent maradsz.<br>
+Kilépés teljes kijelentkeztet.<br>
 
 </div>
 
-<hr>
-
-<h3>👤 Aktuális játékos</h3>
-<select id="currentUser"></select>
-
-<h3>🏦 Új rablás létrehozása</h3>
-<select id="location">
-<option>Állami Bank</option>
-<option>Paleto Bank</option>
-<option>Múzeum</option>
-<option>Bobcat</option>
-<option>Maffia Ház</option>
-<option>Híresség Ház</option>
-</select>
-
-<input type="time" id="time">
-<button onclick="createRoom()">Szoba létrehozása</button>
-
-<div class="section">
-<h3>🔴 Aktív rablások</h3>
-<div id="activeRooms"></div>
+<div style="margin-bottom:10px;">
+Paletói $ <input type="number" id="paleto">
+Állami $ <input type="number" id="allami">
+Múzeum $ <input type="number" id="muzeum">
+Bobcat $ <input type="number" id="bobcat">
+Maffia ház $ <input type="number" id="maffia">
+Kaszino $ <input type="number" id="kaszino">
+Híresség ház $ <input type="number" id="hiresseghaz">
 </div>
 
-<div class="section">
-<h3>📋 Tervezett rablások</h3>
-<div id="rooms"></div>
-</div>
+<div id="summary"></div>
 
-</div>
+<table>
+<thead>
+<tr>
+<th>Tag</th>
+<th>Paleto</th>
+<th>Állami</th>
+<th>Múzeum</th>
+<th>Bobcat</th>
+<th>Maffia</th>
+<th>Kaszino</th>
+<th>Híresség</th>
+<th>Mosó</th>
+<th>Craft</th>
+<th>Összeg</th>
+<th>Kifizetve</th>
+<th>Törlés</th>
+</tr>
+</thead>
+<tbody id="tagokTable"></tbody>
+</table> <script type="module">
 
-<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
-import {
-  getFirestore,
-  collection,
-  addDoc,
-  onSnapshot,
-  updateDoc,
-  deleteDoc,
-  doc,
-  arrayUnion,
-  arrayRemove
-} from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
-
-/* 🔥 A TE FIREBASE PROJEKTED */
 const firebaseConfig = {
   apiKey: "AIzaSyBgbixws2rf6VdqjQATVwZsKg0lgiqy0xI",
   authDomain: "ordog-fizetes.firebaseapp.com",
+  databaseURL: "https://ordog-fizetes-default-rtdb.europe-west1.firebasedatabase.app",
   projectId: "ordog-fizetes",
+  storageBucket: "ordog-fizetes.firebasestorage.app",
+  messagingSenderId: "672089263660",
+  appId: "1:672089263660:web:70086de26402ceb3464b89"
 };
 
 const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+const db = getDatabase(app);
 
-const userSelect = document.getElementById("currentUser");
-const deleteMemberSelect = document.getElementById("deleteMemberSelect");
+const adatRef = ref(db, "aktualisAdatok");
+const hetiRef = ref(db, "hetiOsszesites");
 
-let isAdmin = false;
+let admin=false;
+const ADMIN_JELSZO="1234";
 
-/* ================= ADMIN ================= */
-
-window.adminLogin = ()=>{
-  const pass = prompt("Admin jelszó:");
-  if(pass === "rpadmin123"){
-    isAdmin = true;
-    document.getElementById("adminPanel").classList.remove("hidden");
-    alert("Admin mód aktiválva");
-  }else{
-    alert("Hibás jelszó");
-  }
-};
-
-/* ================= TAGOK ================= */
-
-onSnapshot(collection(db,"members"), snapshot=>{
-  userSelect.innerHTML = "";
-  deleteMemberSelect.innerHTML = "";
-  document.getElementById("memberList").innerHTML = "";
-
-  snapshot.forEach(docSnap=>{
-    const name = docSnap.data().name;
-
-    const opt = document.createElement("option");
-    opt.value = name;
-    opt.innerText = name;
-    userSelect.appendChild(opt);
-
-    const opt2 = document.createElement("option");
-    opt2.value = docSnap.id;
-    opt2.innerText = name;
-    deleteMemberSelect.appendChild(opt2);
-
-    const div = document.createElement("div");
-    div.className="member-item";
-    div.innerText=name;
-    document.getElementById("memberList").appendChild(div);
-  });
+document.addEventListener("DOMContentLoaded",()=>{
+if(localStorage.getItem("adminLogged")==="true"){
+admin=true;
+document.getElementById("loginModal").style.display="none";
+}
 });
 
-window.addMember = async ()=>{
-  if(!isAdmin) return alert("Nem vagy admin!");
-  const name = document.getElementById("newMemberName").value;
-  if(!name) return alert("Adj meg nevet!");
-  await addDoc(collection(db,"members"),{ name });
-  document.getElementById("newMemberName").value="";
+window.modalLogin=function(){
+const pass=document.getElementById("modalPass").value;
+if(pass===ADMIN_JELSZO){
+admin=true;
+localStorage.setItem("adminLogged","true");
+document.getElementById("loginModal").style.display="none";
+}else alert("Hibás jelszó!");
 };
 
-window.deleteMember = async ()=>{
-  if(!isAdmin) return alert("Nem vagy admin!");
-  const id = deleteMemberSelect.value;
-  await deleteDoc(doc(db,"members",id));
+window.logout=function(){
+admin=false;
+localStorage.removeItem("adminLogged");
+location.reload();
 };
 
-/* ================= SZOBÁK ================= */
+function adminCheck(){
+if(!admin){alert("Admin jogosultság szükséges!");return false;}
+return true;
+}
 
-window.createRoom = async ()=>{
-  const leader = userSelect.value;
-  const location = document.getElementById("location").value;
-  const time = document.getElementById("time").value;
+const nevek=[ "Ugaros Turul (Bobi)","Yukito Osano (Neon)","Emily Mitsuko (Biskota)",
+"Vladimir Iwanow (Majom)","Todor Zsombor (Recsi)","Daryl Dixon (Oroszlán)",
+"Julian Alvarez (Szecska)","Adam Taylor (Young)","Nemeth Andras (arpi)",
+"Enrico Martello (Apu)","Ádám Benjamin (Cowboy)","Mateo Tavares Valesco (Kolbi)",
+"Carl Jesus (Faszos)","Noah Knight (Roberts)","David Smith (Szike)",
+"Nico Alvarez (Milka)","Miguel Alvarez (Raszta)","Wells Jordan (Stone)",
+"Williams Jackson (Easy)","Jackson West (Kalap)","David Jackson (Kabát)",
+"Henry Parker (Pufi)" ];
 
-  if(!leader) return alert("Válassz játékost!");
+let adatok=[];
+let hetiOsszesites={};
 
-  await addDoc(collection(db,"rooms"),{
-    leader,
-    location,
-    time,
-    members:[leader],
-    active:false
-  });
-};
-
-onSnapshot(collection(db,"rooms"), snapshot=>{
-  const activeContainer = document.getElementById("activeRooms");
-  const container = document.getElementById("rooms");
-
-  activeContainer.innerHTML="";
-  container.innerHTML="";
-
-  snapshot.forEach(docSnap=>{
-    const room = docSnap.data();
-    const id = docSnap.id;
-    const currentUser = userSelect.value;
-
-    const div = document.createElement("div");
-    div.className = room.active ? "card active-card":"card";
-
-    div.innerHTML = `
-      <strong>Vezető: ${room.leader}</strong><br>
-      📍 ${room.location}<br>
-      🕒 ${room.time || "nincs idő"}<br>
-      <div class="members">👥 ${room.members.join(", ")}</div>
-    `;
-
-    if(!room.members.includes(currentUser)){
-      const joinBtn=document.createElement("button");
-      joinBtn.className="join";
-      joinBtn.innerText="Csatlakozom";
-      joinBtn.onclick=()=>joinRoom(id,currentUser);
-      div.appendChild(joinBtn);
-    }
-
-    if(room.members.includes(currentUser) && currentUser!==room.leader){
-      const leaveBtn=document.createElement("button");
-      leaveBtn.className="leave";
-      leaveBtn.innerText="Kilépés";
-      leaveBtn.onclick=()=>leaveRoom(id,currentUser);
-      div.appendChild(leaveBtn);
-    }
-
-    if(currentUser===room.leader){
-      const activateBtn=document.createElement("button");
-      activateBtn.className="activate";
-      activateBtn.innerText="Aktívra tesz";
-      activateBtn.onclick=()=>activateRoom(id);
-      div.appendChild(activateBtn);
-    }
-
-    if(currentUser===room.leader || isAdmin){
-      const delBtn=document.createElement("button");
-      delBtn.className="admin-btn";
-      delBtn.innerText="Törlés";
-      delBtn.onclick=()=>deleteRoom(id);
-      div.appendChild(delBtn);
-    }
-
-    if(room.active){
-      activeContainer.appendChild(div);
-    } else {
-      container.appendChild(div);
-    }
-
-  });
+onValue(adatRef,s=>{
+if(s.exists()) adatok=s.val();
+else{
+adatok=nevek.map(n=>({
+nev:n,moso:0,craft:0,fizetett:false,osszeg:0,
+rablas:{paleto:false,allami:false,muzeum:false,bobcat:false,maffia:false,kaszino:false,hiresseghaz:false}
+}));
+set(adatRef,adatok);
+}
+render();
 });
 
-window.joinRoom = async(id,user)=>{
-  await updateDoc(doc(db,"rooms",id),{
-    members:arrayUnion(user)
-  });
+onValue(hetiRef,s=>{
+if(s.exists()) hetiOsszesites=s.val();
+});
+
+function mentes(){ set(adatRef,adatok); }
+
+window.ujTag=function(){
+if(!adminCheck())return;
+const nev=document.getElementById("ujTagNev").value.trim();
+if(!nev){alert("Adj meg nevet!");return;}
+adatok.push({nev:nev,moso:0,craft:0,fizetett:false,osszeg:0,
+rablas:{paleto:false,allami:false,muzeum:false,bobcat:false,maffia:false,kaszino:false,hiresseghaz:false}});
+mentes();render();
+document.getElementById("ujTagNev").value="";
 };
 
-window.leaveRoom = async(id,user)=>{
-  await updateDoc(doc(db,"rooms",id),{
-    members:arrayRemove(user)
-  });
+window.torolTag=function(index){
+if(!adminCheck())return;
+if(confirm("Biztos törlöd ezt a tagot?")){
+adatok.splice(index,1);
+mentes();render();
+}
 };
 
-window.activateRoom = async(id)=>{
-  await updateDoc(doc(db,"rooms",id),{
-    active:true
-  });
+window.addMoso=i=>{if(!adminCheck())return;adatok[i].moso++;mentes();render();}
+window.minusMoso=i=>{if(!adminCheck())return;if(adatok[i].moso>0)adatok[i].moso--;mentes();render();}
+window.addCraft=i=>{if(!adminCheck())return;adatok[i].craft++;mentes();render();}
+window.minusCraft=i=>{if(!adminCheck())return;if(adatok[i].craft>0)adatok[i].craft--;mentes();render();}
+window.toggleRablas=(i,t)=>{if(!adminCheck())return;adatok[i].rablas[t]=!adatok[i].rablas[t];mentes();render();}
+window.toggleFizetett=i=>{if(!adminCheck())return;adatok[i].fizetett=!adatok[i].fizetett;mentes();render();}
+
+window.szamol=function(){
+if(!adminCheck())return;
+
+let paleto=+document.getElementById("paleto").value||0;
+let allami=+document.getElementById("allami").value||0;
+let muzeum=+document.getElementById("muzeum").value||0;
+let bobcat=+document.getElementById("bobcat").value||0;
+let maffia=+document.getElementById("maffia").value||0;
+let kaszino=+document.getElementById("kaszino").value||0;
+let hiresseghaz=+document.getElementById("hiresseghaz").value||0;
+
+const cP=adatok.filter(x=>x.rablas.paleto).length||1;
+const cA=adatok.filter(x=>x.rablas.allami).length||1;
+const cM=adatok.filter(x=>x.rablas.muzeum).length||1;
+const cB=adatok.filter(x=>x.rablas.bobcat).length||1;
+const cMa=adatok.filter(x=>x.rablas.maffia).length||1;
+const cK=adatok.filter(x=>x.rablas.kaszino).length||1;
+const cH=adatok.filter(x=>x.rablas.hiresseghaz).length||1;
+
+adatok.forEach(t=>{
+let resz=0;
+if(t.rablas.paleto)resz+=((paleto/2)/cP)*0.82;
+if(t.rablas.allami)resz+=((allami/2)/cA)*0.82;
+if(t.rablas.muzeum)resz+=((muzeum/2)/cM)*0.82;
+if(t.rablas.bobcat)resz+=((bobcat/2)/cB)*0.82;
+if(t.rablas.maffia)resz+=((maffia/2)/cMa)*0.82;
+if(t.rablas.kaszino)resz+=((kaszino/2)/cK)*0.82;
+if(t.rablas.hiresseghaz)resz+=((hiresseghaz/2)/cH)*0.82;
+t.osszeg=resz+t.moso*250+t.craft*250;
+});
+mentes();render();
+}; window.mentNap=function(){
+if(!adminCheck())return;
+
+adatok.forEach(t=>{
+
+if(!hetiOsszesites[t.nev]){
+  hetiOsszesites[t.nev]={
+    nev:t.nev,
+    moso:t.moso,
+    craft:t.craft,
+    osszeg:t.osszeg,
+    fizetett:t.fizetett,
+    rablas:{
+      paleto:t.rablas.paleto?1:0,
+      allami:t.rablas.allami?1:0,
+      muzeum:t.rablas.muzeum?1:0,
+      bobcat:t.rablas.bobcat?1:0,
+      maffia:t.rablas.maffia?1:0,
+      kaszino:t.rablas.kaszino?1:0,
+      hiresseghaz:t.rablas.hiresseghaz?1:0
+    }
+  };
+}
+else{
+  hetiOsszesites[t.nev].moso+=t.moso;
+  hetiOsszesites[t.nev].craft+=t.craft;
+  hetiOsszesites[t.nev].osszeg+=t.osszeg;
+  hetiOsszesites[t.nev].fizetett=t.fizetett;
+
+  if(t.rablas.paleto)hetiOsszesites[t.nev].rablas.paleto++;
+  if(t.rablas.allami)hetiOsszesites[t.nev].rablas.allami++;
+  if(t.rablas.muzeum)hetiOsszesites[t.nev].rablas.muzeum++;
+  if(t.rablas.bobcat)hetiOsszesites[t.nev].rablas.bobcat++;
+  if(t.rablas.maffia)hetiOsszesites[t.nev].rablas.maffia++;
+  if(t.rablas.kaszino)hetiOsszesites[t.nev].rablas.kaszino++;
+  if(t.rablas.hiresseghaz)hetiOsszesites[t.nev].rablas.hiresseghaz++;
+}
+
+});
+
+set(hetiRef,hetiOsszesites);
+alert("Naplózva.");
 };
 
-window.deleteRoom = async(id)=>{
-  await deleteDoc(doc(db,"rooms",id));
+window.openPDF=function(){
+localStorage.setItem("hetiLogPDF",JSON.stringify(hetiOsszesites));
+window.open("pdf_kompakt.html","_blank");
 };
+
+window.nullazHetiLog=function(){
+if(!adminCheck())return;
+if(confirm("Biztos törlöd?")){
+hetiOsszesites={};
+set(hetiRef,{});
+alert("Heti log törölve.");
+}
+};
+
+window.nullazFoMenu=function(){
+if(!adminCheck())return;
+if(confirm("Biztos nullázod az aktuális főmenüt?")){
+adatok.forEach(t=>{
+t.moso=0;
+t.craft=0;
+t.osszeg=0;
+t.fizetett=false;
+t.rablas={
+paleto:false,
+allami:false,
+muzeum:false,
+bobcat:false,
+maffia:false,
+kaszino:false,
+hiresseghaz:false
+};
+});
+mentes();
+render();
+alert("Főmenü nullázva.");
+}
+};
+
+window.toggleHelp=function(){
+const help=document.getElementById("helpContent");
+help.style.display=help.style.display==="none"?"block":"none";
+};
+
+function render(){
+let total=adatok.reduce((s,t)=>s+t.osszeg,0);
+document.getElementById("summary").innerHTML="💵 Összes kiosztva: "+total.toFixed(2)+" $";
+
+let html="";
+adatok.forEach((t,i)=>{
+html+=`<tr>
+<td>${t.nev}</td>
+<td><input type="checkbox" ${t.rablas.paleto?'checked':''} onclick="toggleRablas(${i},'paleto')"></td>
+<td><input type="checkbox" ${t.rablas.allami?'checked':''} onclick="toggleRablas(${i},'allami')"></td>
+<td><input type="checkbox" ${t.rablas.muzeum?'checked':''} onclick="toggleRablas(${i},'muzeum')"></td>
+<td><input type="checkbox" ${t.rablas.bobcat?'checked':''} onclick="toggleRablas(${i},'bobcat')"></td>
+<td><input type="checkbox" ${t.rablas.maffia?'checked':''} onclick="toggleRablas(${i},'maffia')"></td>
+<td><input type="checkbox" ${t.rablas.kaszino?'checked':''} onclick="toggleRablas(${i},'kaszino')"></td>
+<td><input type="checkbox" ${t.rablas.hiresseghaz?'checked':''} onclick="toggleRablas(${i},'hiresseghaz')"></td>
+<td><button onclick="minusMoso(${i})">−</button><button onclick="addMoso(${i})">+250</button> ${t.moso}</td>
+<td><button onclick="minusCraft(${i})">−</button><button onclick="addCraft(${i})">+250</button> ${t.craft}</td>
+<td>${t.osszeg.toFixed(2)}</td>
+<td><button class="${t.fizetett?'green':'red'}" onclick="toggleFizetett(${i})">${t.fizetett?'✅':'❌'}</button></td>
+<td><button class="red" onclick="torolTag(${i})">❌</button></td>
+</tr>`;
+});
+document.getElementById("tagokTable").innerHTML=html;
+}
 
 </script>
-
 </body>
 </html>
