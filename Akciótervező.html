@@ -5,53 +5,20 @@
 <title>GTA RP Akció Terem</title>
 
 <style>
-body{
-    font-family: Arial, sans-serif;
-    background:#0e0e0e;
-    color:white;
-    padding:20px;
-}
+body{font-family:Arial;background:#0e0e0e;color:white;padding:20px;}
 h1{text-align:center;color:#00ff88;}
-.container{
-    max-width:900px;
-    margin:auto;
-    background:#1c1c1c;
-    padding:20px;
-    border-radius:12px;
-}
-select,input,button{
-    width:100%;
-    padding:10px;
-    margin:6px 0;
-    border-radius:6px;
-    border:none;
-}
+.container{max-width:900px;margin:auto;background:#1c1c1c;padding:20px;border-radius:12px;}
+select,input,button{width:100%;padding:10px;margin:6px 0;border-radius:6px;border:none;}
 button{cursor:pointer;font-weight:bold;}
 .add{background:#00aa55;color:white;}
 .join{background:#007bff;color:white;margin-top:5px;}
 .leave{background:#666;color:white;margin-top:5px;}
 .activate{background:orange;margin-top:5px;}
 .delete{background:darkred;margin-top:5px;color:white;}
-.card{
-    background:#2b2b2b;
-    padding:12px;
-    margin-top:10px;
-    border-radius:8px;
-    border-left:5px solid #00ff88;
-}
-.active-card{
-    background:#3b0000;
-    border-left:5px solid red;
-}
-.members{
-    font-size:14px;
-    margin-top:6px;
-    color:#ccc;
-}
-.section-title{
-    margin-top:25px;
-    font-size:20px;
-}
+.card{background:#2b2b2b;padding:12px;margin-top:10px;border-radius:8px;border-left:5px solid #00ff88;}
+.active-card{background:#3b0000;border-left:5px solid red;}
+.members{font-size:14px;margin-top:6px;color:#ccc;}
+.section-title{margin-top:25px;font-size:20px;}
 </style>
 </head>
 
@@ -61,29 +28,7 @@ button{cursor:pointer;font-weight:bold;}
 
 <div class="container">
 
-<select id="currentUser">
-<option>Ugaros Turul (Bobi)</option>
-<option>Yukito Osano (Neon)</option>
-<option>Emily Mitsuko (Biskota)</option>
-<option>Vladimir Iwanow (Majom)</option>
-<option>Todor Zsombor (Recsi)</option>
-<option>Daryl Dixon (Oroszlán)</option>
-<option>Julian Alvarez (Szecska)</option>
-<option>Adam Taylor (Young)</option>
-<option>Nemeth Andras (arpi)</option>
-<option>Enrico Martello (Apu)</option>
-<option>Ádám Benjamin (Cowboy)</option>
-<option>Mateo Tavares Valesco (Kolbi)</option>
-<option>Carl Jesus (Faszos)</option>
-<option>Noah Knight (Roberts)</option>
-<option>David Smith (Szike)</option>
-<option>Nico Alvarez (Milka)</option>
-<option>Miguel Alvarez (Raszta)</option>
-<option>Wells Jordan (Stone)</option>
-<option>Williams Jackson (Easy)</option>
-<option>Jackson West (Kalap)</option>
-<option>David Jackson (Kabát)</option>
-</select>
+<select id="currentUser"></select>
 
 <select id="location">
 <option>Állami Bank</option>
@@ -126,16 +71,35 @@ const firebaseConfig = {
   apiKey: "AIzaSyBgbixws2rf6VdqjQATVwZsKg0lgiqy0xI",
   authDomain: "ordog-fizetes.firebaseapp.com",
   projectId: "ordog-fizetes",
-  storageBucket: "ordog-fizetes.firebasestorage.app",
-  messagingSenderId: "672089263660",
-  appId: "1:672089263660:web:58091123de7a1b08464b89"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+const names = [
+"Ugaros Turul (Bobi)","Yukito Osano (Neon)","Emily Mitsuko (Biskota)",
+"Vladimir Iwanow (Majom)","Todor Zsombor (Recsi)","Daryl Dixon (Oroszlán)",
+"Julian Alvarez (Szecska)","Adam Taylor (Young)","Nemeth Andras (arpi)",
+"Enrico Martello (Apu)","Ádám Benjamin (Cowboy)","Mateo Tavares Valesco (Kolbi)",
+"Carl Jesus (Faszos)","Noah Knight (Roberts)","David Smith (Szike)",
+"Nico Alvarez (Milka)","Miguel Alvarez (Raszta)","Wells Jordan (Stone)",
+"Williams Jackson (Easy)","Jackson West (Kalap)","David Jackson (Kabát)"
+];
+
+const userSelect=document.getElementById("currentUser");
+names.forEach(n=>{
+  const opt=document.createElement("option");
+  opt.value=n;
+  opt.innerText=n;
+  userSelect.appendChild(opt);
+});
+
+let allRooms=[];
+
+userSelect.addEventListener("change", renderRooms);
+
 window.createRoom = async () => {
-  const user = document.getElementById("currentUser").value;
+  const user = userSelect.value;
   const location = document.getElementById("location").value;
   const time = document.getElementById("time").value;
 
@@ -150,69 +114,68 @@ window.createRoom = async () => {
 };
 
 onSnapshot(collection(db,"rooms"), snapshot => {
+  allRooms=[];
+  snapshot.forEach(doc=>allRooms.push({id:doc.id,...doc.data()}));
+  renderRooms();
+});
 
+function renderRooms(){
   const activeContainer=document.getElementById("activeRooms");
   const container=document.getElementById("rooms");
-
   activeContainer.innerHTML="";
   container.innerHTML="";
+  const currentUser=userSelect.value;
 
-  snapshot.forEach(item=>{
-    const data=item.data();
-    const id=item.id;
-    const currentUser=document.getElementById("currentUser").value;
-
+  allRooms.forEach(room=>{
     const div=document.createElement("div");
-    div.className=data.active ? "card active-card" : "card";
+    div.className=room.active ? "card active-card":"card";
 
     div.innerHTML=`
-      <strong>Vezető: ${data.leader}</strong><br>
-      📍 ${data.location}<br>
-      🕒 ${data.time || "nincs idő"}<br>
-      <div class="members">👥 ${data.members.join(", ")}</div>
+      <strong>Vezető: ${room.leader}</strong><br>
+      📍 ${room.location}<br>
+      🕒 ${room.time || "nincs idő"}<br>
+      <div class="members">👥 ${room.members.join(", ")}</div>
     `;
 
-    if(!data.members.includes(currentUser)){
+    if(!room.members.includes(currentUser)){
       const joinBtn=document.createElement("button");
       joinBtn.className="join";
-      joinBtn.innerText="Csatlakozom";
-      joinBtn.onclick=()=>joinRoom(id,currentUser);
+      joinBtn.innerText=`Csatlakozom (${currentUser})`;
+      joinBtn.onclick=()=>joinRoom(room.id,currentUser);
       div.appendChild(joinBtn);
     }
 
-    if(data.members.includes(currentUser) && currentUser!==data.leader){
+    if(room.members.includes(currentUser) && currentUser!==room.leader){
       const leaveBtn=document.createElement("button");
       leaveBtn.className="leave";
       leaveBtn.innerText="Kilépés";
-      leaveBtn.onclick=()=>leaveRoom(id,currentUser);
+      leaveBtn.onclick=()=>leaveRoom(room.id,currentUser);
       div.appendChild(leaveBtn);
     }
 
-    if(currentUser===data.leader && !data.active){
+    if(currentUser===room.leader && !room.active){
       const actBtn=document.createElement("button");
       actBtn.className="activate";
       actBtn.innerText="Aktívra tesz";
-      actBtn.onclick=()=>activateRoom(id);
+      actBtn.onclick=()=>activateRoom(room.id);
       div.appendChild(actBtn);
     }
 
-    if(currentUser===data.leader){
+    if(currentUser===room.leader){
       const delBtn=document.createElement("button");
       delBtn.className="delete";
       delBtn.innerText="Törlés";
-      delBtn.onclick=()=>deleteRoom(id);
+      delBtn.onclick=()=>deleteRoom(room.id);
       div.appendChild(delBtn);
     }
 
-    if(data.active){
+    if(room.active){
       activeContainer.appendChild(div);
     } else {
       container.appendChild(div);
     }
-
   });
-
-});
+}
 
 window.joinRoom = async(id,user)=>{
   await updateDoc(doc(db,"rooms",id),{
