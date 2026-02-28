@@ -203,24 +203,31 @@ function generatePDF(){
   doc.setFontSize(14);
   doc.text("Heti Összesítés", pageWidth/2, 30, {align:'center'});
 
-  doc.autoTable({
-    html:'#hetiTable',
-    startY:45,
-    theme:'grid',
-    styles:{ fontSize:9, cellPadding:2 },
-    margin:{ left:20, right:20 }
+  const table = document.querySelectorAll("#hetiTable tbody tr");
+
+  let bodyData = [];
+
+  table.forEach(row=>{
+    const cells = row.querySelectorAll("td");
+    bodyData.push([
+      cells[0].textContent,
+      cells[1].textContent,
+      cells[2].textContent,
+      cells[3].textContent,
+      cells[4].textContent,
+      cells[5].textContent,
+      cells[6].textContent,
+      cells[7].textContent,
+      cells[8].textContent
+    ]);
   });
 
-  doc.addPage();
-
-  doc.text("Top Keresők", pageWidth/2, 30, {align:'center'});
-
   doc.autoTable({
-    html:'#topTable',
+    head:[["Tag","Paleto","Állami","Múzeum","Bobcat","Mosó","Craft","Összeg","Kifizetve"]],
+    body:bodyData,
     startY:45,
     theme:'grid',
-    styles:{ fontSize:11, cellPadding:4 },
-    margin:{ left:120, right:120 }
+    styles:{ fontSize:9 }
   });
 
   doc.save("heti_osszesites.pdf");
