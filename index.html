@@ -120,6 +120,9 @@ Gyorsabb és biztonságosabb heti zárás.<br><br>
 <div style="margin-bottom:10px;">
 <input type="text" id="ujTagNev" placeholder="Új tag neve">
 <button onclick="ujTag()" class="green">➕ Hozzáadás</button>
+<div style="margin-bottom:10px;">
+🔎 <input type="text" id="kereso" placeholder="Keresés név szerint..." oninput="render()">
+</div>  
 </div>
 
 <div class="icon-panel">
@@ -375,8 +378,12 @@ function render(){
 let total=adatok.reduce((s,t)=>s+t.osszeg,0);
 document.getElementById("summary").innerHTML="💵 Összes kiosztva: "+total.toFixed(2)+" $";
 
+const keresett = document.getElementById("kereso")?.value.toLowerCase() || "";  
+  
 let html="";
 adatok.forEach((t,i)=>{
+
+if(!t.nev.toLowerCase().includes(keresett)) return;
 html+=`
 <tr>
 <td>${t.nev}</td>
@@ -468,6 +475,7 @@ document.addEventListener("DOMContentLoaded",checkVersion);
 </script>
 </body>
 </html>
+
 
 
 
