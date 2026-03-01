@@ -56,6 +56,18 @@ transform:rotate(180deg);
 <h2>💰 Heti Fizetés</h2>
   <button onclick="toggleHelp()" 
         style="background:#334155;color:white;padding:6px 12px;border:none;border-radius:8px;margin-bottom:10px;cursor:pointer;font-weight:bold;">
+<button onclick="openChangelog()" 
+style="position:relative;background:#1d4ed8;color:white;padding:6px 12px;border:none;border-radius:8px;margin-bottom:10px;cursor:pointer;font-weight:bold;">
+🆕 Frissítések
+
+<span id="newBadge" 
+style="position:absolute;top:-6px;right:-6px;background:#dc2626;
+color:white;font-size:10px;padding:2px 6px;border-radius:10px;display:none;">
+NEW
+</span>
+
+</button>
+    
 📘 Útmutató <span id="arrow">▼</span>
 </button>
 
@@ -82,6 +94,18 @@ Kilépés után újra jelszó szükséges.<br><br>
 
 <b>Képlet:</b><br>
 (Rablás összeg / 2 / résztvevők száma) × 0.82<br><br>
+
+  <div id="changelogPanel" class="help-panel">
+
+<h3 style="color:#38bdf8;margin-top:0;">🆕 Legutóbbi Frissítések</h3>
+
+<b>Verzió 2.1</b><br>
+• Bank nevek eltávolítva<br>
+• Egyszerűsített „Rablás” mező<br>
+• Gyorsabb számolási folyamat<br>
+• Letisztultabb kezelőfelület<br><br>
+
+</div>
 
 </div>
 <button onclick="logout()" class="red" style="margin-bottom:10px;">🚪 Kilépés</button>
@@ -121,6 +145,8 @@ Rablás $ <input type="number" id="rablas">
 </table>
 
 <script type="module">
+
+const APP_VERSION = "2.1"; 
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
@@ -346,10 +372,29 @@ const arrow=document.getElementById("arrow");
 panel.classList.toggle("open");
 arrow.classList.toggle("rotate");
 };
-  
+
+  function checkVersion(){
+  const seenVersion = localStorage.getItem("seenVersion");
+
+  if(seenVersion !== APP_VERSION){
+    document.getElementById("newBadge").style.display="inline-block";
+  }
+}
+
+window.openChangelog=function(){
+  const panel=document.getElementById("changelogPanel");
+  panel.classList.toggle("open");
+
+  // ha megnyitotta → eltűnik a NEW
+  localStorage.setItem("seenVersion", APP_VERSION);
+  document.getElementById("newBadge").style.display="none";
+};
+
+document.addEventListener("DOMContentLoaded",checkVersion);
 </script>
 </body>
 </html>
+
 
 
 
