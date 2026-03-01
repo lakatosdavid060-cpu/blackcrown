@@ -3,129 +3,98 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Kő Papír Olló - Mobil Edition</title>
+<title>Film Oldal</title>
 
 <style>
 body {
     margin: 0;
-    padding: 0;
-    text-align: center;
-    font-family: Arial, sans-serif;
-    background: linear-gradient(180deg, #141E30, #243B55);
+    font-family: Arial;
+    background: #111;
     color: white;
 }
 
 h1 {
-    margin-top: 20px;
-    font-size: 28px;
+    text-align: center;
+    padding: 20px;
 }
 
-.gombok {
-    display: flex;
-    justify-content: center;
-    gap: 15px;
-    margin-top: 40px;
+.container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    padding: 20px;
+}
+
+.card {
+    background: #1c1c1c;
+    border-radius: 15px;
+    overflow: hidden;
+}
+
+.card img {
+    width: 100%;
+    height: 350px;
+    object-fit: cover;
+}
+
+.card-content {
+    padding: 15px;
 }
 
 button {
-    flex: 1;
-    max-width: 120px;
-    font-size: 28px;
-    padding: 20px;
-    border-radius: 20px;
+    background: red;
+    color: white;
     border: none;
-    background: #00c6ff;
-    color: black;
-    font-weight: bold;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.4);
+    padding: 10px;
+    width: 100%;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-top: 10px;
 }
 
-button:active {
-    transform: scale(0.95);
+#lejatszo {
+    margin: 20px;
+    text-align: center;
 }
-
-#eredmeny {
-    margin-top: 30px;
-    font-size: 22px;
-    min-height: 60px;
-}
-
-#pontok {
-    margin-top: 20px;
-    font-size: 20px;
-}
-
-#gyoztes {
-    margin-top: 20px;
-    font-size: 24px;
-    color: yellow;
+iframe {
+    width: 90%;
+    height: 400px;
+    border-radius: 10px;
 }
 </style>
 </head>
 
 <body>
 
-<h1>🪨📄✂️</h1>
+<h1>🎬 Film Oldal</h1>
 
-<div class="gombok">
-    <button onclick="jatek('ko')">🪨</button>
-    <button onclick="jatek('papir')">📄</button>
-    <button onclick="jatek('ollo')">✂️</button>
+<div class="container">
+
+<div class="card">
+<img src="https://image.tmdb.org/t/p/w500/q719jXXEzOoYaps6babgKnONONX.jpg">
+<div class="card-content">
+<h3>A sötét lovag</h3>
+<button onclick="indit('EXeTwQWrcwY')">Trailer indítása</button>
+</div>
 </div>
 
-<div id="eredmeny"></div>
-<div id="pontok">Te: 0 | Gép: 0</div>
-<div id="gyoztes"></div>
+<div class="card">
+<img src="https://image.tmdb.org/t/p/w500/8UlWHLMpgZm9bx6QYh0NFoq67TZ.jpg">
+<div class="card-content">
+<h3>Eredet</h3>
+<button onclick="indit('YoHD9XEInc0')">Trailer indítása</button>
+</div>
+</div>
+
+</div>
+
+<div id="lejatszo"></div>
 
 <script>
-let tePont = 0;
-let gepPont = 0;
-let jatekVege = false;
-
-const emoji = { ko: "🪨", papir: "📄", ollo: "✂️" };
-
-function jatek(valasztas) {
-
-    if (jatekVege) return;
-
-    const lehetosegek = ['ko', 'papir', 'ollo'];
-    const gep = lehetosegek[Math.floor(Math.random() * 3)];
-
-    let eredmeny = "";
-
-    if (valasztas === gep) {
-        eredmeny = "🤝 Döntetlen!";
-    } 
-    else if (
-        (valasztas === 'ko' && gep === 'ollo') ||
-        (valasztas === 'papir' && gep === 'ko') ||
-        (valasztas === 'ollo' && gep === 'papir')
-    ) {
-        eredmeny = "🎉 Nyertél!";
-        tePont++;
-    } 
-    else {
-        eredmeny = "😢 Vesztettél!";
-        gepPont++;
-    }
-
-    document.getElementById("eredmeny").innerHTML =
-        "Te: " + emoji[valasztas] +
-        " | Gép: " + emoji[gep] +
-        "<br>" + eredmeny;
-
-    document.getElementById("pontok").innerHTML =
-        "Te: " + tePont + " | Gép: " + gepPont;
-
-    if (tePont === 5) {
-        document.getElementById("gyoztes").innerHTML = "🏆 Te nyertél!";
-        jatekVege = true;
-    }
-
-    if (gepPont === 5) {
-        document.getElementById("gyoztes").innerHTML = "🤖 A gép nyert!";
-        jatekVege = true;
-    }
+function indit(videoID) {
+    document.getElementById("lejatszo").innerHTML =
+    `<iframe src="https://www.youtube.com/embed/${videoID}?autoplay=1"
+    allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
 }
 </script>
 
