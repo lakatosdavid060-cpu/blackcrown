@@ -182,6 +182,26 @@ function generatePDF(){
     styles:{ fontSize:9 }
   });
 
+  // 💰 ÖSSZESÍTÉS SZÁMOLÁS
+let total = 0;
+let kifizetve = 0;
+
+bodyData.forEach(row=>{
+  let osszeg = parseFloat(row[3].replace(/[^\d.-]/g,'')) || 0;
+  total += osszeg;
+  if(row[4] === "✔") kifizetve += osszeg;
+});
+
+let kintlevoseg = total - kifizetve;
+
+// Pozíció a táblázat után
+let finalY = doc.lastAutoTable.finalY + 20;
+
+doc.setFontSize(12);
+doc.text(`Teljes kiosztás: ${total.toLocaleString('hu-HU',{minimumFractionDigits:2})} $`, 40, finalY);
+doc.text(`Kifizetve: ${kifizetve.toLocaleString('hu-HU',{minimumFractionDigits:2})} $`, 40, finalY + 18);
+doc.text(`Kintlévőség: ${kintlevoseg.toLocaleString('hu-HU',{minimumFractionDigits:2})} $`, 40, finalY + 36);
+
   doc.save("heti_osszesites.pdf");
 }
 
