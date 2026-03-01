@@ -382,11 +382,14 @@ document.getElementById("summary").innerHTML="💵 Összes kiosztva: "+total.toF
 const keresett = document.getElementById("kereso")?.value.toLowerCase() || "";  
   
 let html="";
+
 adatok.forEach((t,i)=>{
 
 if(!t.nev.toLowerCase().includes(keresett)) return;
+
 html+=`
 <tr>
+
 <td>${t.nev}</td>
 <td><input type="checkbox" ${t.rablas?'checked':''} onclick="toggleRablas(${i})"></td>
 <td><button onclick="minusMoso(${i})">−</button><button onclick="addMoso(${i})">+250</button> ${t.moso}</td>
@@ -476,6 +479,7 @@ document.addEventListener("DOMContentLoaded",checkVersion);
 </script>
 </body>
 </html>
+
 
 
 
