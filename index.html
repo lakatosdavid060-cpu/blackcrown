@@ -218,19 +218,29 @@ save();render();
 };
 
 window.mentNap=function(){
-if(!adminCheck())return;
-adatok.forEach(t=>{
-if(!heti[t.nev]){
-heti[t.nev]={nev:t.nev,moso:t.moso,craft:t.craft,osszeg:t.osszeg,fizetett:t.fizetett};
-}else{
-heti[t.nev].moso+=t.moso;
-heti[t.nev].craft+=t.craft;
-heti[t.nev].osszeg+=t.osszeg;
-heti[t.nev].fizetett=t.fizetett;
-}
-});
-set(hetiRef,heti);
-alert("Naplózva.");
+  if(!adminCheck())return;
+
+  adatok.forEach(t=>{
+
+    if(!heti[t.nev]){
+      heti[t.nev]={
+        nev:t.nev,
+        moso:t.moso,
+        craft:t.craft,
+        osszeg:t.osszeg,
+        fizetett:false   // csak létrehozáskor
+      };
+    } else {
+      heti[t.nev].moso += t.moso;
+      heti[t.nev].craft += t.craft;
+      heti[t.nev].osszeg += t.osszeg;
+      // ❌ NINCS fizetett módosítás
+    }
+
+  });
+
+  set(hetiRef,heti);
+  alert("Naplózva.");
 };
 
 window.nullazHeti=function(){
@@ -279,7 +289,25 @@ window.addMoso=i=>{if(!adminCheck())return;adatok[i].moso++;save();render();}
 window.minusMoso=i=>{if(!adminCheck())return;if(adatok[i].moso>0)adatok[i].moso--;save();render();}
 window.addCraft=i=>{if(!adminCheck())return;adatok[i].craft++;save();render();}
 window.minusCraft=i=>{if(!adminCheck())return;if(adatok[i].craft>0)adatok[i].craft--;save();render();}
-window.toggleFiz=i=>{if(!adminCheck())return;adatok[i].fizetett=!adatok[i].fizetett;save();render();}
+window.toggleFiz=i=>{
+  if(!adminCheck())return;
+
+  const nev = adatok[i].nev;
+
+  if(!heti[nev]){
+    heti[nev]={
+      nev:nev,
+      moso:0,
+      craft:0,
+      osszeg:0,
+      fizetett:true
+    };
+  } else {
+    heti[nev].fizetett = !heti[nev].fizetett;
+  }
+
+  set(hetiRef,heti);
+};
 
 function render(){
 let total=adatok.reduce((s,t)=>s+t.osszeg,0);
@@ -311,4 +339,5 @@ arrow.classList.toggle("rotate");
 </script>
 </body>
 </html>
+
 
