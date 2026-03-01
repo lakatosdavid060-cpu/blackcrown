@@ -20,7 +20,6 @@ th{background:#eee;}
 <body>
 
 <h2>Heti Összesítés</h2>
-
 <button onclick="generatePDF()">📄 PDF Letöltés</button>
 
 <table id="hetiTable">
@@ -36,35 +35,18 @@ th{background:#eee;}
 <tbody></tbody>
 </table>
 
-<h2>🏆 Top Keresők</h2>
-
-<table id="topTable">
-<thead>
-<tr>
-<th>Helyezés</th>
-<th>Tag</th>
-<th>Összeg</th>
-</tr>
-</thead>
-<tbody></tbody>
-</table>
-
+<h3 id="topLista"></h3>
 <h3 id="totalSummary"></h3>
 
-<!-- Firebase -->
 <script type="module">
-
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBgbixws2rf6VdqjQATVwZsKg0lgiqy0xI",
+  apiKey: "AIzaSy...",
   authDomain: "ordog-fizetes.firebaseapp.com",
   databaseURL: "https://ordog-fizetes-default-rtdb.europe-west1.firebasedatabase.app",
   projectId: "ordog-fizetes",
-  storageBucket: "ordog-fizetes.firebasestorage.app",
-  messagingSenderId: "672089263660",
-  appId: "1:672089263660:web:70086de26402ceb3464b89"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -72,99 +54,94 @@ const db = getDatabase(app);
 const hetiRef = ref(db,"hetiOsszesites");
 
 const tbody = document.querySelector("#hetiTable tbody");
-const topBody = document.querySelector("#topTable tbody");
-const totalSummary = document.getElementById("totalSummary");
 
 onValue(hetiRef, snapshot => {
 
   tbody.innerHTML="";
-  topBody.innerHTML="";
-  totalSummary.innerHTML="";
+  let lista=[];
 
   if(snapshot.exists()){
-
     const data=snapshot.val();
-    let lista=[];
-    let teljesOsszeg=0;
 
     for(let nev in data){
-
       const t=data[nev];
       const osszeg=Number(t.osszeg||0);
-      teljesOsszeg+=osszeg;
 
-      lista.push({nev:t.nev,osszeg:osszeg});
-
-      tbody.innerHTML+=`
-      <tr>
-        <td>${t.nev}</td>
-        <td>${t.moso||0}</td>
-        <td>${t.craft||0}</td>
-        <td>${osszeg.toFixed(2)}$</td>
-        <td>${t.fizetett?"✔":"X"}</td>
-      </tr>`;
+      lista.push({
+        nev:t.nev,
+        moso:t.moso||0,
+        craft:t.craft||0,
+        osszeg:osszeg,
+        fizetett:t.fizetett
+      });
     }
 
+    // Rendezés TOP szerint
     lista.sort((a,b)=>b.osszeg-a.osszeg);
 
-    lista.forEach((t,index)=>{
-      let medal="";
+    lista.forEach((t,i)=>{
       let rowClass="";
-      if(index===0){ medal="🥇"; rowClass="top1"; }
-      else if(index===1){ medal="🥈"; rowClass="top2"; }
-      else if(index===2){ medal="🥉"; rowClass="top3"; }
+      if(i===0) rowClass="top1";
+      else if(i===1) rowClass="top2";
+      else if(i===2) rowClass="top3";
 
-      topBody.innerHTML+=`
+      tbody.innerHTML+=`
       <tr class="${rowClass}">
-        <td>${medal || (index+1)}</td>
         <td>${t.nev}</td>
-        <td>${t.osszeg.toFixed(2)}$</td>
+        <td>${t.moso}</td>
+        <td>${t.craft}</td>
+        <td>${t.osszeg.toLocaleString('hu-HU',{minimumFractionDigits:2})} $</td>
+        <td>${t.fizetett?"✔":"X"}</td>
       </tr>`;
     });
 
-    totalSummary.innerHTML=
-      "💰 Heti teljes kiosztás: <b>"+teljesOsszeg.toFixed(2)+"$</b>";
+    // TOP 3 szöveges
+    let topText="🏆 TOP 3: ";
+    lista.slice(0,3).forEach((t,i)=>{
+      topText += `${i+1}. ${t.nev} (${t.osszeg.toLocaleString('hu-HU')} $)  `;
+    });
+    document.getElementById("topLista").innerText=topText;
+
+    // Összesítés
+    let total=lista.reduce((s,t)=>s+t.osszeg,0);
+    let kifizetve=lista.filter(t=>t.fizetett).reduce((s,t)=>s+t.osszeg,0);
+    let kint=total-kifizetve;
+
+    document.getElementById("totalSummary").innerText=
+      `💵 Teljes kiosztás: ${total.toLocaleString('hu-HU')} $   |   `+
+      `✅ Kifizetve: ${kifizetve.toLocaleString('hu-HU')} $   |   `+
+      `❌ Kintlévőség: ${kint.toLocaleString('hu-HU')} $`;
   }
 });
-
 </script>
 
-<!-- PDF -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 
 <script>
-
 function generatePDF(){
-
   const { jsPDF } = window.jspdf;
-
-  const doc = new jsPDF({
-    orientation:'landscape',
-    unit:'pt',
-    format:'a4'
-  });
-
+  const doc = new jsPDF({orientation:'landscape',unit:'pt',format:'a4'});
   const pageWidth = doc.internal.pageSize.getWidth();
 
-  // Cím
   doc.setFontSize(14);
   doc.text("Heti Összesítés", pageWidth/2, 30, {align:'center'});
 
-  // 📅 DÁTUM
   const today = new Date();
-  const nap = today.getDate().toString().padStart(2,'0');
-  const honap = (today.getMonth()+1).toString().padStart(2,'0');
-  const ev = today.getFullYear();
-
   doc.setFontSize(10);
-  doc.text(`Generálva: ${ev}.${honap}.${nap}`, pageWidth/2, 45, {align:'center'});
+  doc.text(`Generálva: ${today.toLocaleDateString('hu-HU')}`, pageWidth/2, 45, {align:'center'});
 
-  const table=document.querySelectorAll("#hetiTable tbody tr");
+  const rows=document.querySelectorAll("#hetiTable tbody tr");
   let bodyData=[];
+  let total=0;
+  let kifizetve=0;
 
-  table.forEach(row=>{
+  rows.forEach(row=>{
     const cells=row.querySelectorAll("td");
+    let osszeg=parseFloat(cells[3].textContent.replace(/[^\d.-]/g,''))||0;
+    total+=osszeg;
+    if(cells[4].textContent.includes("✔")) kifizetve+=osszeg;
+
     bodyData.push([
       cells[0].textContent,
       cells[1].textContent,
@@ -179,32 +156,19 @@ function generatePDF(){
     body:bodyData,
     startY:60,
     theme:'grid',
-    styles:{ fontSize:9 }
+    styles:{fontSize:9}
   });
 
-  // 💰 ÖSSZESÍTÉS SZÁMOLÁS
-let total = 0;
-let kifizetve = 0;
+  let kint=total-kifizetve;
+  let finalY=doc.lastAutoTable.finalY+25;
 
-bodyData.forEach(row=>{
-  let osszeg = parseFloat(row[3].replace(/[^\d.-]/g,'')) || 0;
-  total += osszeg;
-  if(row[4] === "✔") kifizetve += osszeg;
-});
-
-let kintlevoseg = total - kifizetve;
-
-// Pozíció a táblázat után
-let finalY = doc.lastAutoTable.finalY + 20;
-
-doc.setFontSize(12);
-doc.text(`Teljes kiosztás: ${total.toLocaleString('hu-HU',{minimumFractionDigits:2})} $`, 40, finalY);
-doc.text(`Kifizetve: ${kifizetve.toLocaleString('hu-HU',{minimumFractionDigits:2})} $`, 40, finalY + 18);
-doc.text(`Kintlévőség: ${kintlevoseg.toLocaleString('hu-HU',{minimumFractionDigits:2})} $`, 40, finalY + 36);
+  doc.setFontSize(12);
+  doc.text(`Teljes kiosztás: ${total.toLocaleString('hu-HU')} $`,40,finalY);
+  doc.text(`Kifizetve: ${kifizetve.toLocaleString('hu-HU')} $`,40,finalY+20);
+  doc.text(`Kintlévőség: ${kint.toLocaleString('hu-HU')} $`,40,finalY+40);
 
   doc.save("heti_osszesites.pdf");
 }
-
 </script>
 
 </body>
