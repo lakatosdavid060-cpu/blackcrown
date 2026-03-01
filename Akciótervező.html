@@ -3,99 +3,213 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Film Oldal</title>
+<title>MyStream PRO</title>
 
 <style>
 body {
     margin: 0;
-    font-family: Arial;
-    background: #111;
+    font-family: Arial, sans-serif;
+    background: #141414;
     color: white;
 }
 
-h1 {
-    text-align: center;
-    padding: 20px;
-}
-
-.container {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 20px;
-    padding: 20px;
-}
-
-.card {
-    background: #1c1c1c;
-    border-radius: 15px;
-    overflow: hidden;
-}
-
-.card img {
-    width: 100%;
-    height: 350px;
-    object-fit: cover;
-}
-
-.card-content {
+header {
+    background: black;
     padding: 15px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
 }
 
-button {
-    background: red;
-    color: white;
+header h1 {
+    color: red;
+    margin: 0;
+}
+
+nav button {
+    background: none;
     border: none;
-    padding: 10px;
-    width: 100%;
-    border-radius: 8px;
+    color: white;
+    margin: 5px;
     cursor: pointer;
-    margin-top: 10px;
 }
 
-#lejatszo {
-    margin: 20px;
-    text-align: center;
+nav button:hover {
+    color: red;
 }
-iframe {
-    width: 90%;
-    height: 400px;
+
+#search {
+    padding: 5px;
+    border-radius: 5px;
+    border: none;
+}
+
+.section {
+    padding: 20px;
+}
+
+.movies {
+    display: flex;
+    gap: 15px;
+    overflow-x: auto;
+}
+
+.movie {
+    min-width: 150px;
+    cursor: pointer;
+    position: relative;
+}
+
+.movie img {
+    width: 100%;
     border-radius: 10px;
+}
+
+.favorite {
+    position: absolute;
+    top: 5px;
+    right: 10px;
+    cursor: pointer;
+    font-size: 20px;
+}
+
+.rating {
+    text-align: center;
+    margin-top: 5px;
+    cursor: pointer;
+}
+
+#player {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: black;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+
+video {
+    width: 80%;
+    max-height: 80%;
+}
+
+#close {
+    position: absolute;
+    top: 20px;
+    right: 30px;
+    font-size: 30px;
+    cursor: pointer;
 }
 </style>
 </head>
 
 <body>
 
-<h1>🎬 Film Oldal</h1>
+<header>
+    <h1>MyStream</h1>
 
-<div class="container">
+    <nav>
+        <button onclick="showSection('akcio')">Akció</button>
+        <button onclick="showSection('horror')">Horror</button>
+        <button onclick="showSection('kedvencek')">Kedvencek ❤️</button>
+    </nav>
 
-<div class="card">
-<img src="https://image.tmdb.org/t/p/w500/q719jXXEzOoYaps6babgKnONONX.jpg">
-<div class="card-content">
-<h3>A sötét lovag</h3>
-<button onclick="indit('EXeTwQWrcwY')">Trailer indítása</button>
-</div>
-</div>
+    <input type="text" id="search" placeholder="Keresés..." onkeyup="kereses()">
+</header>
 
-<div class="card">
-<img src="https://image.tmdb.org/t/p/w500/8UlWHLMpgZm9bx6QYh0NFoq67TZ.jpg">
-<div class="card-content">
-<h3>Eredet</h3>
-<button onclick="indit('YoHD9XEInc0')">Trailer indítása</button>
-</div>
+<div id="akcio" class="section">
+    <h2>Akció</h2>
+    <div class="movies" id="akcioList"></div>
 </div>
 
+<div id="horror" class="section" style="display:none;">
+    <h2>Horror</h2>
+    <div class="movies" id="horrorList"></div>
 </div>
 
-<div id="lejatszo"></div>
+<div id="kedvencek" class="section" style="display:none;">
+    <h2>Kedvencek</h2>
+    <div class="movies" id="favList"></div>
+</div>
+
+<div id="player">
+    <span id="close" onclick="closePlayer()">✖</span>
+    <video id="videoPlayer" controls autoplay></video>
+</div>
 
 <script>
-function indit(videoID) {
-    document.getElementById("lejatszo").innerHTML =
-    `<iframe src="https://www.youtube.com/embed/${videoID}?autoplay=1"
-    allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
+const filmek = [
+{cim:"Akció Film 1", kategoria:"akcio", kep:"https://picsum.photos/200/300?1", video:"video1.mp4"},
+{cim:"Akció Film 2", kategoria:"akcio", kep:"https://picsum.photos/200/300?2", video:"video2.mp4"},
+{cim:"Horror Film 1", kategoria:"horror", kep:"https://picsum.photos/200/300?3", video:"video3.mp4"}
+];
+
+let kedvencek = JSON.parse(localStorage.getItem("kedvencek")) || [];
+
+function render() {
+    document.getElementById("akcioList").innerHTML="";
+    document.getElementById("horrorList").innerHTML="";
+    document.getElementById("favList").innerHTML="";
+
+    filmek.forEach((film,i)=>{
+        let card = `
+        <div class="movie">
+            <span class="favorite" onclick="toggleFav(${i})">
+                ${kedvencek.includes(i) ? "❤️" : "🤍"}
+            </span>
+            <img src="${film.kep}" onclick="playMovie('${film.video}')">
+            <div class="rating" onclick="rate(this)">⭐⭐⭐⭐☆</div>
+            <p>${film.cim}</p>
+        </div>
+        `;
+
+        document.getElementById(film.kategoria+"List").innerHTML += card;
+
+        if(kedvencek.includes(i)){
+            document.getElementById("favList").innerHTML += card;
+        }
+    });
 }
+
+function toggleFav(index){
+    if(kedvencek.includes(index)){
+        kedvencek = kedvencek.filter(i=>i!==index);
+    } else {
+        kedvencek.push(index);
+    }
+    localStorage.setItem("kedvencek", JSON.stringify(kedvencek));
+    render();
+}
+
+function rate(el){
+    el.innerHTML="⭐⭐⭐⭐⭐";
+}
+
+function playMovie(src){
+    document.getElementById("player").style.display="flex";
+    document.getElementById("videoPlayer").src=src;
+}
+
+function closePlayer(){
+    document.getElementById("player").style.display="none";
+    document.getElementById("videoPlayer").pause();
+}
+
+function showSection(id){
+    document.querySelectorAll(".section").forEach(s=>s.style.display="none");
+    document.getElementById(id).style.display="block";
+}
+
+function kereses(){
+    let q = document.getElementById("search").value.toLowerCase();
+    document.querySelectorAll(".movie").forEach(m=>{
+        m.style.display = m.innerText.toLowerCase().includes(q) ? "block":"none";
+    });
+}
+
+render();
 </script>
 
 </body>
