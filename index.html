@@ -16,6 +16,31 @@ th, td{border:1px solid #fff;padding:4px;text-align:center;font-size:14px;}
 input{width:140px;padding:4px;border-radius:6px;border:none;}
 .icon-panel{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;}
 .icon-panel button{flex:1;padding:6px;}
+  .help-panel{
+background:#1e293b;
+padding:0 15px;
+border-radius:10px;
+margin-bottom:15px;
+line-height:1.6;
+
+max-height:0;
+overflow:hidden;
+transition:max-height 0.4s ease, padding 0.3s ease;
+}
+
+.help-panel.open{
+max-height:1200px;
+padding:15px;
+}
+
+#arrow{
+display:inline-block;
+transition:transform 0.3s ease;
+}
+
+#arrow.rotate{
+transform:rotate(180deg);
+}
 </style>
 </head>
 <body>
@@ -29,6 +54,36 @@ input{width:140px;padding:4px;border-radius:6px;border:none;}
 </div>
 
 <h2>💰 Heti Fizetés</h2>
+  <button onclick="toggleHelp()" 
+        style="background:#334155;color:white;padding:6px 12px;border:none;border-radius:8px;margin-bottom:10px;cursor:pointer;font-weight:bold;">
+📘 Útmutató <span id="arrow">▼</span>
+</button>
+
+<div id="helpPanel" class="help-panel">
+
+<h3 style="color:#38bdf8;margin-top:0;">📘 Használati útmutató</h3>
+
+<b>🔐 Admin rendszer</b><br>
+Módosítani csak bejelentkezett admin tud.<br>
+Kilépés után újra jelszó szükséges.<br><br>
+
+<hr style="border:1px solid #334155;">
+
+<b>👤 Tag kezelés</b><br>
+• Új tag hozzáadása a név beírásával<br>
+• ❌ gomb = tag törlése<br><br>
+
+<hr style="border:1px solid #334155;">
+
+<b>💰 Rablás számítás</b><br>
+1️⃣ Add meg a teljes rablás összeget<br>
+2️⃣ Jelöld be kik vettek részt<br>
+3️⃣ Kattints a 🧮 Számol gombra<br><br>
+
+<b>Képlet:</b><br>
+(Rablás összeg / 2 / résztvevők száma) × 0.82<br><br>
+
+</div>
 <button onclick="logout()" class="red" style="margin-bottom:10px;">🚪 Kilépés</button>
 
 <div style="margin-bottom:10px;">
@@ -245,7 +300,15 @@ html+=`
 });
 document.getElementById("tabla").innerHTML=html;
 }
+window.toggleHelp=function(){
+const panel=document.getElementById("helpPanel");
+const arrow=document.getElementById("arrow");
 
+panel.classList.toggle("open");
+arrow.classList.toggle("rotate");
+};
+  
 </script>
 </body>
 </html>
+
