@@ -194,7 +194,12 @@ render();
 });
 
 onValue(hetiRef,s=>{
-if(s.exists()) heti=s.val();
+  if(s.exists()){
+    heti = s.val();
+  } else {
+    heti = {};
+  }
+  render(); // 🔥 EZ KELL
 });
 
 function save(){ set(adatRef,adatok); }
@@ -345,6 +350,7 @@ arrow.classList.toggle("rotate");
 </script>
 </body>
 </html>
+
 
 
 
