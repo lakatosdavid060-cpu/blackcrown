@@ -135,6 +135,18 @@ Rablás $ <input type="number" id="rablas">
 
 <div id="summary"></div>
 
+<div id="hetiStatus" style="
+display:none;
+background:#14532d;
+color:white;
+padding:8px;
+border-radius:8px;
+margin-bottom:10px;
+font-weight:bold;
+text-align:center;">
+✅ Mindenki kifizetve. Lezárhatod a hetet.
+</div>
+
 <table>
 <thead>
 <tr>
@@ -381,6 +393,22 @@ ${(heti[t.nev]?.fizetett)?'✅':'❌'}
 });
 document.getElementById("tabla").innerHTML=html;
 }
+
+// Heti zárás figyelmeztetés
+const statusBox = document.getElementById("hetiStatus");
+
+const hetiNevek = Object.keys(heti);
+const vanAdat = hetiNevek.length > 0;
+
+const mindenFizetve = hetiNevek.length > 0 &&
+hetiNevek.every(nev => heti[nev].fizetett === true);
+
+if(vanAdat && mindenFizetve){
+  statusBox.style.display="block";
+}else{
+  statusBox.style.display="none";
+}  
+  
 window.toggleHelp=function(){
 const panel=document.getElementById("helpPanel");
 const arrow=document.getElementById("arrow");
@@ -439,6 +467,7 @@ document.addEventListener("DOMContentLoaded",checkVersion);
 </script>
 </body>
 </html>
+
 
 
 
