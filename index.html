@@ -397,15 +397,12 @@ ${(heti[t.nev]?.fizetett)?'✅':'❌'}
 document.getElementById("tabla").innerHTML=html;
 }
 
-// Heti zárás figyelmeztetés (FŐMENÜ alapján)
+// Heti zárás figyelmeztetés (csak pipák alapján)
 const statusBox = document.getElementById("hetiStatus");
 
-// csak azok számítanak, akiknek van kiosztott pénzük
-const fizetendoTagok = adatok.filter(t => t.osszeg > 0);
-
-const mindenFizetve =
-fizetendoTagok.length > 0 &&
-fizetendoTagok.every(t => heti[t.nev]?.fizetett === true);
+// mindenki fizetve?
+const mindenFizetve = adatok.length > 0 &&
+adatok.every(t => heti[t.nev]?.fizetett === true);
 
 if(mindenFizetve){
   statusBox.style.display="block";
@@ -471,6 +468,7 @@ document.addEventListener("DOMContentLoaded",checkVersion);
 </script>
 </body>
 </html>
+
 
 
 
