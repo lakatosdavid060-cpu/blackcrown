@@ -3,161 +3,130 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Rablás Rögzítés</title>
+<title>Kő Papír Olló - Mobil Edition</title>
 
 <style>
-body{font-family:Arial;background:#0f172a;color:white;padding:20px;margin:0;}
-h2{color:#38bdf8;margin-bottom:10px;}
-.card{background:#1e293b;padding:15px;border-radius:10px;margin-bottom:20px;}
-select,input{padding:6px;border-radius:6px;border:none;margin:5px 0;width:220px;}
-button{padding:8px 14px;border:none;border-radius:6px;cursor:pointer;font-weight:bold;margin-top:10px;}
-.green{background:#16a34a;color:white;}
-.list{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;}
-.member{background:#334155;padding:6px 10px;border-radius:6px;}
-table{border-collapse:collapse;width:100%;margin-top:10px;}
-th,td{border:1px solid #fff;padding:5px;text-align:center;font-size:13px;}
-th{background:#334155;}
+body {
+    margin: 0;
+    padding: 0;
+    text-align: center;
+    font-family: Arial, sans-serif;
+    background: linear-gradient(180deg, #141E30, #243B55);
+    color: white;
+}
+
+h1 {
+    margin-top: 20px;
+    font-size: 28px;
+}
+
+.gombok {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 40px;
+}
+
+button {
+    flex: 1;
+    max-width: 120px;
+    font-size: 28px;
+    padding: 20px;
+    border-radius: 20px;
+    border: none;
+    background: #00c6ff;
+    color: black;
+    font-weight: bold;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.4);
+}
+
+button:active {
+    transform: scale(0.95);
+}
+
+#eredmeny {
+    margin-top: 30px;
+    font-size: 22px;
+    min-height: 60px;
+}
+
+#pontok {
+    margin-top: 20px;
+    font-size: 20px;
+}
+
+#gyoztes {
+    margin-top: 20px;
+    font-size: 24px;
+    color: yellow;
+}
 </style>
 </head>
+
 <body>
 
-<h2>💰 Új Rablás</h2>
+<h1>🪨📄✂️</h1>
 
-<div class="card">
-<label>Rablás típusa</label><br>
-<select id="tipus">
-  <option value="Paleto Bank">Paleto Bank</option>
-  <option value="Állami Bank">Állami Bank</option>
-  <option value="Boltrablás">Boltrablás</option>
-  <option value="Egyéb">Egyéb</option>
-</select>
-<br>
-
-<label>Teljes bevétel ($)</label><br>
-<input type="number" id="osszeg" placeholder="Pl: 130000">
-<br>
-
-<label>Résztvevők</label>
-<div class="list" id="tagLista"></div>
-
-<button class="green" onclick="mentRablas()">Rablás Mentése</button>
+<div class="gombok">
+    <button onclick="jatek('ko')">🪨</button>
+    <button onclick="jatek('papir')">📄</button>
+    <button onclick="jatek('ollo')">✂️</button>
 </div>
 
-<h2>📜 Heti Rablás Napló</h2>
+<div id="eredmeny"></div>
+<div id="pontok">Te: 0 | Gép: 0</div>
+<div id="gyoztes"></div>
 
-<table>
-<thead>
-<tr>
-<th>Dátum</th>
-<th>Típus</th>
-<th>Bevétel</th>
-<th>Résztvevők</th>
-</tr>
-</thead>
-<tbody id="naploTabla"></tbody>
-</table>
+<script>
+let tePont = 0;
+let gepPont = 0;
+let jatekVege = false;
 
-<script type="module">
+const emoji = { ko: "🪨", papir: "📄", ollo: "✂️" };
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getDatabase, ref, onValue, set, push } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+function jatek(valasztas) {
 
-const firebaseConfig = {
-  apiKey: "AIzaSyBgbixws2rf6VdqjQATVwZsKg0lgiqy0xI",
-  authDomain: "ordog-fizetes.firebaseapp.com",
-  databaseURL: "https://ordog-fizetes-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "ordog-fizetes"
-};
+    if (jatekVege) return;
 
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
+    const lehetosegek = ['ko', 'papir', 'ollo'];
+    const gep = lehetosegek[Math.floor(Math.random() * 3)];
 
-const adatRef = ref(db,"aktualisAdatok");
-const naploRef = ref(db,"hetiRablasNaplo");
+    let eredmeny = "";
 
-let adatok=[];
+    if (valasztas === gep) {
+        eredmeny = "🤝 Döntetlen!";
+    } 
+    else if (
+        (valasztas === 'ko' && gep === 'ollo') ||
+        (valasztas === 'papir' && gep === 'ko') ||
+        (valasztas === 'ollo' && gep === 'papir')
+    ) {
+        eredmeny = "🎉 Nyertél!";
+        tePont++;
+    } 
+    else {
+        eredmeny = "😢 Vesztettél!";
+        gepPont++;
+    }
 
-const tagLista=document.getElementById("tagLista");
-const naploTabla=document.getElementById("naploTabla");
+    document.getElementById("eredmeny").innerHTML =
+        "Te: " + emoji[valasztas] +
+        " | Gép: " + emoji[gep] +
+        "<br>" + eredmeny;
 
+    document.getElementById("pontok").innerHTML =
+        "Te: " + tePont + " | Gép: " + gepPont;
 
-// TAGOK BETÖLTÉSE
-onValue(adatRef,snapshot=>{
-  if(snapshot.exists()){
-    adatok=snapshot.val();
-    renderTagok();
-  }
-});
+    if (tePont === 5) {
+        document.getElementById("gyoztes").innerHTML = "🏆 Te nyertél!";
+        jatekVege = true;
+    }
 
-// NAPLÓ BETÖLTÉSE
-onValue(naploRef,snapshot=>{
-  naploTabla.innerHTML="";
-  if(snapshot.exists()){
-    const data=snapshot.val();
-    Object.values(data).forEach(r=>{
-      naploTabla.innerHTML+=`
-      <tr>
-        <td>${r.datum}</td>
-        <td>${r.tipus}</td>
-        <td>${r.osszeg.toLocaleString('hu-HU')} $</td>
-        <td>${r.resztvevok.join(", ")}</td>
-      </tr>`;
-    });
-  }
-});
-
-
-function renderTagok(){
-  tagLista.innerHTML="";
-  adatok.forEach((t,i)=>{
-    tagLista.innerHTML+=`
-      <label class="member">
-        <input type="checkbox" value="${i}">
-        ${t.nev}
-      </label>
-    `;
-  });
+    if (gepPont === 5) {
+        document.getElementById("gyoztes").innerHTML = "🤖 A gép nyert!";
+        jatekVege = true;
+    }
 }
-
-
-window.mentRablas=function(){
-
-  const tipus=document.getElementById("tipus").value;
-  const osszeg=Number(document.getElementById("osszeg").value);
-
-  if(!osszeg) return alert("Adj meg összeget!");
-
-  const checked=document.querySelectorAll("#tagLista input:checked");
-  if(checked.length===0) return alert("Válassz résztvevőket!");
-
-  const resztvevok=[];
-  const egyFoResz=((osszeg/2)/checked.length)*0.82;
-
-  checked.forEach(cb=>{
-    const index=cb.value;
-    adatok[index].osszeg=(adatok[index].osszeg||0)+egyFoResz;
-    resztvevok.push(adatok[index].nev);
-  });
-
-  // Heti összeg frissítése
-  set(adatRef,adatok);
-
-  // Napló mentése
-  const today=new Date().toLocaleDateString('hu-HU');
-
-  push(naploRef,{
-    datum:today,
-    tipus:tipus,
-    osszeg:osszeg,
-    resztvevok:resztvevok
-  });
-
-  alert("Rablás mentve!");
-
-  document.getElementById("osszeg").value="";
-  document.querySelectorAll("#tagLista input").forEach(cb=>cb.checked=false);
-}
-
 </script>
 
 </body>
