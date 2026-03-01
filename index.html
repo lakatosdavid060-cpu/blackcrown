@@ -322,7 +322,13 @@ html+=`
 <td><button onclick="minusMoso(${i})">−</button><button onclick="addMoso(${i})">+250</button> ${t.moso}</td>
 <td><button onclick="minusCraft(${i})">−</button><button onclick="addCraft(${i})">+250</button> ${t.craft}</td>
 <td>${t.osszeg.toFixed(2)}</td>
-<td><button class="${t.fizetett?'green':'red'}" onclick="toggleFiz(${i})">${t.fizetett?'✅':'❌'}</button></td>
+<td>
+<button 
+class="${(heti[t.nev]?.fizetett)?'green':'red'}" 
+onclick="toggleFiz(${i})">
+${(heti[t.nev]?.fizetett)?'✅':'❌'}
+</button>
+</td>
 <td><button class="red" onclick="torolTag(${i})">❌</button></td>
 </tr>`;
 });
@@ -339,5 +345,6 @@ arrow.classList.toggle("rotate");
 </script>
 </body>
 </html>
+
 
 
