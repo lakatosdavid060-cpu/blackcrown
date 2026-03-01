@@ -51,6 +51,7 @@ th{background:#eee;}
 
 <h3 id="totalSummary"></h3>
 
+<!-- Firebase -->
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -128,6 +129,7 @@ onValue(hetiRef, snapshot => {
 
 </script>
 
+<!-- PDF -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 
@@ -136,11 +138,27 @@ onValue(hetiRef, snapshot => {
 function generatePDF(){
 
   const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({orientation:'landscape',unit:'pt',format:'a4'});
+
+  const doc = new jsPDF({
+    orientation:'landscape',
+    unit:'pt',
+    format:'a4'
+  });
+
   const pageWidth = doc.internal.pageSize.getWidth();
 
+  // Cím
   doc.setFontSize(14);
   doc.text("Heti Összesítés", pageWidth/2, 30, {align:'center'});
+
+  // 📅 DÁTUM
+  const today = new Date();
+  const nap = today.getDate().toString().padStart(2,'0');
+  const honap = (today.getMonth()+1).toString().padStart(2,'0');
+  const ev = today.getFullYear();
+
+  doc.setFontSize(10);
+  doc.text(`Generálva: ${ev}.${honap}.${nap}`, pageWidth/2, 45, {align:'center'});
 
   const table=document.querySelectorAll("#hetiTable tbody tr");
   let bodyData=[];
@@ -159,7 +177,7 @@ function generatePDF(){
   doc.autoTable({
     head:[["Tag","Mosó","Craft","Összeg","Kifizetve"]],
     body:bodyData,
-    startY:45,
+    startY:60,
     theme:'grid',
     styles:{ fontSize:9 }
   });
