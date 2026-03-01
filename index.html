@@ -121,6 +121,8 @@ Kilépés után újra jelszó szükséges.<br><br>
 <button onclick="openPDF()">📄 PDF</button>
 <button onclick="nullazHeti()">♻️ Heti nullázás</button>
 <button onclick="nullazFo()">🧹 Főmenü nullázás</button>
+<button onclick="loadArchiv()" class="green">📂 Archív</button> 
+<button onclick="clearAllFiz()" class="red">❌ Összes pipa törlése</button>
 </div>
 
 <div style="margin-bottom:10px;">
@@ -163,6 +165,7 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
+const archiveRef = ref(db, "hetiArchiv");
 const adatRef = ref(db, "aktualisAdatok");
 const hetiRef = ref(db, "hetiOsszesites");
 
@@ -274,15 +277,24 @@ window.mentNap=function(){
   alert("Naplózva.");
 };
 
-window.nullazHeti=function(){
+window.nullazHeti=async function(){
 if(!adminCheck())return;
-if(confirm("Heti törlés?")){
-heti={};
-set(hetiRef,{});
-alert("Törölve.");
+
+if(confirm("Heti zárás és archiválás?")){
+
+const datum = new Date().toISOString().split("T")[0];
+
+// archiv mentés
+await set(ref(db, "hetiArchiv/"+datum), heti);
+
+// aktuális heti törlés
+heti = {};
+await set(hetiRef,{});
+
+alert("Heti lezárva és archiválva.");
 }
 };
-
+  
 window.nullazFo=function(){
 if(!adminCheck())return;
 if(confirm("Főmenü nullázás?")){
@@ -390,10 +402,40 @@ window.openChangelog=function(){
   document.getElementById("newBadge").style.display="none";
 };
 
+window.loadArchiv=function(){
+const datum = prompt("Add meg a dátumot (pl: 2026-03-01)");
+
+if(!datum)return;
+
+onValue(ref(db,"hetiArchiv/"+datum),snap=>{
+if(snap.exists()){
+const data = snap.val();
+localStorage.setItem("hetiLogPDF",JSON.stringify(data));
+window.open("pdf_kompakt.html","_blank");
+}else{
+alert("Nincs ilyen archív hét!");
+}
+},{onlyOnce:true});
+}; 
+
+window.clearAllFiz=function(){
+if(!adminCheck())return;
+
+if(confirm("Biztos törlöd az összes fizetett pipát?")){
+
+Object.keys(heti).forEach(nev=>{
+heti[nev].fizetett=false;
+});
+
+set(hetiRef,heti);
+}
+};
+
 document.addEventListener("DOMContentLoaded",checkVersion);
 </script>
 </body>
 </html>
+
 
 
 
