@@ -15,6 +15,112 @@ th{background:#eee;}
 .top1{background:#ffe066;}
 .top2{background:#e5e7eb;}
 .top3{background:#fcd34d;}
+
+/* ===== HÁTTÉR DESIGN ===== */
+
+body{
+font-family:Arial;
+margin:0;
+padding:10px;
+color:#111;
+
+/* háttér szín + neon fény */
+background:#020617;
+background-image:
+radial-gradient(circle at 20% 20%, #1d4ed8 0%, transparent 40%),
+radial-gradient(circle at 80% 80%, #0ea5e9 0%, transparent 40%);
+
+min-height:100vh;
+}
+
+/* vízjel cím */
+
+body::before{
+content:"ÖRDÖGÖK";
+position:fixed;
+
+top:40px;
+left:50%;
+transform:translateX(-50%);
+
+font-size:110px;
+font-weight:900;
+letter-spacing:15px;
+
+color:white;
+opacity:0.06;
+
+pointer-events:none;
+z-index:0;
+}
+
+/* táblák kártya kinézet */
+
+table{
+border-collapse:collapse;
+width:100%;
+margin-bottom:20px;
+background:white;
+border-radius:8px;
+overflow:hidden;
+box-shadow:0 10px 25px rgba(0,0,0,0.3);
+}
+
+/* fejlécek */
+
+th{
+background:#111827;
+color:white;
+}
+
+/* gomb design */
+
+button{
+padding:8px 14px;
+border:none;
+border-radius:6px;
+cursor:pointer;
+font-weight:bold;
+margin-bottom:10px;
+
+background:#2563eb;
+color:white;
+
+box-shadow:0 4px 10px rgba(0,0,0,0.3);
+transition:0.2s;
+}
+
+button:hover{
+transform:scale(1.05);
+background:#1d4ed8;
+}
+
+/* TOP sorok */
+
+.top1{
+background:#ffe066;
+font-weight:bold;
+}
+
+.top2{
+background:#e5e7eb;
+font-weight:bold;
+}
+
+.top3{
+background:#fcd34d;
+font-weight:bold;
+}
+
+/* összeg box */
+
+#totalSummary{
+background:white;
+padding:10px;
+border-radius:8px;
+box-shadow:0 8px 20px rgba(0,0,0,0.3);
+font-size:16px;
+}
 </style>
 </head>
 <body>
