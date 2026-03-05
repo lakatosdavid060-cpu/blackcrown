@@ -13,6 +13,7 @@ padding:20px;
 table{
 width:100%;
 border-collapse:collapse;
+margin-top:20px;
 }
 
 th,td{
@@ -24,6 +25,11 @@ text-align:center;
 th{
 background:#eee;
 }
+
+.info{
+margin-top:10px;
+font-size:18px;
+}
 </style>
 
 </head>
@@ -31,6 +37,9 @@ background:#eee;
 <body>
 
 <h2>📁 Archív heti fizetés</h2>
+
+<div class="info" id="hetKezdet"></div>
+<div class="info" id="hetZaras"></div>
 
 <table>
 
@@ -56,18 +65,27 @@ if(!data){
 alert("Nincs archiv adat!");
 }
 
+// hét kezdete
+document.getElementById("hetKezdet").innerText =
+"📅 Hét kezdete: " + (data.kezdet || "-");
+
+// hét zárása
+document.getElementById("hetZaras").innerText =
+"🔒 Hét lezárva: " + (data.zaras || "-");
+
 const tabla = document.getElementById("tabla");
 
-for(const nev in data){
+// tagok
+for(const nev in data.adatok){
 
 const sor = document.createElement("tr");
 
 sor.innerHTML = `
 <td>${nev}</td>
-<td>${data[nev].moso}</td>
-<td>${data[nev].craft}</td>
-<td>${data[nev].osszeg}</td>
-<td>${data[nev].kifizetve ? "Igen" : "Nem"}</td>
+<td>${data.adatok[nev].moso}</td>
+<td>${data.adatok[nev].craft}</td>
+<td>${data.adatok[nev].osszeg}</td>
+<td>${data.adatok[nev].fizetett ? "Igen" : "Nem"}</td>
 `;
 
 tabla.appendChild(sor);
