@@ -217,17 +217,9 @@ let hetiRef;
 let archiveRef;
 
 onAuthStateChanged(auth, (user) => {
+
   if (user) {
-    uid = user.uid;
 
-    adatRef = ref(db, "users/" + uid + "/aktualisAdatok");
-    hetiRef = ref(db, "users/" + uid + "/hetiOsszesites");
-    archiveRef = ref(db, "users/" + uid + "/hetiArchiv");
-
-    document.getElementById("loginModal").style.display = "none";
-
-    onAuthStateChanged(auth, (user) => {
-  if (user) {
     uid = user.uid;
 
     adatRef = ref(db, "users/" + uid + "/aktualisAdatok");
@@ -237,7 +229,9 @@ onAuthStateChanged(auth, (user) => {
     document.getElementById("loginModal").style.display = "none";
 
     startDatabase();
+
   }
+
 });
 
 function startDatabase(){
@@ -300,7 +294,6 @@ document.getElementById("loginModal").style.display="none";
 }else alert("Hibás jelszó!");
 };
 
-window.logout=function(){
 window.logout=function(){
 signOut(auth);
 location.reload();
