@@ -59,57 +59,19 @@ transform:rotate(180deg);
 transform:rotate(180deg);
 }
 
-@keyframes devilPulse{
-0%{
-opacity:0.12;
-text-shadow:
-0 0 10px #dc2626,
-0 0 20px #dc2626,
-0 0 40px #7f1d1d;
-}
-
-50%{
-opacity:0.22;
-text-shadow:
-0 0 20px #dc2626,
-0 0 40px #dc2626,
-0 0 80px #7f1d1d;
-}
-
-100%{
-opacity:0.12;
-text-shadow:
-0 0 10px #dc2626,
-0 0 20px #dc2626,
-0 0 40px #7f1d1d;
-}
-}
-
 body::before{
 content:"👹ÖRDÖGÖK👹";
 position:fixed;
-top:50%;
+top:120px;        /* FELJEBB kerül */
 left:50%;
-transform:translate(-50%,-50%);
-font-size:100px;
+transform:translateX(-50%);
+font-size:110px;
 font-weight:900;
 letter-spacing:14px;
 color:white;
 
 animation:devilPulse 4s infinite ease-in-out;
 
-pointer-events:none;
-z-index:0;
-}
-
-body::after{
-content:"👹      👹";
-position:fixed;
-top:22%;
-left:50%;
-transform:translateX(-50%);
-font-size:60px;
-opacity:0.15;
 pointer-events:none;
 z-index:0;
 }
@@ -591,6 +553,7 @@ document.addEventListener("DOMContentLoaded",checkVersion);
 </script>
 </body>
 </html>
+
 
 
 
