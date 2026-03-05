@@ -1,284 +1,105 @@
 <!DOCTYPE html>
 <html lang="hu">
 <head>
+
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+
 <title>Mega AI</title>
 
 <style>
 
 body{
-font-family:Arial;
 background:#0f172a;
+font-family:Arial;
 color:white;
 margin:0;
-display:flex;
-flex-direction:column;
-height:100vh;
 }
 
-header{
+.header{
 background:#1e293b;
 padding:15px;
+font-size:20px;
 display:flex;
 justify-content:space-between;
-align-items:center;
-}
-
-header h1{
-margin:0;
-font-size:18px;
-}
-
-header button{
-background:#ef4444;
-border:none;
-padding:6px 10px;
-border-radius:6px;
-color:white;
-cursor:pointer;
 }
 
 #chat{
-flex:1;
-overflow:auto;
 padding:15px;
-}
-
-.msg{
-padding:10px;
-border-radius:10px;
-margin:8px 0;
-max-width:70%;
-white-space:pre-wrap;
+height:70vh;
+overflow:auto;
 }
 
 .user{
 background:#2563eb;
+padding:10px;
+border-radius:10px;
+margin:10px;
+max-width:70%;
 margin-left:auto;
 }
 
 .ai{
 background:#334155;
-}
-
-#inputArea{
-display:flex;
 padding:10px;
-background:#1e293b;
+border-radius:10px;
+margin:10px;
+max-width:70%;
 }
 
-#input{
+.inputBox{
+position:fixed;
+bottom:0;
+width:100%;
+display:flex;
+background:#1e293b;
+padding:10px;
+}
+
+input{
 flex:1;
 padding:10px;
-border-radius:8px;
+border-radius:10px;
 border:none;
-outline:none;
 }
 
-#sendBtn{
+button{
 margin-left:10px;
-padding:10px 20px;
+padding:10px;
 border:none;
+border-radius:10px;
 background:#22c55e;
-border-radius:8px;
 color:white;
-cursor:pointer;
-}
-
-#voiceBtn{
-margin-left:10px;
-padding:10px 15px;
-border:none;
-background:#f59e0b;
-border-radius:8px;
-color:white;
-cursor:pointer;
-}
-
-.typing{
-opacity:0.6;
-font-style:italic;
 }
 
 </style>
+
 </head>
 
 <body>
 
-<header>
-<h1>🤖 Mega AI</h1>
+<div class="header">
+🤖 Mega AI
 <button onclick="clearChat()">Chat törlés</button>
-</header>
+</div>
 
 <div id="chat"></div>
 
-<div id="inputArea">
-<input id="input" placeholder="Írj vagy beszélj...">
-<button id="voiceBtn" onclick="startVoice()">🎤</button>
-<button id="sendBtn" onclick="send()">Küld</button>
+<div class="inputBox">
+
+<input id="input" placeholder="Írj valamit...">
+
+<button onclick="sendMessage()">Küld</button>
+
 </div>
+
+<script src="ai.js"></script>
 
 <script>
 
-const API_KEY="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";
-
-let messages=[];
-
-const chat=document.getElementById("chat");
-
-function saveChat(){
-localStorage.setItem("mega_ai_chat",JSON.stringify(messages));
-}
-
-function loadChat(){
-
-const saved=localStorage.getItem("mega_ai_chat");
-
-if(saved){
-messages=JSON.parse(saved);
-
-messages.forEach(m=>{
-addMessage(m.content,m.role==="user"?"user":"ai");
-});
-}
-
-}
-
-function addMessage(text,type){
-
-const div=document.createElement("div");
-div.className="msg "+type;
-div.innerText=text;
-
-chat.appendChild(div);
-chat.scrollTop=chat.scrollHeight;
-
-}
-
-function typing(){
-
-const div=document.createElement("div");
-div.className="msg ai typing";
-div.id="typing";
-div.innerText="AI gondolkodik...";
-
-chat.appendChild(div);
-
-}
-
-function removeTyping(){
-const t=document.getElementById("typing");
-if(t) t.remove();
-}
-
-async function send(){
-
-const input=document.getElementById("input");
-const text=input.value.trim();
-
-if(!text) return;
-
-addMessage(text,"user");
-
-messages.push({
-role:"user",
-content:text
-});
-
-saveChat();
-
-input.value="";
-
-typing();
-
-try{
-
-const response=await fetch("https://api.groq.com/openai/v1/chat/completions",{
-
-method:"POST",
-
-headers:{
-"Content-Type":"application/json",
-"Authorization":"Bearer "+API_KEY
-},
-
-body:JSON.stringify({
-model:"llama3-8b-8192",
-messages:messages
-})
-
-});
-
-const data=await response.json();
-
-removeTyping();
-
-const reply=data.choices[0].message.content;
-
-addMessage(reply,"ai");
-
-messages.push({
-role:"assistant",
-content:reply
-});
-
-saveChat();
-
-speak(reply);
-
-}catch(e){
-
-removeTyping();
-addMessage("Hiba történt.","ai");
-
-}
-
-}
-
 function clearChat(){
-
-if(confirm("Törlöd a chatet?")){
-messages=[];
-localStorage.removeItem("mega_ai_chat");
-chat.innerHTML="";
+document.getElementById("chat").innerHTML="";
 }
-
-}
-
-document.getElementById("input").addEventListener("keypress",function(e){
-if(e.key==="Enter") send();
-});
-
-function speak(text){
-
-const speech=new SpeechSynthesisUtterance(text);
-speech.lang="hu-HU";
-speech.rate=1;
-
-speechSynthesis.speak(speech);
-
-}
-
-function startVoice(){
-
-const recognition=new(window.SpeechRecognition || window.webkitSpeechRecognition)();
-
-recognition.lang="hu-HU";
-
-recognition.onresult=function(e){
-
-const text=e.results[0][0].transcript;
-
-document.getElementById("input").value=text;
-
-};
-
-recognition.start();
-
-}
-
-loadChat();
 
 </script>
 
