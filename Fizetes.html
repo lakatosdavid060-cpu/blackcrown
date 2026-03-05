@@ -1,58 +1,7 @@
-<!DOCTYPE html>
-<html lang="hu">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Heti Fizetés</title>
-
-<style>
-body{font-family:Arial;background:#0f172a;color:white;padding:15px;margin:0;}
-h2{color:#38bdf8;}
-button{padding:4px 8px;margin:2px;border:none;border-radius:6px;cursor:pointer;font-weight:bold;}
-.green{background:#16a34a;color:white;}
-.red{background:#dc2626;color:white;}
-table{border-collapse:collapse;width:100%;color:white;margin-top:10px;}
-th, td{border:1px solid #fff;padding:4px;text-align:center;font-size:14px;}
-input{width:140px;padding:4px;border-radius:6px;border:none;}
-</style>
-</head>
-<body>
-
-<div id="loginModal" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);display:flex;align-items:center;justify-content:center;z-index:9999;">
-<div style="background:#1e293b;padding:25px;border-radius:10px;text-align:center;width:300px;">
-<h3>🔐 Bejelentkezés</h3>
-
-<input type="email" id="emailInput" placeholder="Email"><br><br>
-<input type="password" id="passwordInput" placeholder="Jelszó"><br><br>
-
-<button onclick="loginUser()" class="green" style="width:100%;">Belépés</button>
-<button onclick="registerUser()" class="red" style="width:100%;margin-top:5px;">Regisztráció</button>
-
-</div>
-</div>
-
-<h2>💰 Heti Fizetés</h2>
-
-<button onclick="logout()" class="red">🚪 Kilépés</button>
-
-<div style="margin-bottom:10px;">
-<input type="text" id="ujTagNev" placeholder="Új tag neve">
-<button onclick="ujTag()" class="green">➕ Hozzáadás</button>
-</div>
-
-<div style="margin-bottom:10px;">
-Rablás $ <input type="number" id="rablas">
-<button onclick="szamol()">🧮 Számol</button>
-<button onclick="mentNap()">💾 Naplóz</button>
-<button onclick="nullazHeti()">♻️ Heti nullázás</button>
-</div>
-
-<div id="summary"></div>
-
 <table>
 <thead>
 <tr>
-<th>Tag</th>
+<th>Név</th>
 <th>Rablás</th>
 <th>Mosó</th>
 <th>Craft</th>
@@ -61,294 +10,201 @@ Rablás $ <input type="number" id="rablas">
 <th>Törlés</th>
 </tr>
 </thead>
-<tbody id="tabla"></tbody>
+<tbody id="table"></tbody>
 </table>
-
+</div>
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
 
-import { 
+import {
 getAuth,
-signInWithEmailAndPassword,
 createUserWithEmailAndPassword,
-onAuthStateChanged,
-signOut
+signInWithEmailAndPassword,
+signOut,
+onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
 
 import {
-getDatabase,
-ref,
-set,
-onValue
-} from "https://www.gstatic.com/firebasejs/12.10.0/firebase-database.js";
+getFirestore,
+collection,
+addDoc,
+getDocs,
+deleteDoc,
+doc,
+updateDoc
+} from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
+
 
 const firebaseConfig = {
+
 apiKey: "AIzaSyBxFpe6RbhtOFOeUUZye0W7DSpH8EXchIM",
 authDomain: "fizetes-cf7b9.firebaseapp.com",
-databaseURL:"https://fizetes-cf7b9-default-rtdb.firebaseio.com/",
 projectId: "fizetes-cf7b9",
-storageBucket: "fizetes-cf7b9.appspot.com",
+storageBucket: "fizetes-cf7b9.firebasestorage.app",
 messagingSenderId: "645762765776",
 appId: "1:645762765776:web:0e55802957ce13f3fd5fd5"
+
 };
 
 const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getDatabase(app);
 
-let uid=null;
-let adatRef;
-let hetiRef;
+const auth = getAuth();
+const db = getFirestore();
 
-let adatok=[];
-let heti={};
+let uid=null
 
-const alapNevek=[
-"Ugaros Turul","Yukito Osano","Emily Mitsuko","Vladimir Iwanow"
-];
+window.register=()=>{
+
+createUserWithEmailAndPassword(
+auth,
+email.value,
+password.value
+).catch(e=>alert(e.message))
+
+}
+
+window.login=()=>{
+
+signInWithEmailAndPassword(
+auth,
+email.value,
+password.value
+).catch(e=>alert(e.message))
+
+}
+
+window.logout=()=>{
+
+signOut(auth)
+
+}
 
 onAuthStateChanged(auth,(user)=>{
 
 if(user){
 
-uid=user.uid;
+uid=user.uid
 
-adatRef=ref(db,"users/"+uid+"/adatok");
-hetiRef=ref(db,"users/"+uid+"/heti");
+loginBox.style.display="none"
+app.style.display="block"
 
-document.getElementById("loginModal").style.display="none";
+loadMembers()
 
-startDatabase();
-
-}
-
-});
-
-function startDatabase(){
-
-onValue(adatRef,snap=>{
-
-if(snap.exists()){
-adatok=snap.val();
 }else{
-adatok=alapNevek.map(n=>({
-nev:n,moso:0,craft:0,rablas:false,osszeg:0,fizetett:false
-}));
-set(adatRef,adatok);
-}
 
-render();
-
-});
-
-onValue(hetiRef,snap=>{
-if(snap.exists()){
-heti=snap.val();
-}else{
-heti={};
-}
-render();
-});
+loginBox.style.display="block"
+app.style.display="none"
 
 }
 
-function save(){
-set(adatRef,adatok);
-}
+})
 
-window.szamol=function(){
+window.addMember=async()=>{
 
-let osszeg=+document.getElementById("rablas").value||0;
-const reszt=adatok.filter(t=>t.rablas).length||1;
+let total = Number(rob.value)+Number(moso.value)+Number(craft.value)
 
-adatok.forEach(t=>{
-let resz=0;
+await addDoc(collection(db,"users",uid,"members"),{
 
-if(t.rablas){
-resz=((osszeg/2)/reszt)*0.82;
-}
+name:name.value,
+rob:Number(rob.value),
+moso:Number(moso.value),
+craft:Number(craft.value),
+total,
+paid:false
 
-t.osszeg=resz+(t.moso*250)+(t.craft*250);
+})
 
-});
-
-save();
-render();
-
-};
-
-window.mentNap=function(){
-
-adatok.forEach(t=>{
-
-if(!heti[t.nev]){
-heti[t.nev]={nev:t.nev,osszeg:0,fizetett:false};
-}
-
-heti[t.nev].osszeg+=t.osszeg;
-
-});
-
-set(hetiRef,heti);
-alert("Naplózva");
-
-};
-
-window.nullazHeti=function(){
-
-if(confirm("Heti nullázás?")){
-
-heti={};
-set(hetiRef,{});
+loadMembers()
 
 }
 
-};
+window.calc=()=>{
 
-window.ujTag=function(){
+alert("Összeg automatikusan számolva hozzáadáskor")
 
-const nev=document.getElementById("ujTagNev").value;
-
-adatok.push({
-nev:nev,
-moso:0,
-craft:0,
-rablas:false,
-osszeg:0,
-fizetett:false
-});
-
-save();
-render();
-
-};
-
-window.toggleRablas=function(i){
-adatok[i].rablas=!adatok[i].rablas;
-save();
-render();
-};
-
-window.addMoso=i=>{
-adatok[i].moso++;
-save();
-render();
-};
-
-window.addCraft=i=>{
-adatok[i].craft++;
-save();
-render();
-};
-
-window.toggleFiz=function(i){
-
-const nev=adatok[i].nev;
-
-if(!heti[nev]){
-heti[nev]={nev:nev,osszeg:0,fizetett:true};
-}else{
-heti[nev].fizetett=!heti[nev].fizetett;
 }
 
-set(hetiRef,heti);
+window.resetWeek=async()=>{
 
-};
+if(!confirm("Biztos törlöd a hetet?"))return
 
-window.torolTag=function(i){
+const snap=await getDocs(collection(db,"users",uid,"members"))
 
-adatok.splice(i,1);
-save();
-render();
+for(const d of snap.docs){
 
-};
+await deleteDoc(doc(db,"users",uid,"members",d.id))
 
-function render(){
+}
 
-let html="";
-let total=0;
+loadMembers()
 
-adatok.forEach((t,i)=>{
+}
 
-total+=t.osszeg;
+window.togglePaid=async(id,current)=>{
 
-html+=`
+await updateDoc(doc(db,"users",uid,"members",id),{
+
+paid:!current
+
+})
+
+loadMembers()
+
+}
+
+window.remove=async(id)=>{
+
+await deleteDoc(doc(db,"users",uid,"members",id))
+
+loadMembers()
+
+}
+
+window.loadMembers=async()=>{
+
+table.innerHTML=""
+
+let searchText=search.value?.toLowerCase()||""
+
+const snap=await getDocs(collection(db,"users",uid,"members"))
+
+snap.forEach(d=>{
+
+let data=d.data()
+
+if(!data.name.toLowerCase().includes(searchText))return
+
+table.innerHTML+=`
+
 <tr>
 
-<td>${t.nev}</td>
+<td>${data.name}</td>
+<td>${data.rob}</td>
+<td>${data.moso}</td>
+<td>${data.craft}</td>
+<td>${data.total}</td>
 
 <td>
-<input type="checkbox"
-${t.rablas?'checked':''}
-onclick="toggleRablas(${i})">
-</td>
-
-<td>
-<button onclick="addMoso(${i})">+250</button>
-${t.moso}
-</td>
-
-<td>
-<button onclick="addCraft(${i})">+250</button>
-${t.craft}
-</td>
-
-<td>${t.osszeg.toFixed(2)}</td>
-
-<td>
-<button class="${heti[t.nev]?.fizetett?'green':'red'}"
-onclick="toggleFiz(${i})">
-${heti[t.nev]?.fizetett?'✅':'❌'}
+<button onclick="togglePaid('${d.id}',${data.paid})"
+class="${data.paid?'green':'red'}">
+${data.paid?'✔':'❌'}
 </button>
 </td>
 
 <td>
-<button class="red" onclick="torolTag(${i})">❌</button>
+<button onclick="remove('${d.id}')" class="red">❌</button>
 </td>
 
 </tr>
-`;
 
-});
+`
 
-document.getElementById("tabla").innerHTML=html;
-
-document.getElementById("summary").innerHTML=
-"💵 Összes kiosztva: "+total.toFixed(2)+" $";
+})
 
 }
-
-window.loginUser=function(){
-
-const email=document.getElementById("emailInput").value;
-const pass=document.getElementById("passwordInput").value;
-
-signInWithEmailAndPassword(auth,email,pass)
-.then(()=>alert("Belépve"))
-.catch(e=>alert(e.message));
-
-};
-
-window.registerUser=function(){
-
-const email=document.getElementById("emailInput").value;
-const pass=document.getElementById("passwordInput").value;
-
-createUserWithEmailAndPassword(auth,email,pass)
-.then(()=>alert("Regisztráció sikeres"))
-.catch(e=>alert(e.message));
-
-};
-
-window.logout=function(){
-
-signOut(auth);
-
-location.reload();
-
-};
 
 </script>
 </body>
 </html>
+:::
