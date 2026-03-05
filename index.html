@@ -112,6 +112,16 @@ Kilépés után újra jelszó szükséges.<br><br>
 
 </div>
 
+<div id="lastArchiv" style="
+background:#1e293b;
+padding:6px;
+border-radius:8px;
+margin-bottom:10px;
+font-size:13px;
+">
+📁 Utolsó archív mentés: betöltés...
+</div>
+  
 </div>
 <button onclick="logout()" class="red" style="margin-bottom:10px;">🚪 Kilépés</button>
 
@@ -297,15 +307,26 @@ window.mentNap=function(){
   alert("Naplózva.");
 };
 
+onValue(ref(db,"lastArchiv"),snap=>{
+if(snap.exists()){
+document.getElementById("lastArchiv").innerText =
+"📁 Utolsó archív mentés: " + snap.val();
+}
+});
+
 window.nullazHeti=async function(){
 if(!adminCheck())return;
 
 if(confirm("Heti zárás és archiválás?")){
 
 const datum = new Date().toISOString().split("T")[0];
+const mentve = new Date().toLocaleString();
 
 // archiv mentés
 await set(ref(db, "hetiArchiv/"+datum), heti);
+
+// 🔥 utolsó mentés ideje
+await set(ref(db,"lastArchiv"), mentve);
 
 // aktuális heti törlés
 heti = {};
@@ -488,6 +509,7 @@ document.addEventListener("DOMContentLoaded",checkVersion);
 </script>
 </body>
 </html>
+
 
 
 
