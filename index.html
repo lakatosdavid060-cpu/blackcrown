@@ -286,6 +286,16 @@ text-align:center;">
 ✅ Mindenki kifizetve. Lezárhatod a hetet.
 </div>
 
+<div id="nincsFizetve" style="
+display:none;
+background:#7f1d1d;
+color:white;
+padding:8px;
+border-radius:8px;
+margin-bottom:10px;
+font-weight:bold;">
+</div>
+
 <table>
 <thead>
 <tr>
@@ -578,6 +588,24 @@ statusBox.style.display="block";
 statusBox.style.display="none";
 }
 
+const nincsBox = document.getElementById("nincsFizetve");
+
+const nincsLista = adatok
+.filter(t => !heti[t.nev]?.fizetett)
+.map(t => t.nev);
+
+if(nincsLista.length > 0){
+
+nincsBox.style.display="block";
+
+nincsBox.innerHTML =
+"⚠️ Még nincs kifizetve:<br><br>" +
+nincsLista.join("<br>");
+
+}else{
+
+nincsBox.style.display="none";
+
 }
   
 window.toggleHelp=function(){
@@ -679,6 +707,7 @@ document.addEventListener("DOMContentLoaded",checkVersion);
 </script>
 </body>
 </html>
+
 
 
 
