@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<title>Archív heti fizetés</title>
+
+<style>
+body{
+font-family:Arial;
+padding:20px;
+}
+
+h2{
+margin-bottom:20px;
+}
+
+table{
+border-collapse:collapse;
+width:100%;
+}
+
+th,td{
+border:1px solid black;
+padding:6px;
+text-align:center;
+}
+
+</style>
+</head>
+
+<body>
+
+<h2>📂 Archív heti fizetés</h2>
+
+<table>
+
+<thead>
+<tr>
+<th>Név</th>
+<th>Mosó</th>
+<th>Craft</th>
+<th>Összeg</th>
+<th>Kifizetve</th>
+</tr>
+</thead>
+
+<tbody id="tabla"></tbody>
+
+</table>
+
+<script>
+
+const data = JSON.parse(localStorage.getItem("hetiArchivPDF") || "{}");
+
+let html="";
+
+Object.values(data).forEach(t=>{
+
+html+=`
+<tr>
+<td>${t.nev}</td>
+<td>${t.moso}</td>
+<td>${t.craft}</td>
+<td>${t.osszeg.toFixed(2)} $</td>
+<td>${t.fizetett ? "✅" : "❌"}</td>
+</tr>
+`;
+
+});
+
+document.getElementById("tabla").innerHTML = html;
+
+</script>
+
+</body>
+</html>
