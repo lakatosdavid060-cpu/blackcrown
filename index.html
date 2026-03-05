@@ -444,25 +444,20 @@ window.openChangelog=function(){
 };
 
 window.loadArchiv=function(){
+const datum = prompt("Add meg a dátumot (pl: 2026-03-01)");
 
-const datum = prompt("Add meg a dátumot (pl: 2026-03-05)");
-if(!datum) return;
+if(!datum)return;
 
-onValue(ref(db, datum), snap => {
-
+onValue(ref(db,"hetiArchiv/"+datum),snap=>{
 if(snap.exists()){
 const data = snap.val();
-
-localStorage.setItem("hetiLogPDF", JSON.stringify(data));
+localStorage.setItem("hetiLogPDF",JSON.stringify(data));
 window.open("pdf_archiv.html","_blank");
-
 }else{
 alert("Nincs ilyen archív hét!");
 }
-
 },{onlyOnce:true});
-
-};
+}; 
 
 window.clearAllFiz=function(){
 if(!adminCheck())return;
@@ -481,6 +476,7 @@ document.addEventListener("DOMContentLoaded",checkVersion);
 </script>
 </body>
 </html>
+
 
 
 
