@@ -213,7 +213,46 @@ onAuthStateChanged(auth, (user) => {
 
     document.getElementById("loginModal").style.display = "none";
 
-    startListeners();
+    onAuthStateChanged(auth, (user) => {
+  if (user) {
+    uid = user.uid;
+
+    adatRef = ref(db, "users/" + uid + "/aktualisAdatok");
+    hetiRef = ref(db, "users/" + uid + "/hetiOsszesites");
+    archiveRef = ref(db, "users/" + uid + "/hetiArchiv");
+
+    document.getElementById("loginModal").style.display = "none";
+
+    startDatabase();
+  }
+});
+
+function startDatabase(){
+
+onValue(adatRef,s=>{
+if(s.exists()){
+adatok=s.val();
+}else{
+adatok=alapNevek.map(n=>({
+nev:n,moso:0,craft:0,rablas:false,osszeg:0,fizetett:false
+}));
+set(adatRef,adatok);
+}
+render();
+});
+
+onValue(hetiRef,s=>{
+if(s.exists()){
+heti = s.val();
+}else{
+heti = {};
+}
+render();
+});
+
+}
+    
+    
   }
 });
 
@@ -249,7 +288,8 @@ document.getElementById("loginModal").style.display="none";
 };
 
 window.logout=function(){
-localStorage.removeItem("adminLogged");
+window.logout=function(){
+signOut(auth);
 location.reload();
 };
 
