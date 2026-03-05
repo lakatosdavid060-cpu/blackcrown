@@ -258,6 +258,7 @@ font-size:13px;
 <button onclick="nullazHeti()">♻️ Heti nullázás</button>
 <button onclick="nullazFo()">🧹 Főmenü nullázás</button>
 <button onclick="loadArchiv()" class="green">📂 Archív lista</button>
+<div id="archivLista" style="margin-top:10px;"></div>
 <button onclick="clearAllFiz()" class="red">❌ Összes pipa törlése</button>
 </div>
 
@@ -606,31 +607,60 @@ window.openChangelog=function(){
 
 window.loadArchiv = function(){
 
-const datum = prompt("Add meg a dátumot (pl: 2026-03-05)");
-
-if(!datum) return;
-
-const archivRef = ref(db,"hetiArchiv/"+datum);
+const archivRef = ref(db,"hetiArchiv");
 
 onValue(archivRef, snap => {
 
+const box = document.getElementById("archivLista");
+
+if(!snap.exists()){
+box.innerHTML="Nincs archív mentés.";
+return;
+}
+
+let html="<h3>📂 Archív hetek</h3>";
+
+snap.forEach(child => {
+
+const datum = child.key;
+
+html += `
+<div style="margin:5px 0;">
+<button onclick="openArchiv('${datum}')" 
+style="background:#16a34a;color:white;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;">
+📄 ${datum}
+</button>
+</div>
+`;
+
+});
+
+box.innerHTML = html;
+
+},{onlyOnce:true});
+
+}
+
+window.openArchiv = function(datum){
+
+const refDatum = ref(db,"hetiArchiv/"+datum);
+
+onValue(refDatum, snap => {
+
 if(snap.exists()){
 
-const data = snap.val();
-
-localStorage.setItem("hetiLogPDF",JSON.stringify(data));
-
+localStorage.setItem("hetiLogPDF",JSON.stringify(snap.val()));
 window.open("pdf_archiv.html","_blank");
 
 }else{
 
-alert("Nincs ilyen archív hét!");
+alert("Nincs ilyen archív!");
 
 }
 
 },{onlyOnce:true});
 
-};
+}
   
 window.clearAllFiz=function(){
 if(!adminCheck())return;
@@ -649,6 +679,7 @@ document.addEventListener("DOMContentLoaded",checkVersion);
 </script>
 </body>
 </html>
+
 
 
 
