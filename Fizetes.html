@@ -174,29 +174,42 @@ text-align:center;">
 
 const APP_VERSION = "0.1.1"; 
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
+import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-analytics.js";
+
+import { 
+getAuth,
+signInWithEmailAndPassword,
+createUserWithEmailAndPassword,
+onAuthStateChanged,
+signOut
+} from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
+
+import {
+getDatabase,
+ref,
+set,
+onValue,
+update
+} from "https://www.gstatic.com/firebasejs/12.10.0/firebase-database.js";
+
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBgbixws2rf6VdqjQATVwZsKg0lgiqy0xI",
-  authDomain: "ordog-fizetes.firebaseapp.com",
-  databaseURL: "https://ordog-fizetes-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "ordog-fizetes",
-  storageBucket: "ordog-fizetes.firebasestorage.app",
-  messagingSenderId: "672089263660",
-  appId: "1:672089263660:web:70086de26402ceb3464b89"
+  apiKey: "AIzaSyBxFpe6RbhtOFOeUUZye0W7DSpH8EXchIM",
+  authDomain: "fizetes-cf7b9.firebaseapp.com",
+  projectId: "fizetes-cf7b9",
+  storageBucket: "fizetes-cf7b9.firebasestorage.app",
+  messagingSenderId: "645762765776",
+  appId: "1:645762765776:web:0e55802957ce13f3fd5fd5",
+  measurementId: "G-04Y2W2WHPF"
 };
 
+
 const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
-import { getAuth, 
-         createUserWithEmailAndPassword, 
-         signInWithEmailAndPassword, 
-         onAuthStateChanged,
-         signOut } 
-from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
+const analytics = getAnalytics(app);
 
 const auth = getAuth(app);
+const db = getDatabase(app);
 
 let uid = null;
 let adatRef;
