@@ -47,9 +47,13 @@ transform:rotate(180deg);
 
 <div id="loginModal" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);display:flex;align-items:center;justify-content:center;z-index:9999;">
   <div style="background:#1e293b;padding:25px;border-radius:10px;text-align:center;width:300px;">
-    <h3>🔐 Admin Bejelentkezés</h3>
-    <input type="password" id="modalPass" placeholder="Jelszó">
-    <button onclick="modalLogin()" class="green" style="width:100%;margin-top:10px;">Belépés</button>
+    <h3>🔐 Bejelentkezés</h3>
+
+<input type="email" id="emailInput" placeholder="Email"><br><br>
+<input type="password" id="passwordInput" placeholder="Jelszó"><br><br>
+
+<button onclick="loginUser()" class="green" style="width:100%;">Belépés</button>
+<button onclick="registerUser()" class="red" style="width:100%;margin-top:5px;">Regisztráció</button>
   </div>
 </div>
 
@@ -185,9 +189,33 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
-const archiveRef = ref(db, "hetiArchiv");
-const adatRef = ref(db, "aktualisAdatok");
-const hetiRef = ref(db, "hetiOsszesites");
+import { getAuth, 
+         createUserWithEmailAndPassword, 
+         signInWithEmailAndPassword, 
+         onAuthStateChanged,
+         signOut } 
+from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
+
+const auth = getAuth(app);
+
+let uid = null;
+let adatRef;
+let hetiRef;
+let archiveRef;
+
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    uid = user.uid;
+
+    adatRef = ref(db, "users/" + uid + "/aktualisAdatok");
+    hetiRef = ref(db, "users/" + uid + "/hetiOsszesites");
+    archiveRef = ref(db, "users/" + uid + "/hetiArchiv");
+
+    document.getElementById("loginModal").style.display = "none";
+
+    startListeners();
+  }
+});
 
 const ADMIN_JELSZO="1234";
 let admin=false;
