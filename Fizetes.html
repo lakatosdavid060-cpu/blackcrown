@@ -1,210 +1,276 @@
-<table>
-<thead>
-<tr>
-<th>Név</th>
-<th>Rablás</th>
-<th>Mosó</th>
-<th>Craft</th>
-<th>Összeg</th>
-<th>Kifizetve</th>
-<th>Törlés</th>
-</tr>
-</thead>
-<tbody id="table"></tbody>
-</table>
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>AI Assistant ULTRA</title>
+
+<style>
+
+body{
+font-family:Arial;
+margin:0;
+background:#0f172a;
+color:white;
+}
+
+header{
+background:#020617;
+padding:15px;
+text-align:center;
+font-size:22px;
+}
+
+.container{
+max-width:900px;
+margin:auto;
+padding:20px;
+}
+
+#chat{
+height:420px;
+overflow:auto;
+background:#020617;
+padding:15px;
+border-radius:10px;
+margin-bottom:10px;
+}
+
+.msg{
+padding:10px;
+margin:10px 0;
+border-radius:10px;
+}
+
+.user{
+background:#2563eb;
+text-align:right;
+}
+
+.ai{
+background:#374151;
+}
+
+input{
+padding:10px;
+border-radius:8px;
+border:none;
+width:60%;
+}
+
+button{
+padding:10px 14px;
+border:none;
+border-radius:8px;
+background:#2563eb;
+color:white;
+cursor:pointer;
+margin:3px;
+}
+
+button:hover{
+background:#1d4ed8;
+}
+
+#image{
+max-width:100%;
+margin-top:20px;
+border-radius:10px;
+}
+
+.light{
+background:#f1f5f9;
+color:black;
+}
+
+.light #chat{
+background:white;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<header>AI Assistant ULTRA</header>
+
+<div class="container">
+
+<div id="chat"></div>
+
+<input id="text" placeholder="Írj üzenetet...">
+
+<button onclick="send()">Küldés</button>
+<button onclick="voice()">🎤</button>
+<button onclick="theme()">🌙</button>
+
+<br><br>
+
+<button onclick="generateImage()">Kép generálás</button>
+<button onclick="speakLast()">🔊 Felolvasás</button>
+<button onclick="clearChat()">Chat törlés</button>
+
+<br><br>
+
+<input type="file" id="file">
+
+<img id="image">
+
 </div>
-<script type="module">
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
+<script>
 
-import {
-getAuth,
-createUserWithEmailAndPassword,
-signInWithEmailAndPassword,
-signOut,
-onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
+const chat = document.getElementById("chat")
 
-import {
-getFirestore,
-collection,
-addDoc,
-getDocs,
-deleteDoc,
-doc,
-updateDoc
-} from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
+function add(text,cls){
 
+let div=document.createElement("div")
 
-const firebaseConfig = {
+div.className="msg "+cls
 
-apiKey: "AIzaSyBxFpe6RbhtOFOeUUZye0W7DSpH8EXchIM",
-authDomain: "fizetes-cf7b9.firebaseapp.com",
-projectId: "fizetes-cf7b9",
-storageBucket: "fizetes-cf7b9.firebasestorage.app",
-messagingSenderId: "645762765776",
-appId: "1:645762765776:web:0e55802957ce13f3fd5fd5"
+div.innerText=text
 
-};
+chat.appendChild(div)
 
-const app = initializeApp(firebaseConfig);
+chat.scrollTop=chat.scrollHeight
 
-const auth = getAuth();
-const db = getFirestore();
-
-let uid=null
-
-window.register=()=>{
-
-createUserWithEmailAndPassword(
-auth,
-email.value,
-password.value
-).catch(e=>alert(e.message))
+save()
 
 }
 
-window.login=()=>{
+async function send(){
 
-signInWithEmailAndPassword(
-auth,
-email.value,
-password.value
-).catch(e=>alert(e.message))
+let input=document.getElementById("text")
 
-}
+let msg=input.value
 
-window.logout=()=>{
+if(!msg)return
 
-signOut(auth)
+add(msg,"user")
 
-}
+input.value=""
 
-onAuthStateChanged(auth,(user)=>{
+add("AI gondolkodik...","ai")
 
-if(user){
+try{
 
-uid=user.uid
+let r = await fetch("https://api.openai.com/v1/chat/completions",{
 
-loginBox.style.display="none"
-app.style.display="block"
+method:"POST",
 
-loadMembers()
+headers:{
+"Content-Type":"application/json",
+"Authorization":"Bearer API_KEY"
+},
 
-}else{
-
-loginBox.style.display="block"
-app.style.display="none"
-
-}
+body:JSON.stringify({
+model:"gpt-4o-mini",
+messages:[{role:"user",content:msg}]
+})
 
 })
 
-window.addMember=async()=>{
+let data=await r.json()
 
-let total = Number(rob.value)+Number(moso.value)+Number(craft.value)
+let reply=data.choices[0].message.content
 
-await addDoc(collection(db,"users",uid,"members"),{
+chat.lastChild.remove()
 
-name:name.value,
-rob:Number(rob.value),
-moso:Number(moso.value),
-craft:Number(craft.value),
-total,
-paid:false
+add(reply,"ai")
+
+}catch{
+
+chat.lastChild.innerText="AI hiba"
+
+}
+
+}
+
+function generateImage(){
+
+let prompt=document.getElementById("text").value
+
+if(!prompt)return
+
+document.getElementById("image").src=
+"https://image.pollinations.ai/prompt/"+encodeURIComponent(prompt)
+
+}
+
+function voice(){
+
+let rec=new webkitSpeechRecognition()
+
+rec.lang="hu-HU"
+
+rec.start()
+
+rec.onresult=function(e){
+
+document.getElementById("text").value=e.results[0][0].transcript
+
+}
+
+}
+
+function speakLast(){
+
+let msgs=document.querySelectorAll(".ai")
+
+if(!msgs.length)return
+
+let text=msgs[msgs.length-1].innerText
+
+let speech=new SpeechSynthesisUtterance(text)
+
+speech.lang="hu-HU"
+
+speechSynthesis.speak(speech)
+
+}
+
+function theme(){
+
+document.body.classList.toggle("light")
+
+}
+
+function save(){
+
+localStorage.setItem("chat",chat.innerHTML)
+
+}
+
+function load(){
+
+chat.innerHTML=localStorage.getItem("chat")||""
+
+}
+
+function clearChat(){
+
+chat.innerHTML=""
+
+save()
+
+}
+
+document.getElementById("file").addEventListener("change",function(){
+
+let file=this.files[0]
+
+if(!file)return
+
+add("Feltöltve: "+file.name,"user")
 
 })
 
-loadMembers()
-
-}
-
-window.calc=()=>{
-
-alert("Összeg automatikusan számolva hozzáadáskor")
-
-}
-
-window.resetWeek=async()=>{
-
-if(!confirm("Biztos törlöd a hetet?"))return
-
-const snap=await getDocs(collection(db,"users",uid,"members"))
-
-for(const d of snap.docs){
-
-await deleteDoc(doc(db,"users",uid,"members",d.id))
-
-}
-
-loadMembers()
-
-}
-
-window.togglePaid=async(id,current)=>{
-
-await updateDoc(doc(db,"users",uid,"members",id),{
-
-paid:!current
-
-})
-
-loadMembers()
-
-}
-
-window.remove=async(id)=>{
-
-await deleteDoc(doc(db,"users",uid,"members",id))
-
-loadMembers()
-
-}
-
-window.loadMembers=async()=>{
-
-table.innerHTML=""
-
-let searchText=search.value?.toLowerCase()||""
-
-const snap=await getDocs(collection(db,"users",uid,"members"))
-
-snap.forEach(d=>{
-
-let data=d.data()
-
-if(!data.name.toLowerCase().includes(searchText))return
-
-table.innerHTML+=`
-
-<tr>
-
-<td>${data.name}</td>
-<td>${data.rob}</td>
-<td>${data.moso}</td>
-<td>${data.craft}</td>
-<td>${data.total}</td>
-
-<td>
-<button onclick="togglePaid('${d.id}',${data.paid})"
-class="${data.paid?'green':'red'}">
-${data.paid?'✔':'❌'}
-</button>
-</td>
-
-<td>
-<button onclick="remove('${d.id}')" class="red">❌</button>
-</td>
-
-</tr>
-
-`
-
-})
-
-}
+load()
 
 </script>
+
 </body>
+
 </html>
-:::
