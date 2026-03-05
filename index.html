@@ -257,7 +257,7 @@ font-size:13px;
 <button onclick="openPDF()">📄 PDF</button>
 <button onclick="nullazHeti()">♻️ Heti nullázás</button>
 <button onclick="nullazFo()">🧹 Főmenü nullázás</button>
-<button onclick="loadArchiv()" class="green">📂 Archív</button> 
+<button onclick="showArchivList()" class="green">📂 Archív lista</button>
 <button onclick="clearAllFiz()" class="red">❌ Összes pipa törlése</button>
 </div>
 
@@ -265,7 +265,13 @@ font-size:13px;
 Rablás $ <input type="number" id="rablas">
 </div>
 
-<div id="summary"></div>
+<div id="summary" style="
+background:#1e293b;
+padding:8px;
+border-radius:8px;
+margin-bottom:10px;
+font-weight:bold;">
+</div>
 
 <div id="hetiStatus" style="
 display:none;
@@ -524,7 +530,12 @@ window.toggleFiz=i=>{
 
 window.render = function(){
 let total=adatok.reduce((s,t)=>s+t.osszeg,0);
-document.getElementById("summary").innerHTML="💵 Összes kiosztva: "+total.toFixed(2)+" $";
+let fizetett = Object.values(heti).filter(t=>t.fizetett).length;
+
+document.getElementById("summary").innerHTML =
+"👥 Tagok: "+adatok.length+
+" | 💰 Heti összeg: "+total.toFixed(2)+" $" +
+" | ✅ Fizetett: "+fizetett+" / "+adatok.length;
 
 const keresett = document.getElementById("kereso")?.value.toLowerCase() || "";  
   
@@ -617,10 +628,47 @@ alert("Nincs ilyen archív hét!");
 
 }
 
+window.showArchivList=function(){
+
+const archivRef = ref(db,"hetiArchiv");
+
+onValue(archivRef,snap=>{
+
+if(!snap.exists()){
+alert("Nincs archív mentés.");
+return;
+}
+
+let lista="";
+
+snap.forEach(child=>{
+lista+=child.key+"\n";
+});
+
+const datum = prompt("Archív hetek:\n\n"+lista+"\nÍrd be melyiket nyissuk meg:");
+
+if(!datum) return;
+
+const refDatum = ref(db,"hetiArchiv/"+datum);
+
+onValue(refDatum, snap2 => {
+
+if(snap2.exists()){
+
+localStorage.setItem("hetiLogPDF",JSON.stringify(snap2.val()));
+window.open("pdf_archiv.html","_blank");
+
+}else{
+
+alert("Nincs ilyen archív hét!");
+
+}
+
+},{onlyOnce:true});
+
 },{onlyOnce:true});
 
 };
-
 window.clearAllFiz=function(){
 if(!adminCheck())return;
 
@@ -638,6 +686,7 @@ document.addEventListener("DOMContentLoaded",checkVersion);
 </script>
 </body>
 </html>
+
 
 
 
