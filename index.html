@@ -432,21 +432,21 @@ ${(heti[t.nev]?.fizetett)?'✅':'❌'}
 <td><button class="red" onclick="torolTag(${i})">❌</button></td>
 </tr>`;
 });
-document.getElementById("tabla").innerHTML=html;
-}
 
-// Heti zárás figyelmeztetés (csak pipák alapján)
+document.getElementById("tabla").innerHTML=html;
+
 const statusBox = document.getElementById("hetiStatus");
 
-// mindenki fizetve?
 const mindenFizetve = adatok.length > 0 &&
 adatok.every(t => heti[t.nev]?.fizetett === true);
 
 if(mindenFizetve){
-  statusBox.style.display="block";
+statusBox.style.display="block";
 }else{
-  statusBox.style.display="none";
-}  
+statusBox.style.display="none";
+}
+
+}
   
 window.toggleHelp=function(){
 const panel=document.getElementById("helpPanel");
@@ -518,6 +518,7 @@ document.addEventListener("DOMContentLoaded",checkVersion);
 </script>
 </body>
 </html>
+
 
 
 
