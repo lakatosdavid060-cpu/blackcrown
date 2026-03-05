@@ -59,22 +59,105 @@ transform:rotate(180deg);
 transform:rotate(180deg);
 }
 
+@keyframes devilPulse{
+0%{
+opacity:0.2;
+text-shadow:
+0 0 15px #ef4444,
+0 0 35px #dc2626,
+0 0 70px #7f1d1d;
+}
+
+50%{
+opacity:0.45;
+text-shadow:
+0 0 30px #ef4444,
+0 0 60px #dc2626,
+0 0 120px #7f1d1d;
+}
+
+100%{
+opacity:0.2;
+text-shadow:
+0 0 15px #ef4444,
+0 0 35px #dc2626,
+0 0 70px #7f1d1d;
+}
+}
+
+/* 🔥 LÁNG ANIMÁCIÓ */
+
+@keyframes fireGlow{
+0%{filter:blur(40px);opacity:0.2;}
+50%{filter:blur(70px);opacity:0.45;}
+100%{filter:blur(40px);opacity:0.2;}
+}
+
+/* 👹 MOZGÓ ÖRDÖGÖK */
+
+@keyframes devilFloat{
+0%{transform:translateY(0px);}
+50%{transform:translateY(-40px);}
+100%{transform:translateY(0px);}
+}
+
+/* FŐ FELIRAT */
+
 body::before{
-content:"👹ÖRDÖGÖK👹";
+content:"👹 ÖRDÖGÖK 👹";
 position:fixed;
-top:120px;        /* FELJEBB kerül */
+
+top:70px;
 left:50%;
 transform:translateX(-50%);
-font-size:110px;
+
+font-size:120px;
 font-weight:900;
-letter-spacing:14px;
+letter-spacing:18px;
+
 color:white;
 
-animation:devilPulse 4s infinite ease-in-out;
+animation:devilPulse 3.5s infinite ease-in-out;
 
 pointer-events:none;
 z-index:0;
 }
+
+/* LÁNG A FELIRAT MÖGÖTT */
+
+.fire{
+position:fixed;
+top:90px;
+left:50%;
+transform:translateX(-50%);
+
+width:600px;
+height:120px;
+
+background:radial-gradient(circle,#ef4444,#dc2626,#7f1d1d,transparent);
+
+opacity:0.3;
+
+animation:fireGlow 3s infinite ease-in-out;
+
+pointer-events:none;
+z-index:-1;
+}
+
+/* MOZGÓ HÁTTÉR ÖRDÖGÖK */
+
+.devil-bg{
+position:fixed;
+font-size:120px;
+opacity:0.06;
+animation:devilFloat 8s infinite ease-in-out;
+pointer-events:none;
+z-index:0;
+}
+
+.devil1{top:250px;left:8%;}
+.devil2{top:450px;right:10%;}
+.devil3{bottom:120px;left:20%;}
   
 </style>
 </head>
@@ -553,6 +636,7 @@ document.addEventListener("DOMContentLoaded",checkVersion);
 </script>
 </body>
 </html>
+
 
 
 
