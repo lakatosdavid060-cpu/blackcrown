@@ -452,7 +452,7 @@ onValue(ref(db,"hetiArchiv/"+datum),snap=>{
 if(snap.exists()){
 const data = snap.val();
 localStorage.setItem("hetiLogPDF",JSON.stringify(data));
-window.open("pdf_kompakt.html","_blank");
+window.open("pdf_archiv.html","_blank");
 }else{
 alert("Nincs ilyen archív hét!");
 }
@@ -476,6 +476,7 @@ document.addEventListener("DOMContentLoaded",checkVersion);
 </script>
 </body>
 </html>
+
 
 
 
