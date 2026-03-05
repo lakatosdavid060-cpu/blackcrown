@@ -3,274 +3,284 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>AI Assistant ULTRA</title>
+<title>Mega AI</title>
 
 <style>
 
 body{
 font-family:Arial;
-margin:0;
 background:#0f172a;
 color:white;
+margin:0;
+display:flex;
+flex-direction:column;
+height:100vh;
 }
 
 header{
-background:#020617;
+background:#1e293b;
 padding:15px;
-text-align:center;
-font-size:22px;
+display:flex;
+justify-content:space-between;
+align-items:center;
 }
 
-.container{
-max-width:900px;
-margin:auto;
-padding:20px;
+header h1{
+margin:0;
+font-size:18px;
+}
+
+header button{
+background:#ef4444;
+border:none;
+padding:6px 10px;
+border-radius:6px;
+color:white;
+cursor:pointer;
 }
 
 #chat{
-height:420px;
+flex:1;
 overflow:auto;
-background:#020617;
 padding:15px;
-border-radius:10px;
-margin-bottom:10px;
 }
 
 .msg{
 padding:10px;
-margin:10px 0;
 border-radius:10px;
+margin:8px 0;
+max-width:70%;
+white-space:pre-wrap;
 }
 
 .user{
 background:#2563eb;
-text-align:right;
+margin-left:auto;
 }
 
 .ai{
-background:#374151;
+background:#334155;
 }
 
-input{
+#inputArea{
+display:flex;
+padding:10px;
+background:#1e293b;
+}
+
+#input{
+flex:1;
 padding:10px;
 border-radius:8px;
 border:none;
-width:60%;
+outline:none;
 }
 
-button{
-padding:10px 14px;
+#sendBtn{
+margin-left:10px;
+padding:10px 20px;
 border:none;
+background:#22c55e;
 border-radius:8px;
-background:#2563eb;
 color:white;
 cursor:pointer;
-margin:3px;
 }
 
-button:hover{
-background:#1d4ed8;
+#voiceBtn{
+margin-left:10px;
+padding:10px 15px;
+border:none;
+background:#f59e0b;
+border-radius:8px;
+color:white;
+cursor:pointer;
 }
 
-#image{
-max-width:100%;
-margin-top:20px;
-border-radius:10px;
-}
-
-.light{
-background:#f1f5f9;
-color:black;
-}
-
-.light #chat{
-background:white;
+.typing{
+opacity:0.6;
+font-style:italic;
 }
 
 </style>
-
 </head>
 
 <body>
 
-<header>AI Assistant ULTRA</header>
-
-<div class="container">
+<header>
+<h1>🤖 Mega AI</h1>
+<button onclick="clearChat()">Chat törlés</button>
+</header>
 
 <div id="chat"></div>
 
-<input id="text" placeholder="Írj üzenetet...">
-
-<button onclick="send()">Küldés</button>
-<button onclick="voice()">🎤</button>
-<button onclick="theme()">🌙</button>
-
-<br><br>
-
-<button onclick="generateImage()">Kép generálás</button>
-<button onclick="speakLast()">🔊 Felolvasás</button>
-<button onclick="clearChat()">Chat törlés</button>
-
-<br><br>
-
-<input type="file" id="file">
-
-<img id="image">
-
+<div id="inputArea">
+<input id="input" placeholder="Írj vagy beszélj...">
+<button id="voiceBtn" onclick="startVoice()">🎤</button>
+<button id="sendBtn" onclick="send()">Küld</button>
 </div>
 
 <script>
 
-const chat = document.getElementById("chat")
+const API_KEY="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";
 
-function add(text,cls){
+let messages=[];
 
-let div=document.createElement("div")
+const chat=document.getElementById("chat");
 
-div.className="msg "+cls
+function saveChat(){
+localStorage.setItem("mega_ai_chat",JSON.stringify(messages));
+}
 
-div.innerText=text
+function loadChat(){
 
-chat.appendChild(div)
+const saved=localStorage.getItem("mega_ai_chat");
 
-chat.scrollTop=chat.scrollHeight
+if(saved){
+messages=JSON.parse(saved);
 
-save()
+messages.forEach(m=>{
+addMessage(m.content,m.role==="user"?"user":"ai");
+});
+}
 
+}
+
+function addMessage(text,type){
+
+const div=document.createElement("div");
+div.className="msg "+type;
+div.innerText=text;
+
+chat.appendChild(div);
+chat.scrollTop=chat.scrollHeight;
+
+}
+
+function typing(){
+
+const div=document.createElement("div");
+div.className="msg ai typing";
+div.id="typing";
+div.innerText="AI gondolkodik...";
+
+chat.appendChild(div);
+
+}
+
+function removeTyping(){
+const t=document.getElementById("typing");
+if(t) t.remove();
 }
 
 async function send(){
 
-let input=document.getElementById("text")
+const input=document.getElementById("input");
+const text=input.value.trim();
 
-let msg=input.value
+if(!text) return;
 
-if(!msg)return
+addMessage(text,"user");
 
-add(msg,"user")
+messages.push({
+role:"user",
+content:text
+});
 
-input.value=""
+saveChat();
 
-add("AI gondolkodik...","ai")
+input.value="";
+
+typing();
 
 try{
 
-let r = await fetch("https://api.openai.com/v1/chat/completions",{
+const response=await fetch("https://api.groq.com/openai/v1/chat/completions",{
 
 method:"POST",
 
 headers:{
 "Content-Type":"application/json",
-"Authorization":"Bearer API_KEY"
+"Authorization":"Bearer "+API_KEY
 },
 
 body:JSON.stringify({
-model:"gpt-4o-mini",
-messages:[{role:"user",content:msg}]
+model:"llama3-8b-8192",
+messages:messages
 })
 
-})
+});
 
-let data=await r.json()
+const data=await response.json();
 
-let reply=data.choices[0].message.content
+removeTyping();
 
-chat.lastChild.remove()
+const reply=data.choices[0].message.content;
 
-add(reply,"ai")
+addMessage(reply,"ai");
 
-}catch{
+messages.push({
+role:"assistant",
+content:reply
+});
 
-chat.lastChild.innerText="AI hiba"
+saveChat();
 
-}
+speak(reply);
 
-}
+}catch(e){
 
-function generateImage(){
-
-let prompt=document.getElementById("text").value
-
-if(!prompt)return
-
-document.getElementById("image").src=
-"https://image.pollinations.ai/prompt/"+encodeURIComponent(prompt)
+removeTyping();
+addMessage("Hiba történt.","ai");
 
 }
-
-function voice(){
-
-let rec=new webkitSpeechRecognition()
-
-rec.lang="hu-HU"
-
-rec.start()
-
-rec.onresult=function(e){
-
-document.getElementById("text").value=e.results[0][0].transcript
-
-}
-
-}
-
-function speakLast(){
-
-let msgs=document.querySelectorAll(".ai")
-
-if(!msgs.length)return
-
-let text=msgs[msgs.length-1].innerText
-
-let speech=new SpeechSynthesisUtterance(text)
-
-speech.lang="hu-HU"
-
-speechSynthesis.speak(speech)
-
-}
-
-function theme(){
-
-document.body.classList.toggle("light")
-
-}
-
-function save(){
-
-localStorage.setItem("chat",chat.innerHTML)
-
-}
-
-function load(){
-
-chat.innerHTML=localStorage.getItem("chat")||""
 
 }
 
 function clearChat(){
 
-chat.innerHTML=""
-
-save()
+if(confirm("Törlöd a chatet?")){
+messages=[];
+localStorage.removeItem("mega_ai_chat");
+chat.innerHTML="";
+}
 
 }
 
-document.getElementById("file").addEventListener("change",function(){
+document.getElementById("input").addEventListener("keypress",function(e){
+if(e.key==="Enter") send();
+});
 
-let file=this.files[0]
+function speak(text){
 
-if(!file)return
+const speech=new SpeechSynthesisUtterance(text);
+speech.lang="hu-HU";
+speech.rate=1;
 
-add("Feltöltve: "+file.name,"user")
+speechSynthesis.speak(speech);
 
-})
+}
 
-load()
+function startVoice(){
+
+const recognition=new(window.SpeechRecognition || window.webkitSpeechRecognition)();
+
+recognition.lang="hu-HU";
+
+recognition.onresult=function(e){
+
+const text=e.results[0][0].transcript;
+
+document.getElementById("input").value=text;
+
+};
+
+recognition.start();
+
+}
+
+loadChat();
 
 </script>
 
 </body>
-
 </html>
