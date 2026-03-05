@@ -281,19 +281,6 @@ t.osszeg=resz+(t.moso*250)+(t.craft*250);
 save();render();
 };
 
-// Firebase
-const db = getDatabase();
-const hetiRef = ref(db, "heti");
-
-// heti adatok
-let heti = {};
-
-// 🔹 hét kezdete
-let hetKezdete = null;
-
-
-// ----- FÜGGVÉNYEK -----
-
 window.mentNap = function(){
   if(!adminCheck())return;
 
@@ -324,8 +311,11 @@ window.mentNap = function(){
 
   });
 
-}
+  // 🔥 Firebase mentés
+  set(hetiRef,heti);
 
+  alert("Naplózva.");
+}
 set(hetiRef,heti);
 
 alert("Naplózva.");
@@ -538,6 +528,7 @@ document.addEventListener("DOMContentLoaded",checkVersion);
 </script>
 </body>
 </html>
+
 
 
 
