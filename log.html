@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="hu">
+
+<head>
+<meta charset="UTF-8">
+<title>Heti log</title>
+
+<style>
+
+body{
+font-family:Arial;
+padding:20px;
+}
+
+table{
+width:100%;
+border-collapse:collapse;
+margin-top:20px;
+}
+
+th,td{
+border:1px solid black;
+padding:8px;
+text-align:center;
+}
+
+th{
+background:#eee;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h2>📁 Archív hetek</h2>
+
+<table>
+
+<thead>
+<tr>
+<th>Hét</th>
+<th>Név</th>
+<th>Mosó</th>
+<th>Craft</th>
+<th>Összeg</th>
+</tr>
+</thead>
+
+<tbody id="tabla"></tbody>
+
+</table>
+
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+const firebaseConfig = {
+
+apiKey: "API_KEY",
+authDomain: "PROJECT.firebaseapp.com",
+databaseURL: "https://PROJECT-default-rtdb.firebaseio.com",
+projectId: "PROJECT",
+
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+const tabla = document.getElementById("tabla");
+
+const logRef = ref(db,"archiv");
+
+onValue(logRef,(snapshot)=>{
+
+tabla.innerHTML="";
+
+const data = snapshot.val();
+
+for(const het in data){
+
+for(const nev in data[het]){
+
+const sor = document.createElement("tr");
+
+sor.innerHTML = `
+<td>${het}</td>
+<td>${nev}</td>
+<td>${data[het][nev].moso}</td>
+<td>${data[het][nev].craft}</td>
+<td>${data[het][nev].osszeg}</td>
+`;
+
+tabla.appendChild(sor);
+
+}
+
+}
+
+});
+
+</script>
+
+</body>
+</html>
