@@ -402,7 +402,7 @@ window.toggleFiz=i=>{
   set(hetiRef,heti);
 };
 
-function render(){
+window.render = function(){
 let total=adatok.reduce((s,t)=>s+t.osszeg,0);
 document.getElementById("summary").innerHTML="💵 Összes kiosztva: "+total.toFixed(2)+" $";
 
@@ -518,6 +518,7 @@ document.addEventListener("DOMContentLoaded",checkVersion);
 </script>
 </body>
 </html>
+
 
 
 
