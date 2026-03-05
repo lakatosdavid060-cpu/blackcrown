@@ -450,10 +450,12 @@ const zarasIdeje = new Date().toLocaleString();
 
 // archiv mentés dátumokkal
 await set(ref(db, "hetiArchiv/"+datum), {
-  kezdet: hetiKezdet,     // mikor indult
-  zaras: zarasIdeje,      // mikor lett lezárva
-  adatok: heti            // dolgozók adatai
+  kezdet: hetiKezdet,
+  zaras: zarasIdeje,
+  adatok: heti
 });
+
+await set(ref(db,"lastArchiv"), datum);
 
 // aktuális heti törlés
 heti = {};
@@ -636,6 +638,7 @@ document.addEventListener("DOMContentLoaded",checkVersion);
 </script>
 </body>
 </html>
+
 
 
 
