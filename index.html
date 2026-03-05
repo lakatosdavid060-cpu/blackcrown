@@ -628,47 +628,10 @@ alert("Nincs ilyen archív hét!");
 
 }
 
-window.showArchivList=function(){
-
-const archivRef = ref(db,"hetiArchiv");
-
-onValue(archivRef,snap=>{
-
-if(!snap.exists()){
-alert("Nincs archív mentés.");
-return;
-}
-
-let lista="";
-
-snap.forEach(child=>{
-lista+=child.key+"\n";
-});
-
-const datum = prompt("Archív hetek:\n\n"+lista+"\nÍrd be melyiket nyissuk meg:");
-
-if(!datum) return;
-
-const refDatum = ref(db,"hetiArchiv/"+datum);
-
-onValue(refDatum, snap2 => {
-
-if(snap2.exists()){
-
-localStorage.setItem("hetiLogPDF",JSON.stringify(snap2.val()));
-window.open("pdf_archiv.html","_blank");
-
-}else{
-
-alert("Nincs ilyen archív hét!");
-
-}
-
-},{onlyOnce:true});
-
 },{onlyOnce:true});
 
 };
+  
 window.clearAllFiz=function(){
 if(!adminCheck())return;
 
@@ -686,6 +649,7 @@ document.addEventListener("DOMContentLoaded",checkVersion);
 </script>
 </body>
 </html>
+
 
 
 
