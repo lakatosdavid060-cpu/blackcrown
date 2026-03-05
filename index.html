@@ -402,6 +402,10 @@ window.toggleFiz=i=>{
   set(hetiRef,heti);
 };
 
+let adatok = JSON.parse(localStorage.getItem("adatok")) || [];
+let heti = JSON.parse(localStorage.getItem("heti")) || {};
+let lastArchiv = localStorage.getItem("lastArchiv") || "";
+  
 window.render = function(){
 let total=adatok.reduce((s,t)=>s+t.osszeg,0);
 document.getElementById("summary").innerHTML="💵 Összes kiosztva: "+total.toFixed(2)+" $";
@@ -518,6 +522,7 @@ document.addEventListener("DOMContentLoaded",checkVersion);
 </script>
 </body>
 </html>
+
 
 
 
