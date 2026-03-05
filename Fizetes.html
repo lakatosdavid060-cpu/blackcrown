@@ -333,7 +333,7 @@ if(confirm("Heti zárás és archiválás?")){
 const datum = new Date().toISOString().split("T")[0];
 
 // archiv mentés
-await set(ref(db, "hetiArchiv/"+datum), heti);
+await set(ref(db, "users/"+uid+"/hetiArchiv/"+datum), heti);
 
 // aktuális heti törlés
 heti = {};
@@ -501,6 +501,36 @@ set(hetiRef,heti);
 };
 
 document.addEventListener("DOMContentLoaded",checkVersion);
+
+window.loginUser = function(){
+
+const email = document.getElementById("emailInput").value;
+const pass = document.getElementById("passwordInput").value;
+
+signInWithEmailAndPassword(auth, email, pass)
+.then(()=>{
+alert("Sikeres belépés");
+})
+.catch(error=>{
+alert(error.message);
+});
+
+};
+
+window.registerUser = function(){
+
+const email = document.getElementById("emailInput").value;
+const pass = document.getElementById("passwordInput").value;
+
+createUserWithEmailAndPassword(auth, email, pass)
+.then(()=>{
+alert("Sikeres regisztráció");
+})
+.catch(error=>{
+alert(error.message);
+});
+
+};
 </script>
 </body>
 </html>
