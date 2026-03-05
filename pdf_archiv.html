@@ -10,27 +10,27 @@ font-family:Arial;
 padding:20px;
 }
 
-h2{
-margin-bottom:20px;
-}
-
 table{
-border-collapse:collapse;
 width:100%;
+border-collapse:collapse;
 }
 
 th,td{
 border:1px solid black;
-padding:6px;
+padding:8px;
 text-align:center;
 }
 
+th{
+background:#eee;
+}
 </style>
+
 </head>
 
 <body>
 
-<h2>📂 Archív heti fizetés</h2>
+<h2>📁 Archív heti fizetés</h2>
 
 <table>
 
@@ -50,25 +50,29 @@ text-align:center;
 
 <script>
 
-const data = JSON.parse(localStorage.getItem("hetiArchivPDF") || "{}");
+const data = JSON.parse(localStorage.getItem("hetiLogPDF"));
 
-let html="";
+if(!data){
+alert("Nincs archiv adat!");
+}
 
-Object.values(data).forEach(t=>{
+const tabla = document.getElementById("tabla");
 
-html+=`
-<tr>
-<td>${t.nev}</td>
-<td>${t.moso}</td>
-<td>${t.craft}</td>
-<td>${t.osszeg.toFixed(2)} $</td>
-<td>${t.fizetett ? "✅" : "❌"}</td>
-</tr>
+for(const nev in data){
+
+const sor = document.createElement("tr");
+
+sor.innerHTML = `
+<td>${nev}</td>
+<td>${data[nev].moso}</td>
+<td>${data[nev].craft}</td>
+<td>${data[nev].osszeg}</td>
+<td>${data[nev].kifizetve ? "Igen" : "Nem"}</td>
 `;
 
-});
+tabla.appendChild(sor);
 
-document.getElementById("tabla").innerHTML = html;
+}
 
 </script>
 
