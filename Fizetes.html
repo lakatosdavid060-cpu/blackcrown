@@ -522,7 +522,7 @@ const datum = prompt("Add meg a dátumot (pl: 2026-03-01)");
 
 if(!datum)return;
 
-onValue(ref(db,"hetiArchiv/"+datum),snap=>{
+onValue(ref(db,"users/"+uid+"/hetiArchiv/"+datum),snap=>{
 if(snap.exists()){
 const data = snap.val();
 localStorage.setItem("hetiLogPDF",JSON.stringify(data));
