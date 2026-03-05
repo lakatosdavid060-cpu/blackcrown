@@ -288,9 +288,8 @@ window.mentNap = function(){
 
     if(!heti[t.nev]){
 
-      // ha még nincs hét kezdete, most indul
-      if(!hetKezdete){
-        hetKezdete = new Date().toLocaleString();
+      if(!hetiKezdet){
+        hetiKezdet = new Date().toLocaleString();
       }
 
       heti[t.nev]={
@@ -310,16 +309,6 @@ window.mentNap = function(){
     }
 
   });
-
-  // 🔥 Firebase mentés
-  set(hetiRef,heti);
-
-  alert("Naplózva.");
-}
-set(hetiRef,heti);
-
-alert("Naplózva.");
-};
 
   set(hetiRef,heti);
   alert("Naplózva.");
@@ -528,6 +517,7 @@ document.addEventListener("DOMContentLoaded",checkVersion);
 </script>
 </body>
 </html>
+
 
 
 
