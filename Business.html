@@ -5,7 +5,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Business SaaS Suite</title>
+<title>Business SaaS Ultimate</title>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -26,7 +26,7 @@ font-size:26px;
 }
 
 .container{
-max-width:750px;
+max-width:900px;
 margin:auto;
 padding:20px;
 }
@@ -39,9 +39,9 @@ margin-top:20px;
 }
 
 input{
-width:90%;
+width:95%;
 padding:10px;
-margin:8px;
+margin:6px 0;
 border-radius:6px;
 border:none;
 }
@@ -51,13 +51,13 @@ padding:12px 20px;
 background:#22c55e;
 border:none;
 color:white;
-font-size:16px;
+font-size:15px;
 border-radius:6px;
 cursor:pointer;
 }
 
 .result{
-font-size:20px;
+font-size:18px;
 margin-top:10px;
 }
 
@@ -68,8 +68,9 @@ margin-top:10px;
 <body>
 
 <header>
-🚀 Business SaaS Suite
+🚀 Business SaaS Ultimate
 </header>
+
 
 
 <div id="pay" class="container">
@@ -78,14 +79,13 @@ margin-top:10px;
 
 <h2>🔒 Premium hozzáférés</h2>
 
-<p>Az eszköz használatához utalj:</p>
+<p><b>9€ / hó</b></p>
 
-<p><b>IBAN:</b> HU00 0000 0000 0000 0000</p>
-<p><b>Díj:</b> 9€ / hó</p>
+<p>Utalás:</p>
 
-<p>Utalás után kapsz hozzáférési kódot.</p>
+<p><b>IBAN:</b> HU00 0000 0000 0000</p>
 
-<input id="code" placeholder="Hozzáférési kód">
+<input id="code" placeholder="Hozzáférési kulcs">
 
 <button onclick="login()">Belépés</button>
 
@@ -107,6 +107,7 @@ margin-top:10px;
 <button onclick="saveUser()">Mentés</button>
 
 <div id="welcome"></div>
+<div id="expiry"></div>
 
 </div>
 
@@ -117,9 +118,7 @@ margin-top:10px;
 <h2>💰 Profit kalkulátor</h2>
 
 <input id="price" placeholder="Termék ár">
-
-<input id="cost" placeholder="Termék költség">
-
+<input id="cost" placeholder="Költség">
 <input id="sales" placeholder="Eladás / hó">
 
 <button onclick="profitCalc()">Számol</button>
@@ -135,7 +134,6 @@ margin-top:10px;
 <h2>📈 ROI kalkulátor</h2>
 
 <input id="investment" placeholder="Befektetés">
-
 <input id="return" placeholder="Bevétel">
 
 <button onclick="roiCalc()">Számol</button>
@@ -148,11 +146,10 @@ margin-top:10px;
 
 <div class="box">
 
-<h2>📊 Break-even kalkulátor</h2>
+<h2>📊 Break-even</h2>
 
 <input id="fixed" placeholder="Fix költség">
-
-<input id="margin" placeholder="Profit termékenként">
+<input id="margin" placeholder="Profit / termék">
 
 <button onclick="breakCalc()">Számol</button>
 
@@ -164,10 +161,38 @@ margin-top:10px;
 
 <div class="box">
 
+<h2>💸 Cashflow</h2>
+
+<input id="income" placeholder="Bevétel">
+<input id="expense" placeholder="Költség">
+
+<button onclick="cashCalc()">Számol</button>
+
+<div class="result" id="cashResult"></div>
+
+</div>
+
+
+
+<div class="box">
+
+<h2>📅 Éves profit</h2>
+
+<input id="monthlyProfit" placeholder="Havi profit">
+
+<button onclick="yearCalc()">Számol</button>
+
+<div class="result" id="yearResult"></div>
+
+</div>
+
+
+
+<div class="box">
+
 <h2>💵 Ár kalkulátor</h2>
 
 <input id="targetProfit" placeholder="Cél profit">
-
 <input id="units" placeholder="Eladás darab">
 
 <button onclick="priceCalc()">Számol</button>
@@ -183,7 +208,6 @@ margin-top:10px;
 <h2>📣 Marketing ROI</h2>
 
 <input id="adSpend" placeholder="Hirdetés költség">
-
 <input id="adRevenue" placeholder="Hirdetés bevétel">
 
 <button onclick="marketingCalc()">Számol</button>
@@ -196,37 +220,7 @@ margin-top:10px;
 
 <div class="box">
 
-<h2>💸 Cashflow kalkulátor</h2>
-
-<input id="income" placeholder="Havi bevétel">
-
-<input id="expense" placeholder="Havi költség">
-
-<button onclick="cashCalc()">Számol</button>
-
-<div class="result" id="cashResult"></div>
-
-</div>
-
-
-
-<div class="box">
-
-<h2>📅 Éves profit előrejelzés</h2>
-
-<input id="monthlyProfit" placeholder="Havi profit">
-
-<button onclick="yearCalc()">Számol</button>
-
-<div class="result" id="yearResult"></div>
-
-</div>
-
-
-
-<div class="box">
-
-<h2>📊 Grafikon</h2>
+<h2>📊 Dashboard</h2>
 
 <canvas id="chart"></canvas>
 
@@ -236,12 +230,23 @@ margin-top:10px;
 
 <div class="box">
 
-<h2>📄 Export jelentés</h2>
+<h2>📥 Report export</h2>
 
 <button onclick="exportData()">Report letöltés</button>
 
 </div>
 
+
+
+<div class="box">
+
+<h2>🔑 Admin kulcs generátor</h2>
+
+<button onclick="generateKey()">Kulcs generálás</button>
+
+<div id="newKey"></div>
+
+</div>
 
 </div>
 
@@ -251,31 +256,64 @@ margin-top:10px;
 
 let codes=["PRO100","SAAS777","BUSINESS999","PREMIUM2026"]
 
+
+
 function login(){
 
-let code=document.getElementById("code").value
+let code=document.getElementById("code").value.trim()
 
 if(codes.includes(code)){
 
+let expiry=Date.now()+30*24*60*60*1000
+
 localStorage.setItem("access","true")
+localStorage.setItem("expiry",expiry)
 
 document.getElementById("pay").style.display="none"
 document.getElementById("app").style.display="block"
 
+loadUser()
+
 }else{
 
-alert("Érvénytelen kód")
+alert("Érvénytelen kulcs")
 
 }
 
 }
+
+
+
+function checkExpiry(){
+
+let expiry=localStorage.getItem("expiry")
+
+if(expiry && Date.now()>expiry){
+
+localStorage.clear()
+
+alert("Előfizetés lejárt")
+
+location.reload()
+
+}
+
+}
+
+checkExpiry()
+
+
 
 if(localStorage.getItem("access")==="true"){
 
 document.getElementById("pay").style.display="none"
 document.getElementById("app").style.display="block"
 
+loadUser()
+
 }
+
+
 
 function saveUser(){
 
@@ -287,82 +325,106 @@ document.getElementById("welcome").innerHTML="Üdv "+name
 
 }
 
+
+
+function loadUser(){
+
+let user=localStorage.getItem("user")
+
+if(user){
+document.getElementById("welcome").innerHTML="Üdv "+user
+}
+
+let expiry=localStorage.getItem("expiry")
+
+if(expiry){
+
+let date=new Date(Number(expiry))
+
+document.getElementById("expiry").innerHTML="Előfizetés lejár: "+date.toLocaleDateString()
+
+}
+
+}
+
+
+
 function profitCalc(){
 
-let price=Number(document.getElementById("price").value)
-let cost=Number(document.getElementById("cost").value)
-let sales=Number(document.getElementById("sales").value)
+let price=Number(price.value)
+let cost=Number(cost.value)
+let sales=Number(sales.value)
 
 let profit=(price-cost)*sales
 
-document.getElementById("profitResult").innerHTML="Havi profit: € "+profit
+profitResult.innerHTML="Profit: € "+profit
 
 drawChart(price*sales,cost*sales,profit)
 
 }
 
+
+
 function roiCalc(){
 
-let inv=Number(document.getElementById("investment").value)
-let ret=Number(document.getElementById("return").value)
+let inv=Number(investment.value)
+let ret=Number(return.value)
 
 let roi=((ret-inv)/inv)*100
 
-document.getElementById("roiResult").innerHTML="ROI: "+roi.toFixed(1)+"%"
+roiResult.innerHTML="ROI: "+roi.toFixed(1)+"%"
 
 }
+
+
 
 function breakCalc(){
 
-let fixed=Number(document.getElementById("fixed").value)
-let margin=Number(document.getElementById("margin").value)
+let units=fixed.value/margin.value
 
-let units=fixed/margin
-
-document.getElementById("breakResult").innerHTML="Szükséges eladás: "+Math.ceil(units)
+breakResult.innerHTML="Eladás szükséges: "+Math.ceil(units)
 
 }
 
-function priceCalc(){
 
-let profit=Number(document.getElementById("targetProfit").value)
-let units=Number(document.getElementById("units").value)
-
-let price=profit/units
-
-document.getElementById("priceResult").innerHTML="Ajánlott ár: € "+price.toFixed(2)
-
-}
-
-function marketingCalc(){
-
-let spend=Number(document.getElementById("adSpend").value)
-let rev=Number(document.getElementById("adRevenue").value)
-
-let roi=((rev-spend)/spend)*100
-
-document.getElementById("marketingResult").innerHTML="Marketing ROI: "+roi.toFixed(1)+"%"
-
-}
 
 function cashCalc(){
 
-let income=Number(document.getElementById("income").value)
-let expense=Number(document.getElementById("expense").value)
+let cash=income.value-expense.value
 
-let cash=income-expense
-
-document.getElementById("cashResult").innerHTML="Cashflow: € "+cash
+cashResult.innerHTML="Cashflow: € "+cash
 
 }
+
+
 
 function yearCalc(){
 
-let month=Number(document.getElementById("monthlyProfit").value)
-
-document.getElementById("yearResult").innerHTML="Éves profit: € "+(month*12)
+yearResult.innerHTML="Éves profit: € "+(monthlyProfit.value*12)
 
 }
+
+
+
+function priceCalc(){
+
+let price=targetProfit.value/units.value
+
+priceResult.innerHTML="Ajánlott ár: € "+price.toFixed(2)
+
+}
+
+
+
+function marketingCalc(){
+
+let roi=((adRevenue.value-adSpend.value)/adSpend.value)*100
+
+marketingResult.innerHTML="Marketing ROI: "+roi.toFixed(1)+"%"
+
+}
+
+
 
 let chart
 
@@ -370,9 +432,7 @@ function drawChart(rev,cost,profit){
 
 let ctx=document.getElementById("chart")
 
-if(chart){
-chart.destroy()
-}
+if(chart) chart.destroy()
 
 chart=new Chart(ctx,{
 type:"bar",
@@ -386,9 +446,11 @@ data:[rev,cost,profit]
 
 }
 
+
+
 function exportData(){
 
-let text="Business SaaS report"
+let text="Business SaaS Report"
 
 let blob=new Blob([text],{type:"text/plain"})
 
@@ -396,9 +458,21 @@ let a=document.createElement("a")
 
 a.href=URL.createObjectURL(blob)
 
-a.download="business_report.txt"
+a.download="report.txt"
 
 a.click()
+
+}
+
+
+
+function generateKey(){
+
+let key="KEY-"+Math.random().toString(36).substring(2,10).toUpperCase()
+
+codes.push(key)
+
+newKey.innerHTML="Új kulcs: "+key
 
 }
 
