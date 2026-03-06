@@ -277,8 +277,6 @@ document.getElementById("app").style.display="block"
 
 }
 
-
-
 function saveUser(){
 
 let name=document.getElementById("username").value
@@ -289,23 +287,19 @@ document.getElementById("welcome").innerHTML="Üdv "+name
 
 }
 
-
-
 function profitCalc(){
 
 let price=Number(document.getElementById("price").value)
 let cost=Number(document.getElementById("cost").value)
 let sales=Number(document.getElementById("sales").value)
 
-let profit=(price-cost)sales
+let profit=(price-cost)*sales
 
 document.getElementById("profitResult").innerHTML="Havi profit: € "+profit
 
-drawChart(pricesales,cost*sales,profit)
+drawChart(price*sales,cost*sales,profit)
 
 }
-
-
 
 function roiCalc(){
 
@@ -318,8 +312,6 @@ document.getElementById("roiResult").innerHTML="ROI: "+roi.toFixed(1)+"%"
 
 }
 
-
-
 function breakCalc(){
 
 let fixed=Number(document.getElementById("fixed").value)
@@ -330,8 +322,6 @@ let units=fixed/margin
 document.getElementById("breakResult").innerHTML="Szükséges eladás: "+Math.ceil(units)
 
 }
-
-
 
 function priceCalc(){
 
@@ -344,20 +334,16 @@ document.getElementById("priceResult").innerHTML="Ajánlott ár: € "+price.toF
 
 }
 
-
-
 function marketingCalc(){
 
 let spend=Number(document.getElementById("adSpend").value)
 let rev=Number(document.getElementById("adRevenue").value)
 
-let roi=((rev-spend)/spend)100
+let roi=((rev-spend)/spend)*100
 
 document.getElementById("marketingResult").innerHTML="Marketing ROI: "+roi.toFixed(1)+"%"
 
 }
-
-
 
 function cashCalc(){
 
@@ -370,17 +356,13 @@ document.getElementById("cashResult").innerHTML="Cashflow: € "+cash
 
 }
 
-
-
 function yearCalc(){
 
 let month=Number(document.getElementById("monthlyProfit").value)
 
-document.getElementById("yearResult").innerHTML="Éves profit: € "+(month12)
+document.getElementById("yearResult").innerHTML="Éves profit: € "+(month*12)
 
 }
-
-
 
 let chart
 
@@ -403,8 +385,6 @@ data:[rev,cost,profit]
 })
 
 }
-
-
 
 function exportData(){
 
