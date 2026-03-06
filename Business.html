@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Business SaaS Suite</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+
+body{
+font-family:Arial;
+background:#0f172a;
+color:white;
+margin:0;
+}
+
+header{
+background:#020617;
+padding:20px;
+text-align:center;
+font-size:26px;
+}
+
+.container{
+max-width:750px;
+margin:auto;
+padding:20px;
+}
+
+.box{
+background:#1e293b;
+padding:20px;
+border-radius:10px;
+margin-top:20px;
+}
+
+input{
+width:90%;
+padding:10px;
+margin:8px;
+border-radius:6px;
+border:none;
+}
+
+button{
+padding:12px 20px;
+background:#22c55e;
+border:none;
+color:white;
+font-size:16px;
+border-radius:6px;
+cursor:pointer;
+}
+
+.result{
+font-size:20px;
+margin-top:10px;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<header>
+🚀 Business SaaS Suite
+</header>
+
+
+<div id="pay" class="container">
+
+<div class="box">
+
+<h2>🔒 Premium hozzáférés</h2>
+
+<p>Az eszköz használatához utalj:</p>
+
+<p><b>IBAN:</b> HU00 0000 0000 0000 0000</p>
+<p><b>Díj:</b> 9€ / hó</p>
+
+<p>Utalás után kapsz hozzáférési kódot.</p>
+
+<input id="code" placeholder="Hozzáférési kód">
+
+<button onclick="login()">Belépés</button>
+
+</div>
+
+</div>
+
+
+
+<div id="app" style="display:none" class="container">
+
+
+<div class="box">
+
+<h2>👤 Profil</h2>
+
+<input id="username" placeholder="Neved">
+
+<button onclick="saveUser()">Mentés</button>
+
+<div id="welcome"></div>
+
+</div>
+
+
+
+<div class="box">
+
+<h2>💰 Profit kalkulátor</h2>
+
+<input id="price" placeholder="Termék ár">
+
+<input id="cost" placeholder="Termék költség">
+
+<input id="sales" placeholder="Eladás / hó">
+
+<button onclick="profitCalc()">Számol</button>
+
+<div class="result" id="profitResult"></div>
+
+</div>
+
+
+
+<div class="box">
+
+<h2>📈 ROI kalkulátor</h2>
+
+<input id="investment" placeholder="Befektetés">
+
+<input id="return" placeholder="Bevétel">
+
+<button onclick="roiCalc()">Számol</button>
+
+<div class="result" id="roiResult"></div>
+
+</div>
+
+
+
+<div class="box">
+
+<h2>📊 Break-even kalkulátor</h2>
+
+<input id="fixed" placeholder="Fix költség">
+
+<input id="margin" placeholder="Profit termékenként">
+
+<button onclick="breakCalc()">Számol</button>
+
+<div class="result" id="breakResult"></div>
+
+</div>
+
+
+
+<div class="box">
+
+<h2>💵 Ár kalkulátor</h2>
+
+<input id="targetProfit" placeholder="Cél profit">
+
+<input id="units" placeholder="Eladás darab">
+
+<button onclick="priceCalc()">Számol</button>
+
+<div class="result" id="priceResult"></div>
+
+</div>
+
+
+
+<div class="box">
+
+<h2>📣 Marketing ROI</h2>
+
+<input id="adSpend" placeholder="Hirdetés költség">
+
+<input id="adRevenue" placeholder="Hirdetés bevétel">
+
+<button onclick="marketingCalc()">Számol</button>
+
+<div class="result" id="marketingResult"></div>
+
+</div>
+
+
+
+<div class="box">
+
+<h2>💸 Cashflow kalkulátor</h2>
+
+<input id="income" placeholder="Havi bevétel">
+
+<input id="expense" placeholder="Havi költség">
+
+<button onclick="cashCalc()">Számol</button>
+
+<div class="result" id="cashResult"></div>
+
+</div>
+
+
+
+<div class="box">
+
+<h2>📅 Éves profit előrejelzés</h2>
+
+<input id="monthlyProfit" placeholder="Havi profit">
+
+<button onclick="yearCalc()">Számol</button>
+
+<div class="result" id="yearResult"></div>
+
+</div>
+
+
+
+<div class="box">
+
+<h2>📊 Grafikon</h2>
+
+<canvas id="chart"></canvas>
+
+</div>
+
+
+
+<div class="box">
+
+<h2>📄 Export jelentés</h2>
+
+<button onclick="exportData()">Report letöltés</button>
+
+</div>
+
+
+</div>
+
+
+
+<script>
+
+let codes=["PRO100","SAAS777","BUSINESS999","PREMIUM2026"]
+
+function login(){
+
+let code=document.getElementById("code").value
+
+if(codes.includes(code)){
+
+localStorage.setItem("access","true")
+
+document.getElementById("pay").style.display="none"
+document.getElementById("app").style.display="block"
+
+}else{
+
+alert("Érvénytelen kód")
+
+}
+
+}
+
+if(localStorage.getItem("access")==="true"){
+
+document.getElementById("pay").style.display="none"
+document.getElementById("app").style.display="block"
+
+}
+
+
+
+function saveUser(){
+
+let name=document.getElementById("username").value
+
+localStorage.setItem("user",name)
+
+document.getElementById("welcome").innerHTML="Üdv "+name
+
+}
+
+
+
+function profitCalc(){
+
+let price=Number(document.getElementById("price").value)
+let cost=Number(document.getElementById("cost").value)
+let sales=Number(document.getElementById("sales").value)
+
+let profit=(price-cost)sales
+
+document.getElementById("profitResult").innerHTML="Havi profit: € "+profit
+
+drawChart(pricesales,cost*sales,profit)
+
+}
+
+
+
+function roiCalc(){
+
+let inv=Number(document.getElementById("investment").value)
+let ret=Number(document.getElementById("return").value)
+
+let roi=((ret-inv)/inv)*100
+
+document.getElementById("roiResult").innerHTML="ROI: "+roi.toFixed(1)+"%"
+
+}
+
+
+
+function breakCalc(){
+
+let fixed=Number(document.getElementById("fixed").value)
+let margin=Number(document.getElementById("margin").value)
+
+let units=fixed/margin
+
+document.getElementById("breakResult").innerHTML="Szükséges eladás: "+Math.ceil(units)
+
+}
+
+
+
+function priceCalc(){
+
+let profit=Number(document.getElementById("targetProfit").value)
+let units=Number(document.getElementById("units").value)
+
+let price=profit/units
+
+document.getElementById("priceResult").innerHTML="Ajánlott ár: € "+price.toFixed(2)
+
+}
+
+
+
+function marketingCalc(){
+
+let spend=Number(document.getElementById("adSpend").value)
+let rev=Number(document.getElementById("adRevenue").value)
+
+let roi=((rev-spend)/spend)100
+
+document.getElementById("marketingResult").innerHTML="Marketing ROI: "+roi.toFixed(1)+"%"
+
+}
+
+
+
+function cashCalc(){
+
+let income=Number(document.getElementById("income").value)
+let expense=Number(document.getElementById("expense").value)
+
+let cash=income-expense
+
+document.getElementById("cashResult").innerHTML="Cashflow: € "+cash
+
+}
+
+
+
+function yearCalc(){
+
+let month=Number(document.getElementById("monthlyProfit").value)
+
+document.getElementById("yearResult").innerHTML="Éves profit: € "+(month12)
+
+}
+
+
+
+let chart
+
+function drawChart(rev,cost,profit){
+
+let ctx=document.getElementById("chart")
+
+if(chart){
+chart.destroy()
+}
+
+chart=new Chart(ctx,{
+type:"bar",
+data:{
+labels:["Bevétel","Költség","Profit"],
+datasets:[{
+data:[rev,cost,profit]
+}]
+}
+})
+
+}
+
+
+
+function exportData(){
+
+let text="Business SaaS report"
+
+let blob=new Blob([text],{type:"text/plain"})
+
+let a=document.createElement("a")
+
+a.href=URL.createObjectURL(blob)
+
+a.download="business_report.txt"
+
+a.click()
+
+}
+
+</script>
+
+</body>
+</html>
