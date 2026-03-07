@@ -9,6 +9,8 @@
 
 body{
 font-family:Arial;
+background:#020617;
+color:white;
 padding:20px;
 }
 
@@ -19,13 +21,13 @@ margin-top:20px;
 }
 
 th,td{
-border:1px solid black;
+border:1px solid #334155;
 padding:8px;
 text-align:center;
 }
 
 th{
-background:#eee;
+background:#1e293b;
 }
 
 </style>
@@ -34,17 +36,15 @@ background:#eee;
 
 <body>
 
-<h2>📁 Archív hetek</h2>
+<h2>📊 Oldal műveleti log</h2>
 
 <table>
 
 <thead>
 <tr>
-<th>Hét</th>
-<th>Név</th>
-<th>Mosó</th>
-<th>Craft</th>
-<th>Összeg</th>
+<th>Idő</th>
+<th>Művelet</th>
+<th>Adat</th>
 </tr>
 </thead>
 
@@ -54,16 +54,17 @@ background:#eee;
 
 <script type="module">
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
 const firebaseConfig = {
-
-apiKey: "API_KEY",
-authDomain: "PROJECT.firebaseapp.com",
-databaseURL: "https://PROJECT-default-rtdb.firebaseio.com",
-projectId: "PROJECT",
-
+  apiKey: "AIzaSyBgbixws2rf6VdqjQATVwZsKg0lgiqy0xI",
+  authDomain: "ordog-fizetes.firebaseapp.com",
+  databaseURL: "https://ordog-fizetes-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "ordog-fizetes",
+  storageBucket: "ordog-fizetes.firebasestorage.app",
+  messagingSenderId: "672089263660",
+  appId: "1:672089263660:web:70086de26402ceb3464b89"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -71,33 +72,27 @@ const db = getDatabase(app);
 
 const tabla = document.getElementById("tabla");
 
-const logRef = ref(db,"archiv");
+const logRef = ref(db,"actionLog");
 
 onValue(logRef,(snapshot)=>{
 
 tabla.innerHTML="";
 
-const data = snapshot.val();
+snapshot.forEach(child=>{
 
-for(const het in data){
-
-for(const nev in data[het]){
+const data = child.val();
 
 const sor = document.createElement("tr");
 
 sor.innerHTML = `
-<td>${het}</td>
-<td>${nev}</td>
-<td>${data[het][nev].moso}</td>
-<td>${data[het][nev].craft}</td>
-<td>${data[het][nev].osszeg}</td>
+<td>${data.ido}</td>
+<td>${data.muvelet}</td>
+<td>${data.adat}</td>
 `;
 
 tabla.appendChild(sor);
 
-}
-
-}
+});
 
 });
 
