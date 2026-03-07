@@ -557,7 +557,7 @@ if(!t.nev.toLowerCase().includes(keresett)) return;
 html+=`
 <tr>
 
-<td>${tagEmoji[t.nev] || "👤"} ${t.nev}</td>
+<td>${t.nev}</td>
 <td><input type="checkbox" ${t.rablas?'checked':''} onclick="toggleRablas(${i})"></td>
 <td><button onclick="minusMoso(${i})">−</button><button onclick="addMoso(${i})">+250</button> ${t.moso}</td>
 <td><button onclick="minusCraft(${i})">−</button><button onclick="addCraft(${i})">+250</button> ${t.craft}</td>
@@ -708,6 +708,7 @@ document.addEventListener("DOMContentLoaded",checkVersion);
 </script>
 </body>
 </html>
+
 
 
 
