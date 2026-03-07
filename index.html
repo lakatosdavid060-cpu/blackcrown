@@ -346,6 +346,23 @@ const db = getDatabase(app);
 const archiveRef = ref(db, "hetiArchiv");
 const adatRef = ref(db, "aktualisAdatok");
 const hetiRef = ref(db, "hetiOsszesites");
+const actionLogRef = ref(db,"actionLog");
+
+function logAction(muvelet, adat=""){
+
+const ido = new Date().toLocaleString();
+
+const log = {
+ido: ido,
+muvelet: muvelet,
+adat: adat
+};
+
+const id = Date.now();
+
+set(ref(db,"actionLog/"+id), log);
+
+}
 
 const ADMIN_JELSZO="1234";
 let admin=false;
@@ -418,7 +435,12 @@ window.open("pdf_kompakt.html","_blank");
 };
 
 window.szamol=function(){
+
+let rablas = document.getElementById("rablas").value;
+logAction("Számolás","Rablás összeg: "+rablas);
+
 if(!adminCheck())return;
+
 let osszeg=+document.getElementById("rablas").value||0;
 const reszt=adatok.filter(t=>t.rablas).length||1;
 
@@ -723,6 +745,7 @@ document.addEventListener("DOMContentLoaded",checkVersion);
 </script>
 </body>
 </html>
+
 
 
 
