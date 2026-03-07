@@ -100,6 +100,7 @@ background:#1d4ed8;
 .top1{
 background:#ffe066;
 font-weight:bold;
+animation:fireGlow 0.8s infinite alternate;
 }
 
 .top2{
@@ -194,7 +195,22 @@ transform:translate(-50%,-50%) scale(1.2);
 opacity:1;
 transform:translate(-50%,-50%) scale(1);
 }
-} 
+@keyframes fireGlow{
+
+0%{
+box-shadow:
+0 0 10px red,
+0 0 20px orange,
+0 0 30px red;
+}
+
+100%{
+box-shadow:
+0 0 20px orange,
+0 0 40px red,
+0 0 60px orange;
+}
+}
 </style>
 </head>
 
