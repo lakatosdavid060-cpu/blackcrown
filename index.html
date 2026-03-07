@@ -453,10 +453,13 @@ save();render();
 };
 
 window.mentNap = function(){
-  if(!adminCheck())return;
 
-  adatok.forEach(t=>{
+if(!adminCheck())return;
 
+logAction("Heti naplózás");
+
+adatok.forEach(t=>{
+  
     if(!heti[t.nev]){
 
       if(!hetiKezdet){
@@ -493,7 +496,10 @@ document.getElementById("lastArchiv").innerText =
 });
 
 window.nullazHeti = async function(){
+
 if(!adminCheck()) return;
+
+logAction("Heti zárás");
 
 if(confirm("Heti zárás és archiválás?")){
 
@@ -502,7 +508,7 @@ const zarasIdeje = new Date().toLocaleString();
 
 // archiv mentés dátumokkal
 await set(ref(db, "hetiArchiv/"+datum), {
-  kezdet: hetiKezdet,
+  kezdet: hetiKezdet || "ismeretlen",
   zaras: zarasIdeje,
   adatok: heti
 });
@@ -512,6 +518,8 @@ await set(ref(db,"lastArchiv"), datum);
 // aktuális heti törlés
 heti = {};
 await set(hetiRef,{});
+
+hetiKezdet = null;
 
 alert("Heti lezárva és archiválva.");
 }
@@ -745,6 +753,7 @@ document.addEventListener("DOMContentLoaded",checkVersion);
 </script>
 </body>
 </html>
+
 
 
 
