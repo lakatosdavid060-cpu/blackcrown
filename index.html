@@ -499,6 +499,14 @@ window.nullazHeti = async function(){
 
 if(!adminCheck()) return;
 
+// ellenőrzés hogy mindenki fizetett-e
+const mindenFizetve = adatok.every(t => heti[t.nev]?.fizetett === true);
+
+if(!mindenFizetve){
+alert("⚠️ Nem zárhatod le a hetet! Még van aki nem fizetett.");
+return;
+}
+
 logAction("Heti zárás");
 
 if(confirm("Heti zárás és archiválás?")){
@@ -753,6 +761,7 @@ document.addEventListener("DOMContentLoaded",checkVersion);
 </script>
 </body>
 </html>
+
 
 
 
