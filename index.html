@@ -172,9 +172,14 @@ z-index:0;
 </div>
 
 <h2>💰 Heti Fizetés</h2>
-<button onclick="toggleHelp()">📘 Útmutató <span id="arrow">▼</span></button>
 
-<button onclick="openChangelog()">🆕 Útmutató <span id="arrow">▼</span></button>
+<div style="display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap;">
+
+<button onclick="toggleHelp()">
+📘 Útmutató <span id="arrow">▼</span>
+</button>
+
+<button onclick="openChangelog()" 
 style="position:relative;background:#1d4ed8;color:white;padding:6px 12px;border:none;border-radius:8px;cursor:pointer;font-weight:bold;">
 🆕 Frissítések
 
@@ -186,6 +191,7 @@ NEW
 
 </button>
 
+</div>
 <div id="helpPanel" class="help-panel">
 
 <h3 style="color:#38bdf8;margin-top:0;">📘 Használati útmutató</h3>
@@ -708,6 +714,7 @@ document.addEventListener("DOMContentLoaded",checkVersion);
 </script>
 </body>
 </html>
+
 
 
 
