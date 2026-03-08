@@ -2,7 +2,7 @@
 <html lang="hu">
 <head>
 <meta charset="UTF-8">
-<title>Ördög Voice</title>
+<title>Mega Voice</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 
 <style>
@@ -16,44 +16,53 @@ display:flex;
 height:100vh;
 }
 
-.serverBar{
-width:70px;
+.sidebar{
+width:230px;
 background:#020617;
 display:flex;
 flex-direction:column;
-align-items:center;
-padding-top:10px;
-gap:10px;
-}
-
-.server{
-width:50px;
-height:50px;
-border-radius:15px;
-background:#1e293b;
-display:flex;
-align-items:center;
-justify-content:center;
-cursor:pointer;
-font-weight:bold;
 }
 
 .channels{
-width:200px;
-background:#020617;
 padding:10px;
-border-right:2px solid #1e293b;
+border-bottom:1px solid #1e293b;
 }
 
 .channel{
 padding:6px;
-border-radius:6px;
 cursor:pointer;
-margin-bottom:4px;
+border-radius:6px;
 }
 
 .channel:hover{
 background:#1e293b;
+}
+
+.users{
+flex:1;
+overflow:auto;
+padding:10px;
+}
+
+.user{
+padding:6px;
+background:#1e293b;
+border-radius:6px;
+margin-bottom:6px;
+display:flex;
+align-items:center;
+gap:6px;
+}
+
+.avatar{
+width:24px;
+height:24px;
+border-radius:50%;
+background:#2563eb;
+display:flex;
+align-items:center;
+justify-content:center;
+font-size:12px;
 }
 
 .main{
@@ -62,36 +71,49 @@ display:flex;
 flex-direction:column;
 }
 
-.panel{
-background:#1e293b;
-margin:10px;
+.controls{
 padding:10px;
-border-radius:10px;
+border-bottom:1px solid #1e293b;
+display:flex;
+gap:6px;
+flex-wrap:wrap;
 }
 
+button{
+padding:6px 12px;
+border:none;
+border-radius:6px;
+cursor:pointer;
+background:#2563eb;
+color:white;
+}
+
+.green{background:#16a34a}
+.red{background:#dc2626}
+.orange{background:#ea580c}
+
 #videos{
+flex:1;
 display:grid;
-grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
 gap:10px;
+padding:10px;
 }
 
 .videoBox{
-position:relative;
-border:3px solid transparent;
+background:black;
 border-radius:10px;
-}
-
-.videoBox.speaking{
-border-color:#22c55e;
+overflow:hidden;
+position:relative;
 }
 
 video{
 width:100%;
-border-radius:10px;
-background:black;
+height:100%;
+object-fit:cover;
 }
 
-.name{
+.label{
 position:absolute;
 bottom:5px;
 left:5px;
@@ -101,26 +123,30 @@ border-radius:6px;
 font-size:12px;
 }
 
-button{
-padding:6px 10px;
-border:none;
-border-radius:6px;
-cursor:pointer;
-margin:3px;
-font-weight:bold;
+.chat{
+height:200px;
+border-top:1px solid #1e293b;
+display:flex;
+flex-direction:column;
 }
 
-.green{background:#16a34a}
-.red{background:#dc2626}
-.orange{background:#ea580c}
-
 #chatBox{
-height:150px;
+flex:1;
 overflow:auto;
-background:#020617;
-padding:8px;
-border-radius:8px;
-margin-bottom:6px;
+padding:10px;
+}
+
+.chatInput{
+display:flex;
+gap:6px;
+padding:10px;
+}
+
+.chatInput input{
+flex:1;
+padding:6px;
+border-radius:6px;
+border:none;
 }
 
 </style>
@@ -128,51 +154,44 @@ margin-bottom:6px;
 
 <body>
 
-<div class="serverBar">
-
-<div class="server">Ö</div>
-
-</div>
+<div class="sidebar">
 
 <div class="channels">
 
-<h3>🎤 Voice</h3>
+<div class="channel" onclick="setChannel('general')">🎤 general</div>
+<div class="channel" onclick="setChannel('gaming')">🎤 gaming</div>
+<div class="channel" onclick="setChannel('music')">🎤 music</div>
 
-<div class="channel" onclick="joinChannel('general')"># general</div>
-<div class="channel" onclick="joinChannel('gaming')"># gaming</div>
-<div class="channel" onclick="joinChannel('music')"># music</div>
+</div>
+
+<div id="users" class="users"></div>
 
 </div>
 
 <div class="main">
 
-<div class="panel">
+<div class="controls">
 
 <input id="name" placeholder="Neved">
-<button onclick="start()">Belépés</button>
 
-<button onclick="toggleMute()" class="orange">Mute</button>
-<button onclick="startCamera()">Kamera</button>
-<button onclick="startScreen()">Képernyő</button>
+<button onclick="join()" class="green">Join</button>
+<button onclick="mute()" class="orange">Mute</button>
+<button onclick="camera()">Camera</button>
+<button onclick="screen()">Screen</button>
+<button onclick="leave()" class="red">Leave</button>
 
 </div>
 
-<div class="panel">
+<div id="videos"></div>
 
-<h3>💬 Chat</h3>
+<div class="chat">
 
 <div id="chatBox"></div>
 
-<input id="chatInput">
-<button onclick="sendChat()">Küld</button>
-
+<div class="chatInput">
+<input id="msg">
+<button onclick="send()">Send</button>
 </div>
-
-<div class="panel">
-
-<h3>📺 Videók</h3>
-
-<div id="videos"></div>
 
 </div>
 
@@ -181,7 +200,8 @@ margin-bottom:6px;
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getDatabase, ref, set, push, onChildAdded } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import { getDatabase, ref, set, push, onValue, onChildAdded, remove }
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
 const firebaseConfig={
 apiKey:"AIzaSyBgbixws2rf6VdqjQATVwZsKg0lgiqy0xI",
@@ -193,11 +213,17 @@ projectId:"ordog-fizetes"
 const app=initializeApp(firebaseConfig);
 const db=getDatabase(app);
 
-let userId="user_"+Math.floor(Math.random()*999999);
+let id="u"+Math.floor(Math.random()*999999);
 let name="";
-let channel="";
+let channel="general";
 let localStream;
-let muted=false;
+let peers={};
+
+const rtcConfig={
+iceServers:[
+{urls:"stun:stun.l.google.com:19302"}
+]
+};
 
 function addVideo(stream,label){
 
@@ -209,34 +235,119 @@ v.autoplay=true;
 v.playsInline=true;
 v.srcObject=stream;
 
-let n=document.createElement("div");
-n.className="name";
-n.innerText=label;
+let l=document.createElement("div");
+l.className="label";
+l.innerText=label;
 
 box.appendChild(v);
-box.appendChild(n);
+box.appendChild(l);
 
 document.getElementById("videos").appendChild(box);
 
 }
 
-window.start=async function(){
+window.setChannel=c=>{
+channel=c;
+}
 
-name=document.getElementById("name").value || "Vendég";
+window.join=async()=>{
+
+name=document.getElementById("name").value||"Guest";
 
 localStream=await navigator.mediaDevices.getUserMedia({audio:true});
 
 addVideo(localStream,name);
 
+set(ref(db,"channels/"+channel+"/users/"+id),{name});
+
+onValue(ref(db,"channels/"+channel+"/users"),snap=>{
+
+let html="";
+
+snap.forEach(u=>{
+
+let uid=u.key;
+let n=u.val().name;
+
+let avatar=n.charAt(0).toUpperCase();
+
+html+=`
+<div class="user">
+<div class="avatar">${avatar}</div>
+${n}
+</div>
+`;
+
+if(uid!==id && !peers[uid]){
+
+createPeer(uid,true);
+
 }
 
-window.joinChannel=function(c){
-
-channel=c;
-
-set(ref(db,"channels/"+channel+"/users/"+userId),{
-name:name
 });
+
+document.getElementById("users").innerHTML=html;
+
+});
+
+}
+
+function createPeer(uid,init){
+
+let pc=new RTCPeerConnection(rtcConfig);
+
+localStream.getTracks().forEach(t=>{
+pc.addTrack(t,localStream);
+});
+
+pc.ontrack=e=>{
+addVideo(e.streams[0],uid);
+};
+
+peers[uid]=pc;
+
+}
+
+window.camera=async()=>{
+
+let s=await navigator.mediaDevices.getUserMedia({video:true,audio:true});
+addVideo(s,name);
+
+}
+
+window.screen=async()=>{
+
+let s=await navigator.mediaDevices.getDisplayMedia({video:true});
+addVideo(s,name+" screen");
+
+}
+
+window.mute=()=>{
+
+localStream.getAudioTracks().forEach(t=>{
+t.enabled=!t.enabled;
+});
+
+}
+
+window.leave=()=>{
+
+remove(ref(db,"channels/"+channel+"/users/"+id));
+location.reload();
+
+}
+
+window.send=()=>{
+
+let text=document.getElementById("msg").value;
+
+if(!text)return;
+
+push(ref(db,"channels/"+channel+"/chat"),{name,text});
+
+document.getElementById("msg").value="";
+
+}
 
 onChildAdded(ref(db,"channels/"+channel+"/chat"),snap=>{
 
@@ -246,47 +357,6 @@ document.getElementById("chatBox").innerHTML+=
 "<b>"+d.name+":</b> "+d.text+"<br>";
 
 });
-
-}
-
-window.toggleMute=function(){
-
-muted=!muted;
-
-localStream.getAudioTracks().forEach(t=>t.enabled=!muted);
-
-}
-
-window.startCamera=async function(){
-
-let stream=await navigator.mediaDevices.getUserMedia({video:true,audio:true});
-
-addVideo(stream,name);
-
-}
-
-window.startScreen=async function(){
-
-let stream=await navigator.mediaDevices.getDisplayMedia({video:true,audio:true});
-
-addVideo(stream,name+" (screen)");
-
-}
-
-window.sendChat=function(){
-
-let msg=document.getElementById("chatInput").value;
-
-if(!msg)return;
-
-push(ref(db,"channels/"+channel+"/chat"),{
-name:name,
-text:msg
-});
-
-document.getElementById("chatInput").value="";
-
-}
 
 </script>
 
