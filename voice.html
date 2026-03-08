@@ -407,31 +407,41 @@ video:true,
 audio:true
 });
 
-addVideo(stream,name+" screen");
+/* frissítjük a localStream-et */
+localStream = stream;
 
-/* videó track */
+addVideo(stream, name + " screen");
+
+/* screen track */
 let screenTrack = stream.getVideoTracks()[0];
 
-/* minden peer kapcsolatban cseréljük */
+/* elküldjük minden peernek */
 Object.values(peers).forEach(pc => {
 
-let sender = pc.getSenders().find(s => 
+let sender = pc.getSenders().find(s =>
 s.track && s.track.kind === "video"
 );
 
 if(sender){
 sender.replaceTrack(screenTrack);
 }else{
-pc.addTrack(screenTrack,stream);
+pc.addTrack(screenTrack, stream);
 }
 
 });
 
-/* ha leáll a screen share */
+/* ha leáll a megosztás */
 
-screenTrack.onended = () => {
+screenTrack.onended = async () => {
 
-localStream.getVideoTracks().forEach(track=>{
+let cam = await navigator.mediaDevices.getUserMedia({
+video:true,
+audio:true
+});
+
+localStream = cam;
+
+let camTrack = cam.getVideoTracks()[0];
 
 Object.values(peers).forEach(pc => {
 
@@ -440,16 +450,16 @@ s.track && s.track.kind === "video"
 );
 
 if(sender){
-sender.replaceTrack(track);
+sender.replaceTrack(camTrack);
 }
 
 });
 
-});
+addVideo(cam, name);
 
 };
 
-}
+};
 localStream=s;
 addVideo(s,name+" screen");
 
