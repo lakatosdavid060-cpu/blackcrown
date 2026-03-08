@@ -2,23 +2,26 @@
 <html lang="hu">
 <head>
 <meta charset="UTF-8">
-<title>Mega Voice</title>
+<title>Ultimate Voice Platform</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 
 <style>
 
 body{
 margin:0;
-font-family:Arial;
+font-family:system-ui;
 background:#0f172a;
 color:white;
 display:flex;
 height:100vh;
 }
 
+/* SIDEBAR */
+
 .sidebar{
-width:230px;
+width:240px;
 background:#020617;
+border-right:1px solid #1e293b;
 display:flex;
 flex-direction:column;
 }
@@ -29,9 +32,9 @@ border-bottom:1px solid #1e293b;
 }
 
 .channel{
-padding:6px;
-cursor:pointer;
+padding:8px;
 border-radius:6px;
+cursor:pointer;
 }
 
 .channel:hover{
@@ -49,21 +52,9 @@ padding:6px;
 background:#1e293b;
 border-radius:6px;
 margin-bottom:6px;
-display:flex;
-align-items:center;
-gap:6px;
 }
 
-.avatar{
-width:24px;
-height:24px;
-border-radius:50%;
-background:#2563eb;
-display:flex;
-align-items:center;
-justify-content:center;
-font-size:12px;
-}
+/* MAIN */
 
 .main{
 flex:1;
@@ -71,7 +62,7 @@ display:flex;
 flex-direction:column;
 }
 
-.controls{
+.topbar{
 padding:10px;
 border-bottom:1px solid #1e293b;
 display:flex;
@@ -80,17 +71,21 @@ flex-wrap:wrap;
 }
 
 button{
-padding:6px 12px;
+padding:6px 10px;
 border:none;
 border-radius:6px;
-cursor:pointer;
 background:#2563eb;
 color:white;
+cursor:pointer;
 }
 
-.green{background:#16a34a}
-.red{background:#dc2626}
-.orange{background:#ea580c}
+input{
+padding:6px;
+border-radius:6px;
+border:none;
+}
+
+/* VIDEO GRID */
 
 #videos{
 flex:1;
@@ -100,17 +95,17 @@ gap:10px;
 padding:10px;
 }
 
+video{
+width:100%;
+height:100%;
+object-fit:cover;
+}
+
 .videoBox{
 background:black;
 border-radius:10px;
 overflow:hidden;
 position:relative;
-}
-
-video{
-width:100%;
-height:100%;
-object-fit:cover;
 }
 
 .label{
@@ -123,8 +118,14 @@ border-radius:6px;
 font-size:12px;
 }
 
+.speaking{
+outline:3px solid #22c55e;
+}
+
+/* CHAT */
+
 .chat{
-height:200px;
+height:220px;
 border-top:1px solid #1e293b;
 display:flex;
 flex-direction:column;
@@ -144,9 +145,6 @@ padding:10px;
 
 .chatInput input{
 flex:1;
-padding:6px;
-border-radius:6px;
-border:none;
 }
 
 </style>
@@ -170,15 +168,17 @@ border:none;
 
 <div class="main">
 
-<div class="controls">
+<div class="topbar">
 
 <input id="name" placeholder="Neved">
 
-<button onclick="join()" class="green">Join</button>
-<button onclick="mute()" class="orange">Mute</button>
+<button onclick="join()">Join</button>
+<button onclick="toggleMute()">Mute</button>
 <button onclick="camera()">Camera</button>
 <button onclick="screen()">Screen</button>
-<button onclick="leave()" class="red">Leave</button>
+<button onclick="leave()">Leave</button>
+
+<span id="count"></span>
 
 </div>
 
@@ -200,7 +200,7 @@ border:none;
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getDatabase, ref, set, push, onValue, onChildAdded, remove }
+import { getDatabase, ref, set, push, onChildAdded, onValue, remove }
 from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
 const firebaseConfig={
@@ -216,13 +216,12 @@ const db=getDatabase(app);
 let id="u"+Math.floor(Math.random()*999999);
 let name="";
 let channel="general";
+
 let localStream;
 let peers={};
 
-const rtcConfig={
-iceServers:[
-{urls:"stun:stun.l.google.com:19302"}
-]
+const iceServers={
+iceServers:[{urls:"stun:stun.l.google.com:19302"}]
 };
 
 function addVideo(stream,label){
@@ -230,19 +229,48 @@ function addVideo(stream,label){
 let box=document.createElement("div");
 box.className="videoBox";
 
-let v=document.createElement("video");
-v.autoplay=true;
-v.playsInline=true;
-v.srcObject=stream;
+let video=document.createElement("video");
+video.autoplay=true;
+video.playsInline=true;
+video.srcObject=stream;
 
 let l=document.createElement("div");
 l.className="label";
 l.innerText=label;
 
-box.appendChild(v);
+box.appendChild(video);
 box.appendChild(l);
 
 document.getElementById("videos").appendChild(box);
+
+detectSpeaking(stream,box);
+
+}
+
+function detectSpeaking(stream,box){
+
+const ctx=new AudioContext();
+const analyser=ctx.createAnalyser();
+const src=ctx.createMediaStreamSource(stream);
+
+src.connect(analyser);
+
+const data=new Uint8Array(analyser.frequencyBinCount);
+
+function loop(){
+
+analyser.getByteFrequencyData(data);
+
+let vol=data.reduce((a,b)=>a+b)/data.length;
+
+if(vol>30) box.classList.add("speaking");
+else box.classList.remove("speaking");
+
+requestAnimationFrame(loop);
+
+}
+
+loop();
 
 }
 
@@ -254,7 +282,10 @@ window.join=async()=>{
 
 name=document.getElementById("name").value||"Guest";
 
-localStream=await navigator.mediaDevices.getUserMedia({audio:true});
+localStream=await navigator.mediaDevices.getUserMedia({
+audio:true,
+video:false
+});
 
 addVideo(localStream,name);
 
@@ -263,38 +294,64 @@ set(ref(db,"channels/"+channel+"/users/"+id),{name});
 onValue(ref(db,"channels/"+channel+"/users"),snap=>{
 
 let html="";
+let count=0;
 
 snap.forEach(u=>{
 
-let uid=u.key;
+count++;
+
 let n=u.val().name;
 
-let avatar=n.charAt(0).toUpperCase();
+html+=`<div class="user">${n}</div>`;
 
-html+=`
-<div class="user">
-<div class="avatar">${avatar}</div>
-${n}
-</div>
-`;
-
-if(uid!==id && !peers[uid]){
-
-createPeer(uid,true);
-
-}
+if(u.key!==id && !peers[u.key]) createPeer(u.key,true);
 
 });
 
 document.getElementById("users").innerHTML=html;
+document.getElementById("count").innerText=count+" online";
 
+});
+
+onChildAdded(ref(db,"signals/"+channel+"/"+id),async snap=>{
+
+let data=snap.val();
+
+if(!peers[data.from]) createPeer(data.from,false);
+
+let pc=peers[data.from];
+
+if(data.sdp){
+
+await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
+
+if(data.sdp.type==="offer"){
+
+let answer=await pc.createAnswer();
+await pc.setLocalDescription(answer);
+
+push(ref(db,"signals/"+channel+"/"+data.from),{
+from:id,
+sdp:pc.localDescription
 });
 
 }
 
-function createPeer(uid,init){
+}
 
-let pc=new RTCPeerConnection(rtcConfig);
+if(data.ice){
+await pc.addIceCandidate(new RTCIceCandidate(data.ice));
+}
+
+});
+
+};
+
+async function createPeer(uid,init){
+
+let pc=new RTCPeerConnection(iceServers);
+
+peers[uid]=pc;
 
 localStream.getTracks().forEach(t=>{
 pc.addTrack(t,localStream);
@@ -304,25 +361,58 @@ pc.ontrack=e=>{
 addVideo(e.streams[0],uid);
 };
 
-peers[uid]=pc;
+pc.onicecandidate=e=>{
+
+if(e.candidate){
+
+push(ref(db,"signals/"+channel+"/"+uid),{
+from:id,
+ice:e.candidate
+});
+
+}
+
+};
+
+if(init){
+
+let offer=await pc.createOffer();
+await pc.setLocalDescription(offer);
+
+push(ref(db,"signals/"+channel+"/"+uid),{
+from:id,
+sdp:pc.localDescription
+});
+
+}
 
 }
 
 window.camera=async()=>{
 
-let s=await navigator.mediaDevices.getUserMedia({video:true,audio:true});
+let s=await navigator.mediaDevices.getUserMedia({
+video:true,
+audio:true
+});
+
+localStream=s;
 addVideo(s,name);
 
 }
 
 window.screen=async()=>{
 
-let s=await navigator.mediaDevices.getDisplayMedia({video:true});
+let s=await navigator.mediaDevices.getDisplayMedia({
+video:true,
+audio:true
+});
+
+localStream=s;
 addVideo(s,name+" screen");
 
 }
 
-window.mute=()=>{
+window.toggleMute=()=>{
 
 localStream.getAudioTracks().forEach(t=>{
 t.enabled=!t.enabled;
@@ -333,6 +423,11 @@ t.enabled=!t.enabled;
 window.leave=()=>{
 
 remove(ref(db,"channels/"+channel+"/users/"+id));
+
+Object.values(peers).forEach(p=>p.close());
+
+localStream.getTracks().forEach(t=>t.stop());
+
 location.reload();
 
 }
@@ -341,9 +436,10 @@ window.send=()=>{
 
 let text=document.getElementById("msg").value;
 
-if(!text)return;
-
-push(ref(db,"channels/"+channel+"/chat"),{name,text});
+push(ref(db,"channels/"+channel+"/chat"),{
+name,
+text
+});
 
 document.getElementById("msg").value="";
 
@@ -354,7 +450,7 @@ onChildAdded(ref(db,"channels/"+channel+"/chat"),snap=>{
 let d=snap.val();
 
 document.getElementById("chatBox").innerHTML+=
-"<b>"+d.name+":</b> "+d.text+"<br>";
+"<div><b>"+d.name+"</b>: "+d.text+"</div>";
 
 });
 
