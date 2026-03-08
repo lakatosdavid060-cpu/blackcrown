@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<title>Ördög Voice</title>
+
+<style>
+
+body{
+margin:0;
+font-family:Arial;
+background:#020617;
+color:white;
+display:flex;
+height:100vh;
+}
+
+.sidebar{
+width:230px;
+background:#020617;
+border-right:2px solid #1e293b;
+padding:10px;
+overflow:auto;
+}
+
+.main{
+flex:1;
+display:flex;
+flex-direction:column;
+}
+
+.panel{
+background:#1e293b;
+margin:10px;
+padding:10px;
+border-radius:10px;
+}
+
+.user{
+display:flex;
+align-items:center;
+gap:8px;
+padding:6px;
+margin-bottom:5px;
+background:#020617;
+border-radius:6px;
+}
+
+.avatar{
+width:28px;
+height:28px;
+border-radius:50%;
+background:#334155;
+display:flex;
+align-items:center;
+justify-content:center;
+font-size:14px;
+}
+
+.volume{
+height:4px;
+background:#22c55e;
+width:0%;
+margin-top:2px;
+border-radius:2px;
+}
+
+button{
+padding:6px 12px;
+border:none;
+border-radius:6px;
+cursor:pointer;
+font-weight:bold;
+}
+
+.green{background:#16a34a;color:white;}
+.red{background:#dc2626;color:white;}
+
+#chatBox{
+height:160px;
+overflow:auto;
+background:#020617;
+padding:8px;
+border-radius:8px;
+margin-bottom:6px;
+}
+
+video{
+max-width:600px;
+width:100%;
+border-radius:10px;
+}
+
+@media(max-width:700px){
+body{flex-direction:column}
+.sidebar{width:100%;border-right:none;border-bottom:2px solid #1e293b}
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="sidebar">
+
+<h3>👥 Voice</h3>
+<div id="onlineUsers"></div>
+
+</div>
+
+<div class="main">
+
+<div class="panel">
+
+<button onclick="joinVoice()" class="green">🎤 Csatlakozás</button>
+<button onclick="startCamera()">🎥 Kamera</button>
+<button onclick="startScreen()">🖥️ Képernyő</button>
+<button onclick="leaveVoice()" class="red">⛔ Kilépés</button>
+
+</div>
+
+<div class="panel">
+
+<h3>💬 Chat</h3>
+
+<div id="chatBox"></div>
+
+<input id="chatInput" placeholder="Üzenet">
+<button onclick="sendChat()">Küld</button>
+
+</div>
+
+<div class="panel">
+
+<h3>🎥 Kamera / Screen</h3>
+
+<video id="video" autoplay playsinline></video>
+<audio id="audio" autoplay></audio>
+
+</div>
+
+</div>
+
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+const firebaseConfig={
+apiKey:"AIzaSyBgbixws2rf6VdqjQATVwZsKg0lgiqy0xI",
+authDomain:"ordog-fizetes.firebaseapp.com",
+databaseURL:"https://ordog-fizetes-default-rtdb.europe-west1.firebasedatabase.app",
+projectId:"ordog-fizetes"
+};
+
+const app=initializeApp(firebaseConfig);
+const db=getDatabase(app);
+
+let userId="user_"+Math.floor(Math.random()*9999);
+let localStream;
+
+const usersRef=ref(db,"voice/users");
+const chatRef=ref(db,"voice/chat");
+
+function avatarLetter(name){
+return name.substring(0,1).toUpperCase();
+}
+
+window.joinVoice=async function(){
+
+localStream=await navigator.mediaDevices.getUserMedia({audio:true});
+
+set(ref(db,"voice/users/"+userId),true);
+
+startVolumeMeter();
+
+};
+
+window.leaveVoice=function(){
+
+if(localStream){
+localStream.getTracks().forEach(t=>t.stop());
+}
+
+set(ref(db,"voice/users/"+userId),null);
+
+};
+
+onValue(usersRef,snap=>{
+
+let html="";
+
+snap.forEach(u=>{
+
+html+=`
+<div class="user" id="u_${u.key}">
+<div class="avatar">${avatarLetter(u.key)}</div>
+<div>
+${u.key}
+<div class="volume" id="v_${u.key}"></div>
+</div>
+</div>
+`;
+
+});
+
+document.getElementById("onlineUsers").innerHTML=html;
+
+});
+
+window.startCamera=async function(){
+
+const stream=await navigator.mediaDevices.getUserMedia({
+video:true,
+audio:true
+});
+
+document.getElementById("video").srcObject=stream;
+
+};
+
+window.startScreen=async function(){
+
+const stream=await navigator.mediaDevices.getDisplayMedia({
+video:true,
+audio:true
+});
+
+document.getElementById("video").srcObject=stream;
+
+};
+
+window.sendChat=function(){
+
+const msg=document.getElementById("chatInput").value;
+
+if(!msg)return;
+
+set(ref(db,"voice/chat/"+Date.now()),{
+user:userId,
+text:msg
+});
+
+document.getElementById("chatInput").value="";
+
+};
+
+onValue(chatRef,snap=>{
+
+let html="";
+
+snap.forEach(m=>{
+const d=m.val();
+html+=`<b>${d.user}:</b> ${d.text}<br>`;
+});
+
+document.getElementById("chatBox").innerHTML=html;
+
+});
+
+function startVolumeMeter(){
+
+const audioContext=new AudioContext();
+const analyser=audioContext.createAnalyser();
+
+const mic=audioContext.createMediaStreamSource(localStream);
+
+mic.connect(analyser);
+
+const data=new Uint8Array(analyser.frequencyBinCount);
+
+function loop(){
+
+analyser.getByteFrequencyData(data);
+
+let volume=data.reduce((a,b)=>a+b)/data.length;
+
+const bar=document.getElementById("v_"+userId);
+
+if(bar){
+
+let percent=Math.min(volume*2,100);
+
+bar.style.width=percent+"%";
+
+}
+
+requestAnimationFrame(loop);
+
+}
+
+loop();
+
+}
+
+</script>
+
+</body>
+</html>
