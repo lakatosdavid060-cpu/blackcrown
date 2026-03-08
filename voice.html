@@ -3,7 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <title>Ultimate Voice Platform</title>
-<meta name="viewport" content="width=device-width,initial-scale=1">
 
 <style>
 
@@ -21,37 +20,28 @@ height:100vh;
 .sidebar{
 width:240px;
 background:#020617;
-border-right:1px solid #1e293b;
 display:flex;
 flex-direction:column;
-}
-
-.channels{
 padding:10px;
-border-bottom:1px solid #1e293b;
 }
 
 .channel{
 padding:8px;
+background:#1e293b;
 border-radius:6px;
+margin-bottom:6px;
 cursor:pointer;
 }
 
 .channel:hover{
-background:#1e293b;
-}
-
-.users{
-flex:1;
-overflow:auto;
-padding:10px;
+background:#334155;
 }
 
 .user{
-padding:6px;
 background:#1e293b;
+padding:6px;
 border-radius:6px;
-margin-bottom:6px;
+margin-bottom:5px;
 }
 
 /* MAIN */
@@ -65,9 +55,6 @@ flex-direction:column;
 .topbar{
 padding:10px;
 border-bottom:1px solid #1e293b;
-display:flex;
-gap:6px;
-flex-wrap:wrap;
 }
 
 button{
@@ -77,12 +64,7 @@ border-radius:6px;
 background:#2563eb;
 color:white;
 cursor:pointer;
-}
-
-input{
-padding:6px;
-border-radius:6px;
-border:none;
+margin-right:5px;
 }
 
 /* VIDEO GRID */
@@ -95,17 +77,17 @@ gap:10px;
 padding:10px;
 }
 
-video{
-width:100%;
-height:100%;
-object-fit:cover;
-}
-
 .videoBox{
 background:black;
 border-radius:10px;
 overflow:hidden;
 position:relative;
+}
+
+video{
+width:100%;
+height:100%;
+object-fit:cover;
 }
 
 .label{
@@ -125,7 +107,7 @@ outline:3px solid #22c55e;
 /* CHAT */
 
 .chat{
-height:220px;
+height:240px;
 border-top:1px solid #1e293b;
 display:flex;
 flex-direction:column;
@@ -139,12 +121,26 @@ padding:10px;
 
 .chatInput{
 display:flex;
-gap:6px;
+gap:5px;
 padding:10px;
 }
 
 .chatInput input{
 flex:1;
+padding:6px;
+}
+
+/* WATCH */
+
+#watch{
+height:200px;
+border-top:1px solid #1e293b;
+}
+
+iframe{
+width:100%;
+height:100%;
+border:none;
 }
 
 </style>
@@ -154,15 +150,14 @@ flex:1;
 
 <div class="sidebar">
 
-<div class="channels">
+<h3>Channels</h3>
 
-<div class="channel" onclick="setChannel('general')">🎤 general</div>
-<div class="channel" onclick="setChannel('gaming')">🎤 gaming</div>
-<div class="channel" onclick="setChannel('music')">🎤 music</div>
+<div class="channel" onclick="setRoom('general')">🎤 general</div>
+<div class="channel" onclick="setRoom('gaming')">🎮 gaming</div>
+<div class="channel" onclick="setRoom('music')">🎵 music</div>
 
-</div>
-
-<div id="users" class="users"></div>
+<h3>Users</h3>
+<div id="users"></div>
 
 </div>
 
@@ -173,16 +168,18 @@ flex:1;
 <input id="name" placeholder="Neved">
 
 <button onclick="join()">Join</button>
-<button onclick="toggleMute()">Mute</button>
 <button onclick="camera()">Camera</button>
-<button onclick="screen()">Screen</button>
-<button onclick="leave()">Leave</button>
+<button onclick="screenShare()">Screen</button>
+<button onclick="toggleMute()">Mute</button>
 
-<span id="count"></span>
+<input id="yt" placeholder="YouTube link">
+<button onclick="watch()">Watch</button>
 
 </div>
 
 <div id="videos"></div>
+
+<div id="watch"></div>
 
 <div class="chat">
 
@@ -191,6 +188,10 @@ flex:1;
 <div class="chatInput">
 <input id="msg">
 <button onclick="send()">Send</button>
+<button onclick="emoji('😀')">😀</button>
+<button onclick="emoji('🔥')">🔥</button>
+<input type="file" id="file">
+<button onclick="sendFile()">File</button>
 </div>
 
 </div>
@@ -213,23 +214,31 @@ projectId:"ordog-fizetes"
 const app=initializeApp(firebaseConfig);
 const db=getDatabase(app);
 
-let id="u"+Math.floor(Math.random()*999999);
+let id="u"+Math.random().toString(36).substr(2,9);
 let name="";
-let channel="general";
+let room="general";
 
-let localStream;
 let peers={};
+let localStream;
 
 const servers={
 iceServers:[{urls:"stun:stun.l.google.com:19302"}]
 };
 
-/* VIDEO GRID */
+/* VIDEO */
 
-function addVideo(stream,label){
+function addVideo(stream,label,uid){
+
+let existing=document.getElementById("v_"+uid);
+
+if(existing){
+existing.querySelector("video").srcObject=stream;
+return;
+}
 
 let box=document.createElement("div");
 box.className="videoBox";
+box.id="v_"+uid;
 
 let v=document.createElement("video");
 v.autoplay=true;
@@ -249,7 +258,7 @@ detectVoice(stream,box);
 
 }
 
-/* SPEAK DETECTION */
+/* SPEAK DETECT */
 
 function detectVoice(stream,box){
 
@@ -265,16 +274,70 @@ function loop(){
 
 analyser.getByteFrequencyData(data);
 
-let volume=data.reduce((a,b)=>a+b)/data.length;
+let vol=data.reduce((a,b)=>a+b)/data.length;
 
-if(volume>30) box.classList.add("speaking");
-else box.classList.remove("speaking");
+if(vol>30){
+box.classList.add("speaking");
+}else{
+box.classList.remove("speaking");
+}
 
 requestAnimationFrame(loop);
 
 }
 
 loop();
+
+}
+
+/* JOIN */
+
+window.join=async()=>{
+
+name=document.getElementById("name").value || "Guest";
+
+localStream=await navigator.mediaDevices.getUserMedia({
+audio:true,
+video:true
+});
+
+addVideo(localStream,name,id);
+
+set(ref(db,"rooms/"+room+"/users/"+id),{name});
+
+listenUsers();
+listenSignals();
+listenChat();
+
+}
+
+/* USERS */
+
+function listenUsers(){
+
+onValue(ref(db,"rooms/"+room+"/users"),snap=>{
+
+let users=snap.val() || {};
+
+let box=document.getElementById("users");
+box.innerHTML="";
+
+Object.values(users).forEach(u=>{
+let d=document.createElement("div");
+d.className="user";
+d.innerText=u.name;
+box.appendChild(d);
+});
+
+Object.keys(users).forEach(uid=>{
+
+if(uid===id) return;
+
+if(!peers[uid]) createPeer(uid,true);
+
+});
+
+});
 
 }
 
@@ -291,14 +354,14 @@ pc.addTrack(track,localStream);
 });
 
 pc.ontrack=e=>{
-addVideo(e.streams[0],uid);
+addVideo(e.streams[0],uid,uid);
 };
 
 pc.onicecandidate=e=>{
 
 if(e.candidate){
 
-push(ref(db,"signals/"+channel+"/"+uid),{
+push(ref(db,"rooms/"+room+"/signals/"+uid),{
 from:id,
 ice:e.candidate
 });
@@ -312,7 +375,7 @@ if(init){
 let offer=await pc.createOffer();
 await pc.setLocalDescription(offer);
 
-push(ref(db,"signals/"+channel+"/"+uid),{
+push(ref(db,"rooms/"+room+"/signals/"+uid),{
 from:id,
 sdp:pc.localDescription
 });
@@ -321,42 +384,17 @@ sdp:pc.localDescription
 
 }
 
-/* JOIN */
-
-window.join=async()=>{
-
-name=document.getElementById("name").value||"Guest";
-
-localStream=await navigator.mediaDevices.getUserMedia({
-audio:true,
-video:false
-});
-
-addVideo(localStream,name);
-
-set(ref(db,"channels/"+channel+"/users/"+id),{name});
-
-onValue(ref(db,"channels/"+channel+"/users"),snap=>{
-
-snap.forEach(user=>{
-
-let uid=user.key;
-
-if(uid===id) return;
-
-if(!peers[uid]) createPeer(uid,true);
-
-});
-
-});
-
 /* SIGNALS */
 
-onChildAdded(ref(db,"signals/"+channel+"/"+id),async snap=>{
+function listenSignals(){
+
+onChildAdded(ref(db,"rooms/"+room+"/signals/"+id),async snap=>{
 
 let data=snap.val();
 
-if(!peers[data.from]) createPeer(data.from,false);
+if(!peers[data.from]){
+createPeer(data.from,false);
+}
 
 let pc=peers[data.from];
 
@@ -369,7 +407,7 @@ if(data.sdp.type==="offer"){
 let answer=await pc.createAnswer();
 await pc.setLocalDescription(answer);
 
-push(ref(db,"signals/"+channel+"/"+data.from),{
+push(ref(db,"rooms/"+room+"/signals/"+data.from),{
 from:id,
 sdp:pc.localDescription
 });
@@ -379,30 +417,84 @@ sdp:pc.localDescription
 }
 
 if(data.ice){
-
 await pc.addIceCandidate(new RTCIceCandidate(data.ice));
+}
+
+});
 
 }
 
+/* CHAT */
+
+function listenChat(){
+
+onChildAdded(ref(db,"rooms/"+room+"/chat"),snap=>{
+
+let data=snap.val();
+
+let div=document.createElement("div");
+
+div.innerHTML="<b>"+data.name+"</b>: "+data.msg;
+
+document.getElementById("chatBox").appendChild(div);
+
+});
+
+}
+
+window.send=()=>{
+
+let msg=document.getElementById("msg").value;
+
+push(ref(db,"rooms/"+room+"/chat"),{
+name,
+msg
+});
+
+document.getElementById("msg").value="";
+
+}
+
+/* EMOJI */
+
+window.emoji=e=>{
+push(ref(db,"rooms/"+room+"/chat"),{
+name,
+msg:e
+});
+}
+
+/* FILE */
+
+window.sendFile=()=>{
+
+let file=document.getElementById("file").files[0];
+
+let reader=new FileReader();
+
+reader.onload=e=>{
+
+push(ref(db,"rooms/"+room+"/chat"),{
+name,
+msg:"<a href='"+e.target.result+"' download='"+file.name+"'>📂 "+file.name+"</a>"
 });
 
 };
 
-/* TRACK CSERE */
+reader.readAsDataURL(file);
 
-function replaceVideoTrack(track,stream){
-
-Object.values(peers).forEach(pc=>{
-
-let sender=pc.getSenders().find(s=>s.track && s.track.kind==="video");
-
-if(sender){
-sender.replaceTrack(track);
-}else{
-pc.addTrack(track,stream);
 }
 
-});
+/* YOUTUBE */
+
+window.watch=()=>{
+
+let url=document.getElementById("yt").value;
+
+let id=url.split("v=")[1];
+
+document.getElementById("watch").innerHTML=
+"<iframe src='https://www.youtube.com/embed/"+id+"'></iframe>";
 
 }
 
@@ -417,47 +509,21 @@ audio:true
 
 localStream=stream;
 
-addVideo(stream,name);
-
-let track=stream.getVideoTracks()[0];
-
-replaceVideoTrack(track,stream);
+addVideo(stream,name,id);
 
 }
 
-/* SCREEN SHARE */
+/* SCREEN */
 
-window.screen=async()=>{
+window.screenShare=async()=>{
 
 let stream=await navigator.mediaDevices.getDisplayMedia({
-video:true,
-audio:true
+video:true
 });
 
 localStream=stream;
 
-addVideo(stream,name+" screen");
-
-let track=stream.getVideoTracks()[0];
-
-replaceVideoTrack(track,stream);
-
-track.onended=async()=>{
-
-let cam=await navigator.mediaDevices.getUserMedia({
-video:true,
-audio:true
-});
-
-localStream=cam;
-
-addVideo(cam,name);
-
-let camTrack=cam.getVideoTracks()[0];
-
-replaceVideoTrack(camTrack,cam);
-
-};
+addVideo(stream,name+" screen",id);
 
 }
 
@@ -471,18 +537,14 @@ t.enabled=!t.enabled;
 
 }
 
-/* LEAVE */
+/* ROOM */
 
-window.leave=()=>{
-
-remove(ref(db,"channels/"+channel+"/users/"+id));
-
-Object.values(peers).forEach(p=>p.close());
-
-localStream.getTracks().forEach(t=>t.stop());
-
+window.setRoom=r=>{
+room=r;
 location.reload();
-
 }
 
 </script>
+
+</body>
+</html>
