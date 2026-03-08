@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <title>Ördög Voice</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
 
 <style>
-
 body{
 margin:0;
 font-family:Arial;
@@ -37,32 +37,10 @@ border-radius:10px;
 }
 
 .user{
-display:flex;
-align-items:center;
-gap:8px;
 padding:6px;
-margin-bottom:5px;
 background:#020617;
 border-radius:6px;
-}
-
-.avatar{
-width:28px;
-height:28px;
-border-radius:50%;
-background:#334155;
-display:flex;
-align-items:center;
-justify-content:center;
-font-size:14px;
-}
-
-.volume{
-height:4px;
-background:#22c55e;
-width:0%;
-margin-top:2px;
-border-radius:2px;
+margin-bottom:4px;
 }
 
 button{
@@ -71,13 +49,14 @@ border:none;
 border-radius:6px;
 cursor:pointer;
 font-weight:bold;
+margin:3px;
 }
 
 .green{background:#16a34a;color:white;}
 .red{background:#dc2626;color:white;}
 
 #chatBox{
-height:160px;
+height:150px;
 overflow:auto;
 background:#020617;
 padding:8px;
@@ -89,40 +68,35 @@ video{
 max-width:600px;
 width:100%;
 border-radius:10px;
+margin-top:5px;
+background:black;
 }
-
-@media(max-width:700px){
-body{flex-direction:column}
-.sidebar{width:100%;border-right:none;border-bottom:2px solid #1e293b}
-}
-
 </style>
 </head>
 
 <body>
 
 <div class="sidebar">
-
-<h3>👥 Voice</h3>
+<h3>👥 Online</h3>
 <div id="onlineUsers"></div>
-
 </div>
 
 <div class="main">
 
 <div class="panel">
 
-<button onclick="joinVoice()" class="green">🎤 Csatlakozás</button>
+<input id="roomId" placeholder="Szoba ID" value="ordog">
+
+<button onclick="joinRoom()" class="green">🎤 Csatlakozás</button>
 <button onclick="startCamera()">🎥 Kamera</button>
 <button onclick="startScreen()">🖥️ Képernyő</button>
-<button onclick="leaveVoice()" class="red">⛔ Kilépés</button>
+<button onclick="leaveRoom()" class="red">⛔ Kilépés</button>
 
 </div>
 
 <div class="panel">
 
 <h3>💬 Chat</h3>
-
 <div id="chatBox"></div>
 
 <input id="chatInput" placeholder="Üzenet">
@@ -132,10 +106,8 @@ body{flex-direction:column}
 
 <div class="panel">
 
-<h3>🎥 Kamera / Screen</h3>
-
-<video id="video" autoplay playsinline></video>
-<audio id="audio" autoplay></audio>
+<h3>🎥 Videók</h3>
+<div id="videos"></div>
 
 </div>
 
@@ -144,7 +116,7 @@ body{flex-direction:column}
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import { getDatabase, ref, set, push, onValue, onChildAdded, remove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
 const firebaseConfig={
 apiKey:"AIzaSyBgbixws2rf6VdqjQATVwZsKg0lgiqy0xI",
@@ -157,86 +129,157 @@ const app=initializeApp(firebaseConfig);
 const db=getDatabase(app);
 
 let userId="user_"+Math.floor(Math.random()*9999);
-let localStream;
+let room="";
+let localStream=null;
+let peers={};
 
-const usersRef=ref(db,"voice/users");
-const chatRef=ref(db,"voice/chat");
+let pcConfig={
+iceServers:[
+{urls:"stun:stun.l.google.com:19302"}
+]
+};
 
-function avatarLetter(name){
-return name.substring(0,1).toUpperCase();
+function addVideo(id,stream){
+let video=document.createElement("video");
+video.autoplay=true;
+video.playsInline=true;
+video.srcObject=stream;
+video.id="v_"+id;
+document.getElementById("videos").appendChild(video);
 }
 
-window.joinVoice=async function(){
+window.joinRoom=async function(){
+
+room=document.getElementById("roomId").value;
 
 localStream=await navigator.mediaDevices.getUserMedia({audio:true});
 
-set(ref(db,"voice/users/"+userId),true);
+addVideo(userId,localStream);
 
-startVolumeMeter();
+set(ref(db,"rooms/"+room+"/users/"+userId),true);
 
-};
-
-window.leaveVoice=function(){
-
-if(localStream){
-localStream.getTracks().forEach(t=>t.stop());
-}
-
-set(ref(db,"voice/users/"+userId),null);
-
-};
-
-onValue(usersRef,snap=>{
+onValue(ref(db,"rooms/"+room+"/users"),snap=>{
 
 let html="";
-
 snap.forEach(u=>{
-
-html+=`
-<div class="user" id="u_${u.key}">
-<div class="avatar">${avatarLetter(u.key)}</div>
-<div>
-${u.key}
-<div class="volume" id="v_${u.key}"></div>
-</div>
-</div>
-`;
-
+html+="<div class='user'>🟢 "+u.key+"</div>";
 });
-
 document.getElementById("onlineUsers").innerHTML=html;
 
 });
 
-window.startCamera=async function(){
+onChildAdded(ref(db,"rooms/"+room+"/signals"),snap=>{
+let data=snap.val();
 
-const stream=await navigator.mediaDevices.getUserMedia({
-video:true,
-audio:true
+if(data.to!==userId) return;
+
+handleSignal(data);
 });
 
-document.getElementById("video").srcObject=stream;
+};
+
+async function createPeer(otherId){
+
+let pc=new RTCPeerConnection(pcConfig);
+
+localStream.getTracks().forEach(t=>pc.addTrack(t,localStream));
+
+pc.ontrack=e=>{
+addVideo(otherId,e.streams[0]);
+};
+
+pc.onicecandidate=e=>{
+if(e.candidate){
+push(ref(db,"rooms/"+room+"/signals"),{
+type:"candidate",
+to:otherId,
+from:userId,
+candidate:e.candidate
+});
+}
+};
+
+peers[otherId]=pc;
+
+return pc;
+}
+
+async function handleSignal(data){
+
+let pc=peers[data.from] || await createPeer(data.from);
+
+if(data.type==="offer"){
+
+await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
+
+let answer=await pc.createAnswer();
+await pc.setLocalDescription(answer);
+
+push(ref(db,"rooms/"+room+"/signals"),{
+type:"answer",
+to:data.from,
+from:userId,
+answer:answer
+});
+
+}
+
+if(data.type==="answer"){
+await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
+}
+
+if(data.type==="candidate"){
+pc.addIceCandidate(new RTCIceCandidate(data.candidate));
+}
+
+}
+
+window.startCamera=async function(){
+
+let stream=await navigator.mediaDevices.getUserMedia({video:true,audio:true});
+
+replaceStream(stream);
 
 };
 
 window.startScreen=async function(){
 
-const stream=await navigator.mediaDevices.getDisplayMedia({
-video:true,
-audio:true
+let stream=await navigator.mediaDevices.getDisplayMedia({video:true,audio:true});
+
+replaceStream(stream);
+
+};
+
+function replaceStream(stream){
+
+localStream=stream;
+
+document.getElementById("videos").innerHTML="";
+addVideo(userId,stream);
+
+Object.values(peers).forEach(pc=>{
+stream.getTracks().forEach(t=>pc.addTrack(t,stream));
 });
 
-document.getElementById("video").srcObject=stream;
+}
+
+window.leaveRoom=function(){
+
+Object.values(peers).forEach(pc=>pc.close());
+
+remove(ref(db,"rooms/"+room+"/users/"+userId));
+
+location.reload();
 
 };
 
 window.sendChat=function(){
 
-const msg=document.getElementById("chatInput").value;
+let msg=document.getElementById("chatInput").value;
 
 if(!msg)return;
 
-set(ref(db,"voice/chat/"+Date.now()),{
+push(ref(db,"rooms/"+room+"/chat"),{
 user:userId,
 text:msg
 });
@@ -245,53 +288,10 @@ document.getElementById("chatInput").value="";
 
 };
 
-onValue(chatRef,snap=>{
-
-let html="";
-
-snap.forEach(m=>{
-const d=m.val();
-html+=`<b>${d.user}:</b> ${d.text}<br>`;
+onChildAdded(ref(db,"rooms/"+room+"/chat"),snap=>{
+let d=snap.val();
+document.getElementById("chatBox").innerHTML+="<b>"+d.user+":</b> "+d.text+"<br>";
 });
-
-document.getElementById("chatBox").innerHTML=html;
-
-});
-
-function startVolumeMeter(){
-
-const audioContext=new AudioContext();
-const analyser=audioContext.createAnalyser();
-
-const mic=audioContext.createMediaStreamSource(localStream);
-
-mic.connect(analyser);
-
-const data=new Uint8Array(analyser.frequencyBinCount);
-
-function loop(){
-
-analyser.getByteFrequencyData(data);
-
-let volume=data.reduce((a,b)=>a+b)/data.length;
-
-const bar=document.getElementById("v_"+userId);
-
-if(bar){
-
-let percent=Math.min(volume*2,100);
-
-bar.style.width=percent+"%";
-
-}
-
-requestAnimationFrame(loop);
-
-}
-
-loop();
-
-}
 
 </script>
 
