@@ -400,13 +400,56 @@ addVideo(s,name);
 
 }
 
-window.screen=async()=>{
+window.screen = async () => {
 
-let s=await navigator.mediaDevices.getDisplayMedia({
+let stream = await navigator.mediaDevices.getDisplayMedia({
 video:true,
 audio:true
 });
 
+addVideo(stream,name+" screen");
+
+/* videó track */
+let screenTrack = stream.getVideoTracks()[0];
+
+/* minden peer kapcsolatban cseréljük */
+Object.values(peers).forEach(pc => {
+
+let sender = pc.getSenders().find(s => 
+s.track && s.track.kind === "video"
+);
+
+if(sender){
+sender.replaceTrack(screenTrack);
+}else{
+pc.addTrack(screenTrack,stream);
+}
+
+});
+
+/* ha leáll a screen share */
+
+screenTrack.onended = () => {
+
+localStream.getVideoTracks().forEach(track=>{
+
+Object.values(peers).forEach(pc => {
+
+let sender = pc.getSenders().find(s =>
+s.track && s.track.kind === "video"
+);
+
+if(sender){
+sender.replaceTrack(track);
+}
+
+});
+
+});
+
+};
+
+}
 localStream=s;
 addVideo(s,name+" screen");
 
