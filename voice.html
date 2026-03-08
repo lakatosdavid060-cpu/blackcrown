@@ -200,7 +200,7 @@ flex:1;
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getDatabase, ref, set, push, onChildAdded, onValue, remove }
+import { getDatabase, ref, set, push, onValue, onChildAdded, remove }
 from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
 const firebaseConfig={
@@ -220,34 +220,38 @@ let channel="general";
 let localStream;
 let peers={};
 
-const iceServers={
+const servers={
 iceServers:[{urls:"stun:stun.l.google.com:19302"}]
 };
+
+/* VIDEO GRID */
 
 function addVideo(stream,label){
 
 let box=document.createElement("div");
 box.className="videoBox";
 
-let video=document.createElement("video");
-video.autoplay=true;
-video.playsInline=true;
-video.srcObject=stream;
+let v=document.createElement("video");
+v.autoplay=true;
+v.playsInline=true;
+v.srcObject=stream;
 
 let l=document.createElement("div");
 l.className="label";
 l.innerText=label;
 
-box.appendChild(video);
+box.appendChild(v);
 box.appendChild(l);
 
 document.getElementById("videos").appendChild(box);
 
-detectSpeaking(stream,box);
+detectVoice(stream,box);
 
 }
 
-function detectSpeaking(stream,box){
+/* SPEAK DETECTION */
+
+function detectVoice(stream,box){
 
 const ctx=new AudioContext();
 const analyser=ctx.createAnalyser();
@@ -261,9 +265,9 @@ function loop(){
 
 analyser.getByteFrequencyData(data);
 
-let vol=data.reduce((a,b)=>a+b)/data.length;
+let volume=data.reduce((a,b)=>a+b)/data.length;
 
-if(vol>30) box.classList.add("speaking");
+if(volume>30) box.classList.add("speaking");
 else box.classList.remove("speaking");
 
 requestAnimationFrame(loop);
@@ -274,87 +278,16 @@ loop();
 
 }
 
-window.setChannel=c=>{
-channel=c;
-}
-
-window.join=async()=>{
-
-name=document.getElementById("name").value||"Guest";
-
-localStream=await navigator.mediaDevices.getUserMedia({
-audio:true,
-video:false
-});
-
-addVideo(localStream,name);
-
-set(ref(db,"channels/"+channel+"/users/"+id),{name});
-
-onValue(ref(db,"channels/"+channel+"/users"),snap=>{
-
-let html="";
-let count=0;
-
-snap.forEach(u=>{
-
-count++;
-
-let n=u.val().name;
-
-html+=`<div class="user">${n}</div>`;
-
-if(u.key!==id && !peers[u.key]) createPeer(u.key,true);
-
-});
-
-document.getElementById("users").innerHTML=html;
-document.getElementById("count").innerText=count+" online";
-
-});
-
-onChildAdded(ref(db,"signals/"+channel+"/"+id),async snap=>{
-
-let data=snap.val();
-
-if(!peers[data.from]) createPeer(data.from,false);
-
-let pc=peers[data.from];
-
-if(data.sdp){
-
-await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
-
-if(data.sdp.type==="offer"){
-
-let answer=await pc.createAnswer();
-await pc.setLocalDescription(answer);
-
-push(ref(db,"signals/"+channel+"/"+data.from),{
-from:id,
-sdp:pc.localDescription
-});
-
-}
-
-}
-
-if(data.ice){
-await pc.addIceCandidate(new RTCIceCandidate(data.ice));
-}
-
-});
-
-};
+/* PEER */
 
 async function createPeer(uid,init){
 
-let pc=new RTCPeerConnection(iceServers);
+let pc=new RTCPeerConnection(servers);
 
 peers[uid]=pc;
 
-localStream.getTracks().forEach(t=>{
-pc.addTrack(t,localStream);
+localStream.getTracks().forEach(track=>{
+pc.addTrack(track,localStream);
 });
 
 pc.ontrack=e=>{
@@ -388,82 +321,147 @@ sdp:pc.localDescription
 
 }
 
+/* JOIN */
+
+window.join=async()=>{
+
+name=document.getElementById("name").value||"Guest";
+
+localStream=await navigator.mediaDevices.getUserMedia({
+audio:true,
+video:false
+});
+
+addVideo(localStream,name);
+
+set(ref(db,"channels/"+channel+"/users/"+id),{name});
+
+onValue(ref(db,"channels/"+channel+"/users"),snap=>{
+
+snap.forEach(user=>{
+
+let uid=user.key;
+
+if(uid===id) return;
+
+if(!peers[uid]) createPeer(uid,true);
+
+});
+
+});
+
+/* SIGNALS */
+
+onChildAdded(ref(db,"signals/"+channel+"/"+id),async snap=>{
+
+let data=snap.val();
+
+if(!peers[data.from]) createPeer(data.from,false);
+
+let pc=peers[data.from];
+
+if(data.sdp){
+
+await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
+
+if(data.sdp.type==="offer"){
+
+let answer=await pc.createAnswer();
+await pc.setLocalDescription(answer);
+
+push(ref(db,"signals/"+channel+"/"+data.from),{
+from:id,
+sdp:pc.localDescription
+});
+
+}
+
+}
+
+if(data.ice){
+
+await pc.addIceCandidate(new RTCIceCandidate(data.ice));
+
+}
+
+});
+
+};
+
+/* TRACK CSERE */
+
+function replaceVideoTrack(track,stream){
+
+Object.values(peers).forEach(pc=>{
+
+let sender=pc.getSenders().find(s=>s.track && s.track.kind==="video");
+
+if(sender){
+sender.replaceTrack(track);
+}else{
+pc.addTrack(track,stream);
+}
+
+});
+
+}
+
+/* CAMERA */
+
 window.camera=async()=>{
 
-let s=await navigator.mediaDevices.getUserMedia({
+let stream=await navigator.mediaDevices.getUserMedia({
 video:true,
 audio:true
 });
 
-localStream=s;
-addVideo(s,name);
+localStream=stream;
+
+addVideo(stream,name);
+
+let track=stream.getVideoTracks()[0];
+
+replaceVideoTrack(track,stream);
 
 }
 
-window.screen = async () => {
+/* SCREEN SHARE */
 
-let stream = await navigator.mediaDevices.getDisplayMedia({
+window.screen=async()=>{
+
+let stream=await navigator.mediaDevices.getDisplayMedia({
 video:true,
 audio:true
 });
 
-/* frissítjük a localStream-et */
-localStream = stream;
+localStream=stream;
 
-addVideo(stream, name + " screen");
+addVideo(stream,name+" screen");
 
-/* screen track */
-let screenTrack = stream.getVideoTracks()[0];
+let track=stream.getVideoTracks()[0];
 
-/* elküldjük minden peernek */
-Object.values(peers).forEach(pc => {
+replaceVideoTrack(track,stream);
 
-let sender = pc.getSenders().find(s =>
-s.track && s.track.kind === "video"
-);
+track.onended=async()=>{
 
-if(sender){
-sender.replaceTrack(screenTrack);
-}else{
-pc.addTrack(screenTrack, stream);
-}
-
-});
-
-/* ha leáll a megosztás */
-
-screenTrack.onended = async () => {
-
-let cam = await navigator.mediaDevices.getUserMedia({
+let cam=await navigator.mediaDevices.getUserMedia({
 video:true,
 audio:true
 });
 
-localStream = cam;
+localStream=cam;
 
-let camTrack = cam.getVideoTracks()[0];
+addVideo(cam,name);
 
-Object.values(peers).forEach(pc => {
+let camTrack=cam.getVideoTracks()[0];
 
-let sender = pc.getSenders().find(s =>
-s.track && s.track.kind === "video"
-);
-
-if(sender){
-sender.replaceTrack(camTrack);
-}
-
-});
-
-addVideo(cam, name);
+replaceVideoTrack(camTrack,cam);
 
 };
 
-};
-localStream=s;
-addVideo(s,name+" screen");
-
 }
+
+/* MUTE */
 
 window.toggleMute=()=>{
 
@@ -472,6 +470,8 @@ t.enabled=!t.enabled;
 });
 
 }
+
+/* LEAVE */
 
 window.leave=()=>{
 
@@ -485,29 +485,4 @@ location.reload();
 
 }
 
-window.send=()=>{
-
-let text=document.getElementById("msg").value;
-
-push(ref(db,"channels/"+channel+"/chat"),{
-name,
-text
-});
-
-document.getElementById("msg").value="";
-
-}
-
-onChildAdded(ref(db,"channels/"+channel+"/chat"),snap=>{
-
-let d=snap.val();
-
-document.getElementById("chatBox").innerHTML+=
-"<div><b>"+d.name+"</b>: "+d.text+"</div>";
-
-});
-
 </script>
-
-</body>
-</html>
