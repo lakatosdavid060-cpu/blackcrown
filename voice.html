@@ -6,21 +6,54 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 
 <style>
+
 body{
 margin:0;
 font-family:Arial;
-background:#020617;
+background:#0f172a;
 color:white;
 display:flex;
 height:100vh;
 }
 
-.sidebar{
-width:230px;
+.serverBar{
+width:70px;
 background:#020617;
-border-right:2px solid #1e293b;
+display:flex;
+flex-direction:column;
+align-items:center;
+padding-top:10px;
+gap:10px;
+}
+
+.server{
+width:50px;
+height:50px;
+border-radius:15px;
+background:#1e293b;
+display:flex;
+align-items:center;
+justify-content:center;
+cursor:pointer;
+font-weight:bold;
+}
+
+.channels{
+width:200px;
+background:#020617;
 padding:10px;
-overflow:auto;
+border-right:2px solid #1e293b;
+}
+
+.channel{
+padding:6px;
+border-radius:6px;
+cursor:pointer;
+margin-bottom:4px;
+}
+
+.channel:hover{
+background:#1e293b;
 }
 
 .main{
@@ -36,24 +69,50 @@ padding:10px;
 border-radius:10px;
 }
 
-.user{
-padding:6px;
-background:#020617;
+#videos{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+gap:10px;
+}
+
+.videoBox{
+position:relative;
+border:3px solid transparent;
+border-radius:10px;
+}
+
+.videoBox.speaking{
+border-color:#22c55e;
+}
+
+video{
+width:100%;
+border-radius:10px;
+background:black;
+}
+
+.name{
+position:absolute;
+bottom:5px;
+left:5px;
+background:rgba(0,0,0,0.6);
+padding:3px 6px;
 border-radius:6px;
-margin-bottom:4px;
+font-size:12px;
 }
 
 button{
-padding:6px 12px;
+padding:6px 10px;
 border:none;
 border-radius:6px;
 cursor:pointer;
-font-weight:bold;
 margin:3px;
+font-weight:bold;
 }
 
-.green{background:#16a34a;color:white;}
-.red{background:#dc2626;color:white;}
+.green{background:#16a34a}
+.red{background:#dc2626}
+.orange{background:#ea580c}
 
 #chatBox{
 height:150px;
@@ -64,49 +123,55 @@ border-radius:8px;
 margin-bottom:6px;
 }
 
-video{
-max-width:600px;
-width:100%;
-border-radius:10px;
-margin-top:5px;
-background:black;
-}
 </style>
 </head>
 
 <body>
 
-<div class="sidebar">
-<h3>👥 Online</h3>
-<div id="onlineUsers"></div>
+<div class="serverBar">
+
+<div class="server">Ö</div>
+
+</div>
+
+<div class="channels">
+
+<h3>🎤 Voice</h3>
+
+<div class="channel" onclick="joinChannel('general')"># general</div>
+<div class="channel" onclick="joinChannel('gaming')"># gaming</div>
+<div class="channel" onclick="joinChannel('music')"># music</div>
+
 </div>
 
 <div class="main">
 
 <div class="panel">
 
-<input id="roomId" placeholder="Szoba ID" value="ordog">
+<input id="name" placeholder="Neved">
+<button onclick="start()">Belépés</button>
 
-<button onclick="joinRoom()" class="green">🎤 Csatlakozás</button>
-<button onclick="startCamera()">🎥 Kamera</button>
-<button onclick="startScreen()">🖥️ Képernyő</button>
-<button onclick="leaveRoom()" class="red">⛔ Kilépés</button>
+<button onclick="toggleMute()" class="orange">Mute</button>
+<button onclick="startCamera()">Kamera</button>
+<button onclick="startScreen()">Képernyő</button>
 
 </div>
 
 <div class="panel">
 
 <h3>💬 Chat</h3>
+
 <div id="chatBox"></div>
 
-<input id="chatInput" placeholder="Üzenet">
+<input id="chatInput">
 <button onclick="sendChat()">Küld</button>
 
 </div>
 
 <div class="panel">
 
-<h3>🎥 Videók</h3>
+<h3>📺 Videók</h3>
+
 <div id="videos"></div>
 
 </div>
@@ -116,7 +181,7 @@ background:black;
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getDatabase, ref, set, push, onValue, onChildAdded, remove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import { getDatabase, ref, set, push, onChildAdded } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
 const firebaseConfig={
 apiKey:"AIzaSyBgbixws2rf6VdqjQATVwZsKg0lgiqy0xI",
@@ -128,109 +193,67 @@ projectId:"ordog-fizetes"
 const app=initializeApp(firebaseConfig);
 const db=getDatabase(app);
 
-let userId="user_"+Math.floor(Math.random()*9999);
-let room="";
-let localStream=null;
-let peers={};
+let userId="user_"+Math.floor(Math.random()*999999);
+let name="";
+let channel="";
+let localStream;
+let muted=false;
 
-let pcConfig={
-iceServers:[
-{urls:"stun:stun.l.google.com:19302"}
-]
-};
+function addVideo(stream,label){
 
-function addVideo(id,stream){
-let video=document.createElement("video");
-video.autoplay=true;
-video.playsInline=true;
-video.srcObject=stream;
-video.id="v_"+id;
-document.getElementById("videos").appendChild(video);
+let box=document.createElement("div");
+box.className="videoBox";
+
+let v=document.createElement("video");
+v.autoplay=true;
+v.playsInline=true;
+v.srcObject=stream;
+
+let n=document.createElement("div");
+n.className="name";
+n.innerText=label;
+
+box.appendChild(v);
+box.appendChild(n);
+
+document.getElementById("videos").appendChild(box);
+
 }
 
-window.joinRoom=async function(){
+window.start=async function(){
 
-room=document.getElementById("roomId").value;
+name=document.getElementById("name").value || "Vendég";
 
 localStream=await navigator.mediaDevices.getUserMedia({audio:true});
 
-addVideo(userId,localStream);
+addVideo(localStream,name);
 
-set(ref(db,"rooms/"+room+"/users/"+userId),true);
-
-onValue(ref(db,"rooms/"+room+"/users"),snap=>{
-
-let html="";
-snap.forEach(u=>{
-html+="<div class='user'>🟢 "+u.key+"</div>";
-});
-document.getElementById("onlineUsers").innerHTML=html;
-
-});
-
-onChildAdded(ref(db,"rooms/"+room+"/signals"),snap=>{
-let data=snap.val();
-
-if(data.to!==userId) return;
-
-handleSignal(data);
-});
-
-};
-
-async function createPeer(otherId){
-
-let pc=new RTCPeerConnection(pcConfig);
-
-localStream.getTracks().forEach(t=>pc.addTrack(t,localStream));
-
-pc.ontrack=e=>{
-addVideo(otherId,e.streams[0]);
-};
-
-pc.onicecandidate=e=>{
-if(e.candidate){
-push(ref(db,"rooms/"+room+"/signals"),{
-type:"candidate",
-to:otherId,
-from:userId,
-candidate:e.candidate
-});
-}
-};
-
-peers[otherId]=pc;
-
-return pc;
 }
 
-async function handleSignal(data){
+window.joinChannel=function(c){
 
-let pc=peers[data.from] || await createPeer(data.from);
+channel=c;
 
-if(data.type==="offer"){
+set(ref(db,"channels/"+channel+"/users/"+userId),{
+name:name
+});
 
-await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
+onChildAdded(ref(db,"channels/"+channel+"/chat"),snap=>{
 
-let answer=await pc.createAnswer();
-await pc.setLocalDescription(answer);
+let d=snap.val();
 
-push(ref(db,"rooms/"+room+"/signals"),{
-type:"answer",
-to:data.from,
-from:userId,
-answer:answer
+document.getElementById("chatBox").innerHTML+=
+"<b>"+d.name+":</b> "+d.text+"<br>";
+
 });
 
 }
 
-if(data.type==="answer"){
-await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
-}
+window.toggleMute=function(){
 
-if(data.type==="candidate"){
-pc.addIceCandidate(new RTCIceCandidate(data.candidate));
-}
+muted=!muted;
+
+localStream.getAudioTracks().forEach(t=>t.enabled=!muted);
 
 }
 
@@ -238,40 +261,17 @@ window.startCamera=async function(){
 
 let stream=await navigator.mediaDevices.getUserMedia({video:true,audio:true});
 
-replaceStream(stream);
+addVideo(stream,name);
 
-};
+}
 
 window.startScreen=async function(){
 
 let stream=await navigator.mediaDevices.getDisplayMedia({video:true,audio:true});
 
-replaceStream(stream);
-
-};
-
-function replaceStream(stream){
-
-localStream=stream;
-
-document.getElementById("videos").innerHTML="";
-addVideo(userId,stream);
-
-Object.values(peers).forEach(pc=>{
-stream.getTracks().forEach(t=>pc.addTrack(t,stream));
-});
+addVideo(stream,name+" (screen)");
 
 }
-
-window.leaveRoom=function(){
-
-Object.values(peers).forEach(pc=>pc.close());
-
-remove(ref(db,"rooms/"+room+"/users/"+userId));
-
-location.reload();
-
-};
 
 window.sendChat=function(){
 
@@ -279,19 +279,14 @@ let msg=document.getElementById("chatInput").value;
 
 if(!msg)return;
 
-push(ref(db,"rooms/"+room+"/chat"),{
-user:userId,
+push(ref(db,"channels/"+channel+"/chat"),{
+name:name,
 text:msg
 });
 
 document.getElementById("chatInput").value="";
 
-};
-
-onChildAdded(ref(db,"rooms/"+room+"/chat"),snap=>{
-let d=snap.val();
-document.getElementById("chatBox").innerHTML+="<b>"+d.user+":</b> "+d.text+"<br>";
-});
+}
 
 </script>
 
