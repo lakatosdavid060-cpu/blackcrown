@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+i<!DOCTYPE html>
 <html lang="hu">
 <head>
 <meta charset="UTF-8">
@@ -757,9 +757,62 @@ set(hetiRef,heti);
 };
 
 document.addEventListener("DOMContentLoaded",checkVersion);
+
+document.addEventListener("keydown",function(e){
+
+// Számol
+if(e.key==="F2"){
+e.preventDefault();
+szamol();
+}
+
+// Naplóz
+if(e.key==="F3"){
+e.preventDefault();
+mentNap();
+}
+
+// PDF
+if(e.key==="F4"){
+e.preventDefault();
+openPDF();
+}
+
+// Fizetett pipák törlése
+if(e.key==="F6"){
+e.preventDefault();
+clearAllFiz();
+}
+
+// Heti zárás
+if(e.key==="F8"){
+e.preventDefault();
+nullazHeti();
+}
+
+// Főmenü nullázás
+if(e.key==="F9"){
+e.preventDefault();
+nullazFo();
+}
+
+// Kereső
+if(e.ctrlKey && e.key==="f"){
+e.preventDefault();
+document.getElementById("kereso").focus();
+}
+
+// Új tag
+if(e.ctrlKey && e.key==="n"){
+e.preventDefault();
+document.getElementById("ujTagNev").focus();
+}
+
+});
 </script>
 </body>
 </html>
+
 
 
 
