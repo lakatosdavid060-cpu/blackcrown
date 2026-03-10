@@ -555,7 +555,7 @@ const db = getDatabase(app);
 const auth = getAuth(app);
 
 const rablasRef = ref(db,"crews/"+crew+"/rablasHistory");
-const archiveRef = ref(db,"crews/"+crew+"/hetiArchiv");
+const archivRef = ref(db,"crews/"+crew+"/hetiArchiv");
 const adatRef = ref(db,"crews/"+crew+"/aktualisAdatok");
 const hetiRef = ref(db,"crews/"+crew+"/hetiOsszesites");
 const actionLogRef = ref(db,"crews/"+crew+"/actionLog");
@@ -732,7 +732,7 @@ adatok.forEach(t=>{
   alert("Naplózva.");
 };
 
-onValue(ref(db,"lastArchiv"),snap=>{
+onValue(ref(db,"crews/"+crew+"/lastArchiv"),snap=>{
 if(snap.exists()){
 document.getElementById("lastArchiv").innerText =
 "📁 Utolsó archív mentés: " + snap.val();
@@ -759,13 +759,13 @@ const datum = new Date().toISOString().split("T")[0];
 const zarasIdeje = new Date().toLocaleString();
 
 // archiv mentés dátumokkal
-await set(ref(db, "hetiArchiv/"+datum), {
+await set(ref(db, "crews/"+crew+"/hetiArchiv/"+datum), {
   kezdet: hetiKezdet || "ismeretlen",
   zaras: zarasIdeje,
   adatok: heti
 });
 
-await set(ref(db,"lastArchiv"), datum);
+await set(ref(db,"crews/"+crew+"/lastArchiv"), datum);
 
 // aktuális heti törlés
 heti = {};
@@ -1133,6 +1133,7 @@ location.reload();
 </script>
 </body>
 </html>
+
 
 
 
