@@ -341,12 +341,6 @@ animation:sparkMove 3s infinite;
   </div>
 </div>
 
-<select id="crewSelect" onchange="setCrew()">
-<option value="ordogok">👹 Ördögök</option>
-<option value="maffia">💀 Maffia</option>
-<option value="kartel">💰 Kartel</option>
-</select>
-
 <h2>💰 Heti Fizetés</h2>
 
 <div style="display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap;">
@@ -548,17 +542,15 @@ const firebaseConfig = {
   appId: "1:672089263660:web:70086de26402ceb3464b89"
 };
 
-let crew = localStorage.getItem("crew") || "ordogok";
-
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const auth = getAuth(app);
 
-const rablasRef = ref(db,"crews/"+crew+"/rablasHistory");
-const archivRef = ref(db,"crews/"+crew+"/hetiArchiv");
-const adatRef = ref(db,"crews/"+crew+"/aktualisAdatok");
-const hetiRef = ref(db,"crews/"+crew+"/hetiOsszesites");
-const actionLogRef = ref(db,"crews/"+crew+"/actionLog");
+const rablasRef = ref(db,"rablasHistory");
+const archivRef = ref(db,"hetiArchiv");
+const adatRef = ref(db,"aktualisAdatok");
+const hetiRef = ref(db,"hetiOsszesites");
+const actionLogRef = ref(db,"actionLog");
 
 function logAction(muvelet, adat=""){
 
@@ -572,7 +564,7 @@ adat: adat
 
 const id = Date.now();
 
-set(ref(db,"crews/"+crew+"/actionLog/"+id), log);
+set(ref(db,"actionLog/"+id), log);
 
 }
 
@@ -644,7 +636,7 @@ function save(){ set(adatRef,adatok); }
 
 window.openPDF=function(){
 
-localStorage.setItem("hetiLogPDF_"+crew, JSON.stringify({
+localStorage.setItem("hetiLogPDF", JSON.stringify({
 adatok: heti,
 kezdet: hetiKezdet
 }));
@@ -731,7 +723,7 @@ adatok.forEach(t=>{
   alert("Naplózva.");
 };
 
-onValue(ref(db,"crews/"+crew+"/lastArchiv"),snap=>{
+onValue(ref(db,"lastArchiv"),snap=>{
 if(snap.exists()){
 document.getElementById("lastArchiv").innerText =
 "📁 Utolsó archív mentés: " + snap.val();
@@ -758,13 +750,13 @@ const datum = new Date().toISOString().split("T")[0];
 const zarasIdeje = new Date().toLocaleString();
 
 // archiv mentés dátumokkal
-await set(ref(db, "crews/"+crew+"/hetiArchiv/"+datum), {
+await set(ref(db,"lastArchiv"), datum);
   kezdet: hetiKezdet || "ismeretlen",
   zaras: zarasIdeje,
   adatok: heti
 });
 
-await set(ref(db,"crews/"+crew+"/lastArchiv"), datum);
+await set(ref(db,"lastArchiv"), datum);
 
 // aktuális heti törlés
 heti = {};
@@ -932,7 +924,7 @@ window.openChangelog=function(){
 
 window.loadArchiv = function(){
 
-const archivRef = ref(db,"crews/"+crew+"/hetiArchiv");
+const archivRef = ref(db,"hetiArchiv");
 
 onValue(archivRef, snap => {
 
@@ -968,7 +960,7 @@ box.innerHTML = html;
 
 window.loadRablasHistory=function(){
 
-const historyRef = ref(db,"crews/"+crew+"/rablasHistory");
+const historyRef = ref(db,"rablasHistory");
 
 onValue(historyRef,snap=>{
 
@@ -1004,7 +996,7 @@ box.innerHTML=html;
 
 window.openArchiv = function(datum){
 
-const refDatum = ref(db,"crews/"+crew+"/hetiArchiv/"+datum);
+const refDatum = ref(db,"hetiArchiv/"+datum);
 
 onValue(refDatum, snap => {
 
@@ -1119,27 +1111,10 @@ loader.style.display="none";
 },5000);
 
 });
-
-window.setCrew=function(){
-
-const selected = document.getElementById("crewSelect").value;
-
-localStorage.setItem("crew",selected);
-
-location.reload();
-
-}
-
-document.addEventListener("DOMContentLoaded",()=>{
-
-const savedCrew = localStorage.getItem("crew") || "ordogok";
-
-document.getElementById("crewSelect").value = savedCrew;
-
-});
 </script>
 </body>
 </html>
+
 
 
 
