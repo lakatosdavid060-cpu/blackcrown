@@ -287,10 +287,22 @@ font-size:13px;
 <button onclick="nullazHeti()">♻️ Heti nullázás</button>
 <button onclick="nullazFo()">🧹 Főmenü nullázás</button>
 <button onclick="loadArchiv()" class="green">📂 Archív lista</button>
+
+<button onclick="clearAllFiz()" class="red">❌ Összes pipa törlése</button>
+<button onclick="toggleMenu()">☰ További</button>
+</div>
+
+<div id="archivLista" style="margin-top:10px;"></div>
+
+<div id="extraMenu" style="
+display:none;
+background:#1e293b;
+padding:10px;
+border-radius:10px;
+margin-top:8px;
+">
 <button onclick="window.location='log.html'">📁 Heti log</button>
 <button onclick="window.location='voice.html'">🎤 Voice szoba</button>
-<div id="archivLista" style="margin-top:10px;"></div>
-<button onclick="clearAllFiz()" class="red">❌ Összes pipa törlése</button>
 <button onclick="window.location='rablas.html'">🏦 Rablás stat</button>
 </div>
 
@@ -903,6 +915,7 @@ document.getElementById("ujTagNev").focus();
 </script>
 </body>
 </html>
+
 
 
 
