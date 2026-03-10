@@ -680,7 +680,7 @@ resztvevok: resztvevok,
 fejenkent: fejenkent
 };
 
-set(ref(db,"crews/"+crew+"/rablasHistory/"+Date.now()),history);
+set(ref(db,"rablasHistory/"+Date.now()),history);
 
 }
   
@@ -750,7 +750,7 @@ const datum = new Date().toISOString().split("T")[0];
 const zarasIdeje = new Date().toLocaleString();
 
 // archiv mentés dátumokkal
-await set(ref(db,"lastArchiv"), datum);
+await set(ref(db,"hetiArchiv/"+datum), {
   kezdet: hetiKezdet || "ismeretlen",
   zaras: zarasIdeje,
   adatok: heti
@@ -1114,6 +1114,7 @@ loader.style.display="none";
 </script>
 </body>
 </html>
+
 
 
 
