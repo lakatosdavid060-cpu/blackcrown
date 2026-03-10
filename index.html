@@ -384,7 +384,6 @@ set(ref(db,"actionLog/"+id), log);
 
 }
 
-const ADMIN_JELSZO="1234";
 let admin=false;
 let adatok=[];
 let heti={};
@@ -401,23 +400,39 @@ const alapNevek=[
 "🐻Henry Parker (Pufi)"
 ];
 
-document.addEventListener("DOMContentLoaded",()=>{
-if(localStorage.getItem("adminLogged")==="true"){
-admin=true;
-document.getElementById("loginModal").style.display="none";
-}
-});
+window.modalLogin = function(){
 
-window.modalLogin=function(){
-if(document.getElementById("modalPass").value===ADMIN_JELSZO){
+const user = document.getElementById("loginUser").value;
+const pass = document.getElementById("loginPass").value;
+
+const userRef = ref(db,"users/"+user);
+
+onValue(userRef, async snap=>{
+
+if(!snap.exists()){
+alert("Nincs ilyen felhasználó");
+return;
+}
+
+const data = snap.val();
+
+if(data.pass !== pass){
+alert("Hibás jelszó");
+return;
+}
+
+await signInAnonymously(auth);
+
 admin=true;
-localStorage.setItem("adminLogged","true");
+
 document.getElementById("loginModal").style.display="none";
-}else alert("Hibás jelszó!");
+
+},{onlyOnce:true});
+
 };
 
 window.logout=function(){
-localStorage.removeItem("adminLogged");
+signOut(auth);
 location.reload();
 };
 
@@ -833,6 +848,7 @@ document.getElementById("ujTagNev").focus();
 </script>
 </body>
 </html>
+
 
 
 
