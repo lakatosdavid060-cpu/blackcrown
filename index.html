@@ -933,7 +933,7 @@ window.openChangelog=function(){
 
 window.loadArchiv = function(){
 
-const archivRef = ref(db,"hetiArchiv");
+const archivRef = ref(db,"crews/"+crew+"/hetiArchiv");
 
 onValue(archivRef, snap => {
 
@@ -969,7 +969,7 @@ box.innerHTML = html;
 
 window.loadRablasHistory=function(){
 
-const historyRef = ref(db,"rablasHistory");
+const historyRef = ref(db,"crews/"+crew+"/rablasHistory");
 
 onValue(historyRef,snap=>{
 
@@ -1005,7 +1005,7 @@ box.innerHTML=html;
 
 window.openArchiv = function(datum){
 
-const refDatum = ref(db,"hetiArchiv/"+datum);
+const refDatum = ref(db,"crews/"+crew+"/hetiArchiv/"+datum);
 
 onValue(refDatum, snap => {
 
@@ -1130,9 +1130,18 @@ localStorage.setItem("crew",selected);
 location.reload();
 
 }
+
+document.addEventListener("DOMContentLoaded",()=>{
+
+const savedCrew = localStorage.getItem("crew") || "ordogok";
+
+document.getElementById("crewSelect").value = savedCrew;
+
+});
 </script>
 </body>
 </html>
+
 
 
 
