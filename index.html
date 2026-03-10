@@ -361,10 +361,10 @@ const firebaseConfig = {
   appId: "1:672089263660:web:70086de26402ceb3464b89"
 };
 
-const rablasRef = ref(db,"rablasHistory");  
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const auth = getAuth(app);
+const rablasRef = ref(db,"rablasHistory");
 const archiveRef = ref(db, "hetiArchiv");
 const adatRef = ref(db, "aktualisAdatok");
 const hetiRef = ref(db, "hetiOsszesites");
@@ -903,6 +903,7 @@ document.getElementById("ujTagNev").focus();
 </script>
 </body>
 </html>
+
 
 
 
