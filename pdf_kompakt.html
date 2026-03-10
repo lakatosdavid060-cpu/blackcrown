@@ -293,7 +293,7 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
-const hetiRef = ref(db, "crews/"+crew+"/hetiOsszesites");
+const hetiRef = ref(db, "hetiOsszesites");
 
 const tbody = document.querySelector("#hetiTable tbody");
 const topBody = document.querySelector("#topTable tbody");
