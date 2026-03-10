@@ -59,7 +59,11 @@ font-size:18px;
 
 <script>
 
-const data = JSON.parse(localStorage.getItem("hetiLogPDF"));
+const crew = localStorage.getItem("crew") || "ordogok";
+
+const data = JSON.parse(
+localStorage.getItem("hetiLogPDF_"+crew)
+);
 
 if(!data){
 alert("Nincs archiv adat!");
