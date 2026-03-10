@@ -341,6 +341,12 @@ animation:sparkMove 3s infinite;
   </div>
 </div>
 
+<select id="crewSelect" onchange="setCrew()">
+<option value="ordogok">👹 Ördögök</option>
+<option value="maffia">💀 Maffia</option>
+<option value="kartel">💰 Kartel</option>
+</select>
+
 <h2>💰 Heti Fizetés</h2>
 
 <div style="display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap;">
@@ -545,11 +551,11 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const auth = getAuth(app);
-const rablasRef = ref(db,"rablasHistory");
-const archiveRef = ref(db, "hetiArchiv");
-const adatRef = ref(db, "aktualisAdatok");
-const hetiRef = ref(db, "hetiOsszesites");
-const actionLogRef = ref(db,"actionLog");
+const rablasRef = ref(db,"crews/"+crew+"/rablasHistory");
+const archiveRef = ref(db,"crews/"+crew+"/hetiArchiv");
+const adatRef = ref(db,"crews/"+crew+"/aktualisAdatok");
+const hetiRef = ref(db,"crews/"+crew+"/hetiOsszesites");
+const actionLogRef = ref(db,"crews/"+crew+"/actionLog");
 
 function logAction(muvelet, adat=""){
 
@@ -571,7 +577,8 @@ let admin=false;
 let adatok=[];
 let heti={};
 let hetiKezdet=null;
-  
+let crew = localStorage.getItem("crew") || "ordogok";
+
 const alapNevek=[
 "👴Ugaros Turul (Bobi)","Yukito Osano (Neon)","Emily Mitsuko (Biskota)",
 "🐒Vladimir Iwanow (Majom)","🪾Todor Zsombor (Recsi)","🦁Daryl Dixon (Oroszlán)",
@@ -1111,9 +1118,20 @@ loader.style.display="none";
 },5000);
 
 });
+
+window.setCrew=function(){
+
+const selected = document.getElementById("crewSelect").value;
+
+localStorage.setItem("crew",selected);
+
+location.reload();
+
+}
 </script>
 </body>
 </html>
+
 
 
 
