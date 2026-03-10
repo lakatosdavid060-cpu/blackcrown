@@ -166,7 +166,8 @@ z-index:0;
 <div id="loginModal" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);display:flex;align-items:center;justify-content:center;z-index:9999;">
   <div style="background:#1e293b;padding:25px;border-radius:10px;text-align:center;width:300px;">
     <h3>🔐 Admin Bejelentkezés</h3>
-    <input type="password" id="modalPass" placeholder="Jelszó">
+    <input type="text" id="loginUser" placeholder="Felhasználónév">
+    <input type="password" id="loginPass" placeholder="Jelszó">
     <button onclick="modalLogin()" class="green" style="width:100%;margin-top:10px;">Belépés</button>
   </div>
 </div>
@@ -347,6 +348,7 @@ const APP_VERSION = "0.1.1";
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import { getAuth,signInAnonymously,signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBgbixws2rf6VdqjQATVwZsKg0lgiqy0xI",
@@ -360,6 +362,7 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
+const auth = getAuth(app);
 const archiveRef = ref(db, "hetiArchiv");
 const adatRef = ref(db, "aktualisAdatok");
 const hetiRef = ref(db, "hetiOsszesites");
@@ -830,6 +833,7 @@ document.getElementById("ujTagNev").focus();
 </script>
 </body>
 </html>
+
 
 
 
