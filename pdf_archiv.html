@@ -59,10 +59,8 @@ font-size:18px;
 
 <script>
 
-const crew = localStorage.getItem("crew") || "ordogok";
-
 const data = JSON.parse(
-localStorage.getItem("hetiLogPDF_"+crew)
+localStorage.getItem("hetiLogPDF")
 );
 
 if(!data){
