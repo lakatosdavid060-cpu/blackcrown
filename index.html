@@ -548,9 +548,12 @@ const firebaseConfig = {
   appId: "1:672089263660:web:70086de26402ceb3464b89"
 };
 
+let crew = localStorage.getItem("crew") || "ordogok";
+
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const auth = getAuth(app);
+
 const rablasRef = ref(db,"crews/"+crew+"/rablasHistory");
 const archiveRef = ref(db,"crews/"+crew+"/hetiArchiv");
 const adatRef = ref(db,"crews/"+crew+"/aktualisAdatok");
@@ -569,7 +572,7 @@ adat: adat
 
 const id = Date.now();
 
-set(ref(db,"actionLog/"+id), log);
+set(ref(db,"crews/"+crew+"/actionLog/"+id), log);
 
 }
 
@@ -577,7 +580,6 @@ let admin=false;
 let adatok=[];
 let heti={};
 let hetiKezdet=null;
-let crew = localStorage.getItem("crew") || "ordogok";
 
 const alapNevek=[
 "👴Ugaros Turul (Bobi)","Yukito Osano (Neon)","Emily Mitsuko (Biskota)",
@@ -687,7 +689,7 @@ resztvevok: resztvevok,
 fejenkent: fejenkent
 };
 
-set(ref(db,"rablasHistory/"+Date.now()),history);
+set(ref(db,"crews/"+crew+"/rablasHistory/"+Date.now()),history);
 
 }
   
@@ -1131,6 +1133,7 @@ location.reload();
 </script>
 </body>
 </html>
+
 
 
 
