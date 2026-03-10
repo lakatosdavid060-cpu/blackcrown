@@ -360,6 +360,7 @@ const firebaseConfig = {
   appId: "1:672089263660:web:70086de26402ceb3464b89"
 };
 
+const rablasRef = ref(db,"rablasHistory");  
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const auth = getAuth(app);
@@ -477,6 +478,30 @@ let resz=0;
 if(t.rablas) resz=((osszeg/2)/reszt)*0.82;
 t.osszeg=resz+(t.moso*250)+(t.craft*250);
 });
+
+// 🔥 Rablás history mentés
+
+const resztvevok = adatok
+.filter(t=>t.rablas)
+.map(t=>t.nev);
+
+if(resztvevok.length > 0){
+
+const rablasOsszeg = +document.getElementById("rablas").value || 0;
+
+const fejenkent = ((rablasOsszeg/2)/resztvevok.length)*0.82;
+
+const history = {
+ido: new Date().toLocaleString(),
+osszeg: rablasOsszeg,
+resztvevok: resztvevok,
+fejenkent: fejenkent
+};
+
+set(ref(db,"rablasHistory/"+Date.now()),history);
+
+}
+  
 save();render();
 };
 
@@ -751,6 +776,42 @@ box.innerHTML = html;
 
 }
 
+window.loadRablasHistory=function(){
+
+const historyRef = ref(db,"rablasHistory");
+
+onValue(historyRef,snap=>{
+
+const box = document.getElementById("archivLista");
+
+if(!snap.exists()){
+box.innerHTML="Nincs rablás history.";
+return;
+}
+
+let html="<h3>🏦 Rablások</h3>";
+
+snap.forEach(child=>{
+
+const d = child.val();
+
+html += `
+<div style="background:#1e293b;padding:6px;border-radius:6px;margin:5px 0;">
+<b>${d.ido}</b><br>
+💰 Összeg: ${d.osszeg}$<br>
+👥 Résztvevők: ${d.resztvevok.join(", ")}<br>
+💵 Fejenként: ${d.fejenkent.toFixed(0)}$
+</div>
+`;
+
+});
+
+box.innerHTML=html;
+
+});
+
+}
+
 window.openArchiv = function(datum){
 
 const refDatum = ref(db,"hetiArchiv/"+datum);
@@ -841,6 +902,7 @@ document.getElementById("ujTagNev").focus();
 </script>
 </body>
 </html>
+
 
 
 
