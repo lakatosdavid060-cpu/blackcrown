@@ -638,7 +638,8 @@ window.openPDF=function(){
 
 localStorage.setItem("hetiLogPDF", JSON.stringify({
 adatok: heti,
-kezdet: hetiKezdet
+kezdet: hetiKezdet,
+zaras: new Date().toLocaleString()
 }));
 
 window.open("pdf_kompakt.html","_blank");
@@ -1114,6 +1115,7 @@ loader.style.display="none";
 </script>
 </body>
 </html>
+
 
 
 
