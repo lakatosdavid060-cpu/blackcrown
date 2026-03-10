@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rablás Statisztika</title>
+
+<style>
+body{
+font-family:Arial;
+background:#020617;
+color:white;
+padding:20px;
+}
+
+h2{
+color:#38bdf8;
+}
+
+.box{
+background:#1e293b;
+padding:10px;
+border-radius:8px;
+margin-bottom:10px;
+}
+
+.top{
+background:#14532d;
+padding:10px;
+border-radius:8px;
+margin-bottom:20px;
+}
+
+button{
+background:#16a34a;
+color:white;
+border:none;
+padding:6px 12px;
+border-radius:6px;
+cursor:pointer;
+margin-bottom:15px;
+}
+</style>
+</head>
+
+<body>
+
+<button onclick="window.location='index.html'">⬅ Vissza</button>
+
+<h2>🏦 Rablás statisztika</h2>
+
+<div id="topLista" class="top"></div>
+
+<div id="rablasLista"></div>
+
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBgbixws2rf6VdqjQATVwZsKg0lgiqy0xI",
+  authDomain: "ordog-fizetes.firebaseapp.com",
+  databaseURL: "https://ordog-fizetes-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "ordog-fizetes",
+  storageBucket: "ordog-fizetes.firebasestorage.app",
+  messagingSenderId: "672089263660",
+  appId: "1:672089263660:web:70086de26402ceb3464b89"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+const rablasRef = ref(db,"rablasHistory");
+
+onValue(rablasRef,snap=>{
+
+const lista = document.getElementById("rablasLista");
+const top = document.getElementById("topLista");
+
+if(!snap.exists()){
+lista.innerHTML="Nincs rablás adat.";
+return;
+}
+
+let html="";
+let stat={};
+
+snap.forEach(child=>{
+
+const d = child.val();
+
+html += `
+<div class="box">
+<b>${d.ido}</b><br>
+💰 Összeg: ${d.osszeg}$<br>
+👥 Résztvevők: ${d.resztvevok.join(", ")}<br>
+💵 Fejenként: ${d.fejenkent.toFixed(0)}$
+</div>
+`;
+
+d.resztvevok.forEach(n=>{
+
+if(!stat[n]) stat[n]=0;
+
+stat[n]+=d.fejenkent;
+
+});
+
+});
+
+lista.innerHTML=html;
+
+let topHtml="<h3>👑 TOP rablók</h3>";
+
+const sorted = Object.entries(stat)
+.sort((a,b)=>b[1]-a[1])
+.slice(0,10);
+
+sorted.forEach((t,i)=>{
+
+topHtml += `
+${i+1}. ${t[0]} — ${t[1].toFixed(0)} $<br>
+`;
+
+});
+
+top.innerHTML=topHtml;
+
+});
+
+</script>
+
+</body>
+</html>
