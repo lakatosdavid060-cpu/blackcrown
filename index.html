@@ -643,7 +643,7 @@ onValue(hetiRef,s=>{
 function save(){ set(adatRef,adatok); }
 
 window.openPDF=function(){
-localStorage.setItem("hetiLogPDF",JSON.stringify(heti));
+localStorage.setItem("hetiLogPDF_"+crew,JSON.stringify(snap.val()));
 window.open("pdf_kompakt.html","_blank");
 };
 
@@ -1134,6 +1134,7 @@ document.getElementById("crewSelect").value = savedCrew;
 </script>
 </body>
 </html>
+
 
 
 
