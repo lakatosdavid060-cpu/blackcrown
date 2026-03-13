@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+i<!DOCTYPE html>
 <html lang="hu">
 <head>
   <meta charset="UTF-8" />
@@ -283,262 +283,223 @@
   </div>
 
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-    import {
-      getDatabase,
-      ref,
-      set,
-      onValue
-    } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+  import {
+    getDatabase,
+    ref,
+    push,
+    set,
+    onChildAdded,
+    onValue,
+    remove,
+    off
+  } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyBgbixws2rf6VdqjQATVwZsKg0lgiqy0xI",
-      authDomain: "ordog-fizetes.firebaseapp.com",
-      databaseURL: "https://ordog-fizetes-default-rtdb.europe-west1.firebasedatabase.app",
-      projectId: "ordog-fizetes",
-      storageBucket: "ordog-fizetes.firebasestorage.app",
-      messagingSenderId: "672089263660",
-      appId: "1:672089263660:web:70086de26402ceb3464b89"
+  const firebaseConfig = {
+    apiKey: "AIzaSyBgbixws2rf6VdqjQATVwZsKg0lgiqy0xI",
+    authDomain: "ordog-fizetes.firebaseapp.com",
+    databaseURL: "https://ordog-fizetes-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "ordog-fizetes",
+    storageBucket: "ordog-fizetes.firebasestorage.app",
+    messagingSenderId: "672089263660",
+    appId: "1:672089263660:web:70086de26402ceb3464b89"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+
+  const canvas = document.getElementById("canvas");
+  const ctx = canvas.getContext("2d");
+
+  const roomInput = document.getElementById("roomId");
+  const joinBtn = document.getElementById("joinBtn");
+  const clearBtn = document.getElementById("clearBtn");
+
+  const clientId = crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random());
+
+  let currentRoom = roomInput.value.trim() || "mi-szobank";
+  let roomRef = null;
+  let segmentsRef = null;
+  let metaRef = null;
+
+  let drawing = false;
+  let lastPoint = null;
+
+  let childAddedCb = null;
+  let metaCb = null;
+
+  function setupCanvas() {
+    const rect = canvas.getBoundingClientRect();
+    const ratio = window.devicePixelRatio || 1;
+
+    canvas.width = rect.width * ratio;
+    canvas.height = rect.height * ratio;
+    ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = "#ff4f84";
+
+    clearLocalCanvas();
+  }
+
+  function clearLocalCanvas() {
+    const rect = canvas.getBoundingClientRect();
+    ctx.fillStyle = "white";
+    ctx.fillRect(0, 0, rect.width, rect.height);
+  }
+
+  function getPos(e) {
+    const rect = canvas.getBoundingClientRect();
+    const point = e.touches ? e.touches[0] : e;
+    return {
+      x: point.clientX - rect.left,
+      y: point.clientY - rect.top
+    };
+  }
+
+  function drawSegment(seg) {
+    if (!seg) return;
+
+    ctx.strokeStyle = seg.color || "#ff4f84";
+    ctx.lineWidth = seg.width || 3;
+    ctx.beginPath();
+    ctx.moveTo(seg.x1, seg.y1);
+    ctx.lineTo(seg.x2, seg.y2);
+    ctx.stroke();
+  }
+
+  async function redrawAll() {
+    if (!segmentsRef) return;
+
+    clearLocalCanvas();
+
+    const snapshot = await new Promise((resolve) => {
+      onValue(segmentsRef, resolve, { onlyOnce: true });
+    });
+
+    const data = snapshot.val();
+    if (!data) return;
+
+    Object.values(data).forEach(drawSegment);
+  }
+
+  function detachRoomListeners() {
+    if (segmentsRef && childAddedCb) {
+      off(segmentsRef, "child_added", childAddedCb);
+    }
+    if (metaRef && metaCb) {
+      off(metaRef, "value", metaCb);
+    }
+    childAddedCb = null;
+    metaCb = null;
+  }
+
+  async function joinRoom() {
+    currentRoom = roomInput.value.trim() || "mi-szobank";
+
+    detachRoomListeners();
+
+    roomRef = ref(db, "liveDrawRooms/" + currentRoom);
+    segmentsRef = ref(db, "liveDrawRooms/" + currentRoom + "/segments");
+    metaRef = ref(db, "liveDrawRooms/" + currentRoom + "/meta");
+
+    await redrawAll();
+
+    childAddedCb = (snapshot) => {
+      const seg = snapshot.val();
+      drawSegment(seg);
     };
 
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
-
-    const startDate = new Date("2023-12-28T00:00:00");
-
-    const messages = [
-      "Szeretlek mindennél jobban ❤️",
-      "Veled minden nap a kedvenc napom 💖",
-      "Te vagy a legszebb része az életemnek ✨",
-      "Melletted még az idő is szebben telik 🥰",
-      "Te vagy az én kedvenc történetem 💌",
-      "Bárhol is vagy, ott van az otthonom ❤️"
-    ];
-
-    let msgIndex = 0;
-
-    function updateTimer(){
-      const now = new Date();
-      let diff = now - startDate;
-
-      if(diff < 0){
-        diff = 0;
+    metaCb = (snapshot) => {
+      const meta = snapshot.val();
+      if (meta && meta.clearedAt) {
+        redrawAll();
       }
+    };
 
-      const days = Math.floor(diff / (1000*60*60*24));
-      const hours = Math.floor((diff / (1000*60*60)) % 24);
-      const minutes = Math.floor((diff / (1000*60)) % 60);
-      const seconds = Math.floor((diff / 1000) % 60);
+    onChildAdded(segmentsRef, childAddedCb);
+    onValue(metaRef, metaCb);
+  }
 
-      document.getElementById("days").textContent = days;
-      document.getElementById("hours").textContent = hours;
-      document.getElementById("minutes").textContent = minutes;
-      document.getElementById("seconds").textContent = seconds;
+  async function sendSegment(from, to) {
+    if (!segmentsRef) return;
 
-      updateAnniversary(now);
-    }
+    const segRef = push(segmentsRef);
+    await set(segRef, {
+      x1: from.x,
+      y1: from.y,
+      x2: to.x,
+      y2: to.y,
+      color: "#ff4f84",
+      width: 3,
+      by: clientId,
+      createdAt: Date.now()
+    });
+  }
 
-    function updateAnniversary(now){
-      let next = new Date(now.getFullYear(), 11, 28, 0, 0, 0);
+  function startDraw(e) {
+    e.preventDefault();
+    drawing = true;
+    lastPoint = getPos(e);
+  }
 
-      if(now > next){
-        next = new Date(now.getFullYear() + 1, 11, 28, 0, 0, 0);
-      }
+  async function moveDraw(e) {
+    if (!drawing) return;
+    e.preventDefault();
 
-      const diff = next - now;
-      const d = Math.floor(diff / (1000*60*60*24));
-      const h = Math.floor((diff / (1000*60*60)) % 24);
-      const m = Math.floor((diff / (1000*60)) % 60);
-      const s = Math.floor((diff / 1000) % 60);
+    const newPoint = getPos(e);
 
-      const yearCount = next.getFullYear() - 2023;
+    // helyben azonnal látszódjon
+    drawSegment({
+      x1: lastPoint.x,
+      y1: lastPoint.y,
+      x2: newPoint.x,
+      y2: newPoint.y,
+      color: "#ff4f84",
+      width: 3
+    });
 
-      document.getElementById("anniversaryText").innerHTML =
-        `A következő, <b>${yearCount}. évfordulóig</b> még ${d} nap, ${h} óra, ${m} perc és ${s} másodperc van.`;
-    }
+    // másiknál is élőben látszódjon
+    await sendSegment(lastPoint, newPoint);
 
-    window.nextMessage = function(){
-      msgIndex++;
-      if(msgIndex >= messages.length){
-        msgIndex = 0;
-      }
-      const el = document.getElementById("loveMessage");
-      el.textContent = messages[msgIndex];
-      el.classList.remove("flash");
-      void el.offsetWidth;
-      el.classList.add("flash");
-    }
+    lastPoint = newPoint;
+  }
 
-    function createHeart(){
-      const heart = document.createElement("div");
-      heart.className = "heart";
-      heart.textContent = Math.random() > 0.5 ? "❤️" : "💖";
-      heart.style.left = Math.random()*100 + "vw";
-      heart.style.fontSize = (16 + Math.random()*24) + "px";
-      heart.style.animationDuration = (4 + Math.random()*4) + "s";
-      document.body.appendChild(heart);
+  function endDraw() {
+    drawing = false;
+    lastPoint = null;
+  }
 
-      setTimeout(() => {
-        heart.remove();
-      }, 8500);
-    }
+  async function clearCanvasForEveryone() {
+    if (!segmentsRef || !metaRef) return;
+    await remove(segmentsRef);
+    await set(metaRef, {
+      clearedAt: Date.now(),
+      by: clientId
+    });
+    clearLocalCanvas();
+  }
 
-    window.heartClick = function(){
-      for(let i = 0; i < 16; i++){
-        setTimeout(createHeart, i * 70);
-      }
-      window.nextMessage();
-    }
+  canvas.addEventListener("mousedown", startDraw);
+  canvas.addEventListener("mousemove", moveDraw);
+  canvas.addEventListener("mouseup", endDraw);
+  canvas.addEventListener("mouseleave", endDraw);
 
-    setInterval(createHeart, 350);
-    updateTimer();
-    setInterval(updateTimer, 1000);
+  canvas.addEventListener("touchstart", startDraw, { passive: false });
+  canvas.addEventListener("touchmove", moveDraw, { passive: false });
+  canvas.addEventListener("touchend", endDraw);
 
-    const canvas = document.getElementById("canvas");
-    const ctx = canvas.getContext("2d");
-    const roomInput = document.getElementById("roomId");
-    const joinBtn = document.getElementById("joinBtn");
-    const clearBtn = document.getElementById("clearBtn");
-    const saveBtn = document.getElementById("saveBtn");
+  joinBtn.addEventListener("click", joinRoom);
+  clearBtn.addEventListener("click", clearCanvasForEveryone);
+  window.addEventListener("resize", () => {
+    setupCanvas();
+    redrawAll();
+  });
 
-    let drawing = false;
-    let currentRoom = roomInput.value.trim();
-    let lastRemoteImage = null;
-    let ignoreNextRemote = false;
-
-    function setupBrush(){
-      ctx.lineWidth = 3;
-      ctx.lineCap = "round";
-      ctx.lineJoin = "round";
-      ctx.strokeStyle = "#ff4f84";
-      ctx.fillStyle = "white";
-    }
-
-    function fillWhiteBackground(){
-      const rect = canvas.getBoundingClientRect();
-      ctx.fillStyle = "white";
-      ctx.fillRect(0, 0, rect.width, rect.height);
-      setupBrush();
-    }
-
-    function resizeCanvas(){
-      const rect = canvas.getBoundingClientRect();
-      const ratio = window.devicePixelRatio || 1;
-
-      canvas.width = rect.width * ratio;
-      canvas.height = rect.height * ratio;
-      ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
-
-      fillWhiteBackground();
-
-      if(lastRemoteImage){
-        drawImageToCanvas(lastRemoteImage);
-      }
-    }
-
-    function getPos(e){
-      const rect = canvas.getBoundingClientRect();
-      const point = e.touches ? e.touches[0] : e;
-      return {
-        x: point.clientX - rect.left,
-        y: point.clientY - rect.top
-      };
-    }
-
-    function startDraw(e){
-      e.preventDefault();
-      drawing = true;
-      const p = getPos(e);
-      ctx.beginPath();
-      ctx.moveTo(p.x, p.y);
-    }
-
-    function draw(e){
-      if(!drawing) return;
-      e.preventDefault();
-      const p = getPos(e);
-      ctx.lineTo(p.x, p.y);
-      ctx.stroke();
-    }
-
-    function endDraw(){
-      if(!drawing) return;
-      drawing = false;
-      saveCanvas();
-    }
-
-    function getCanvasImage(){
-      return canvas.toDataURL("image/png");
-    }
-
-    function drawImageToCanvas(dataUrl){
-      const img = new Image();
-      img.onload = () => {
-        const rect = canvas.getBoundingClientRect();
-        ctx.fillStyle = "white";
-        ctx.fillRect(0, 0, rect.width, rect.height);
-        ctx.drawImage(img, 0, 0, rect.width, rect.height);
-        setupBrush();
-      };
-      img.src = dataUrl;
-    }
-
-    async function saveCanvas(){
-      if(!currentRoom) return;
-
-      const image = getCanvasImage();
-      lastRemoteImage = image;
-      ignoreNextRemote = true;
-
-      await set(ref(db, "drawingRooms/" + currentRoom), {
-        image: image,
-        updatedAt: Date.now()
-      });
-    }
-
-    async function clearCanvas(){
-      fillWhiteBackground();
-      await saveCanvas();
-    }
-
-    function joinRoom(){
-      const newRoom = roomInput.value.trim();
-      if(!newRoom) return;
-
-      currentRoom = newRoom;
-
-      onValue(ref(db, "drawingRooms/" + currentRoom), (snapshot) => {
-        const data = snapshot.val();
-        if(!data || !data.image) return;
-
-        if(ignoreNextRemote && data.image === lastRemoteImage){
-          ignoreNextRemote = false;
-          return;
-        }
-
-        if(data.image !== lastRemoteImage){
-          lastRemoteImage = data.image;
-          drawImageToCanvas(data.image);
-        }
-      });
-    }
-
-    canvas.addEventListener("mousedown", startDraw);
-    canvas.addEventListener("mousemove", draw);
-    canvas.addEventListener("mouseup", endDraw);
-    canvas.addEventListener("mouseleave", endDraw);
-
-    canvas.addEventListener("touchstart", startDraw, { passive:false });
-    canvas.addEventListener("touchmove", draw, { passive:false });
-    canvas.addEventListener("touchend", endDraw);
-
-    joinBtn.addEventListener("click", joinRoom);
-    clearBtn.addEventListener("click", clearCanvas);
-    saveBtn.addEventListener("click", saveCanvas);
-    window.addEventListener("resize", resizeCanvas);
-
-    resizeCanvas();
-    joinRoom();
-  </script>
+  setupCanvas();
+  joinRoom();
+</script>
 </body>
 </html>
