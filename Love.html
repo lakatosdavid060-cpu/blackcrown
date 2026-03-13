@@ -671,6 +671,49 @@ transform:translateY(110vh);
 
   setupCanvas();
   joinRoom();
+
+  // loader eltűnés
+window.addEventListener("load",()=>{
+
+setTimeout(()=>{
+
+const loader=document.getElementById("loader");
+
+loader.style.opacity="0";
+
+setTimeout(()=>{
+loader.style.display="none";
+},800);
+
+},2200);
+
+});
+
+// hulló szívek loader alatt
+
+function loaderHeart(){
+
+const heart=document.createElement("div");
+
+heart.className="loader-heart-fall";
+
+heart.innerHTML=Math.random()>0.5?"❤️":"💖";
+
+heart.style.left=Math.random()*100+"vw";
+
+heart.style.fontSize=(Math.random()*15+15)+"px";
+
+heart.style.animationDuration=(Math.random()*3+2)+"s";
+
+document.body.appendChild(heart);
+
+setTimeout(()=>{
+heart.remove();
+},5000);
+
+}
+
+setInterval(loaderHeart,250);
 </script>
 </body>
 </html>
