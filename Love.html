@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<title>Mi történetünk ❤️</title>
+
+<style>
+body{
+    background: linear-gradient(135deg,#ff758c,#ff7eb3);
+    font-family: Arial;
+    text-align:center;
+    color:white;
+    margin-top:100px;
+}
+
+h1{
+    font-size:40px;
+}
+
+#timer{
+    font-size:35px;
+    margin-top:30px;
+}
+
+.love{
+    font-size:25px;
+    margin-top:20px;
+}
+
+.heart{
+    position: fixed;
+    top: -10px;
+    animation: fall 6s linear infinite;
+}
+
+@keyframes fall{
+    to{
+        transform: translateY(110vh);
+    }
+}
+</style>
+</head>
+
+<body>
+
+<h1>❤️ A mi történetünk ❤️</h1>
+<h2>2023.12.28 óta együtt</h2>
+
+<div id="timer"></div>
+
+<div class="love">
+Szeretlek ❤️
+</div>
+
+<script>
+
+let startDate = new Date("2023-12-28 00:00:00");
+
+function updateTimer(){
+
+let now = new Date();
+let diff = now - startDate;
+
+let days = Math.floor(diff / (1000*60*60*24));
+let hours = Math.floor(diff / (1000*60*60) % 24);
+let minutes = Math.floor(diff / (1000*60) % 60);
+let seconds = Math.floor(diff / 1000 % 60);
+
+document.getElementById("timer").innerHTML =
+days + " nap " +
+hours + " óra " +
+minutes + " perc " +
+seconds + " másodperc ❤️";
+
+}
+
+setInterval(updateTimer,1000);
+updateTimer();
+
+function createHeart(){
+
+let heart = document.createElement("div");
+heart.className = "heart";
+heart.innerHTML = "❤️";
+
+heart.style.left = Math.random()*100 + "vw";
+heart.style.fontSize = (Math.random()*20+15)+"px";
+
+document.body.appendChild(heart);
+
+setTimeout(()=>{
+heart.remove();
+},6000);
+
+}
+
+setInterval(createHeart,300);
+
+</script>
+
+</body>
+</html>
