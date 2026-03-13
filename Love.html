@@ -308,6 +308,95 @@
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
 
+  const startDate = new Date("2023-12-28T00:00:00");
+
+  const messages = [
+    "Szeretlek mindennél jobban ❤️",
+    "Veled minden nap a kedvenc napom 💖",
+    "Te vagy a legszebb része az életemnek ✨",
+    "Melletted még az idő is szebben telik 🥰",
+    "Te vagy az én kedvenc történetem 💌",
+    "Bárhol is vagy, ott van az otthonom ❤️"
+  ];
+
+  let msgIndex = 0;
+
+  function updateTimer() {
+    const now = new Date();
+    let diff = now - startDate;
+
+    if (diff < 0) diff = 0;
+
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+    const minutes = Math.floor((diff / (1000 * 60)) % 60);
+    const seconds = Math.floor((diff / 1000) % 60);
+
+    document.getElementById("days").textContent = days;
+    document.getElementById("hours").textContent = hours;
+    document.getElementById("minutes").textContent = minutes;
+    document.getElementById("seconds").textContent = seconds;
+
+    updateAnniversary(now);
+  }
+
+  function updateAnniversary(now) {
+    let next = new Date(now.getFullYear(), 11, 28, 0, 0, 0);
+
+    if (now > next) {
+      next = new Date(now.getFullYear() + 1, 11, 28, 0, 0, 0);
+    }
+
+    const diff = next - now;
+    const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
+    const m = Math.floor((diff / (1000 * 60)) % 60);
+    const s = Math.floor((diff / 1000) % 60);
+
+    const yearCount = next.getFullYear() - 2023;
+
+    document.getElementById("anniversaryText").innerHTML =
+      `A következő, <b>${yearCount}. évfordulóig</b> még ${d} nap, ${h} óra, ${m} perc és ${s} másodperc van.`;
+  }
+
+  window.nextMessage = function () {
+    msgIndex++;
+    if (msgIndex >= messages.length) {
+      msgIndex = 0;
+    }
+
+    const el = document.getElementById("loveMessage");
+    el.textContent = messages[msgIndex];
+    el.classList.remove("flash");
+    void el.offsetWidth;
+    el.classList.add("flash");
+  };
+
+  function createHeart() {
+    const heart = document.createElement("div");
+    heart.className = "heart";
+    heart.textContent = Math.random() > 0.5 ? "❤️" : "💖";
+    heart.style.left = Math.random() * 100 + "vw";
+    heart.style.fontSize = (16 + Math.random() * 24) + "px";
+    heart.style.animationDuration = (4 + Math.random() * 4) + "s";
+    document.body.appendChild(heart);
+
+    setTimeout(() => {
+      heart.remove();
+    }, 8500);
+  }
+
+  window.heartClick = function () {
+    for (let i = 0; i < 16; i++) {
+      setTimeout(createHeart, i * 70);
+    }
+    window.nextMessage();
+  };
+
+  setInterval(createHeart, 350);
+  updateTimer();
+  setInterval(updateTimer, 1000);
+
   const canvas = document.getElementById("canvas");
   const ctx = canvas.getContext("2d");
 
@@ -318,7 +407,6 @@
   const clientId = crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random());
 
   let currentRoom = roomInput.value.trim() || "mi-szobank";
-  let roomRef = null;
   let segmentsRef = null;
   let metaRef = null;
 
@@ -401,7 +489,6 @@
 
     detachRoomListeners();
 
-    roomRef = ref(db, "liveDrawRooms/" + currentRoom);
     segmentsRef = ref(db, "liveDrawRooms/" + currentRoom + "/segments");
     metaRef = ref(db, "liveDrawRooms/" + currentRoom + "/meta");
 
@@ -451,7 +538,6 @@
 
     const newPoint = getPos(e);
 
-    // helyben azonnal látszódjon
     drawSegment({
       x1: lastPoint.x,
       y1: lastPoint.y,
@@ -461,7 +547,6 @@
       width: 3
     });
 
-    // másiknál is élőben látszódjon
     await sendSegment(lastPoint, newPoint);
 
     lastPoint = newPoint;
@@ -474,11 +559,13 @@
 
   async function clearCanvasForEveryone() {
     if (!segmentsRef || !metaRef) return;
+
     await remove(segmentsRef);
     await set(metaRef, {
       clearedAt: Date.now(),
       by: clientId
     });
+
     clearLocalCanvas();
   }
 
@@ -493,9 +580,10 @@
 
   joinBtn.addEventListener("click", joinRoom);
   clearBtn.addEventListener("click", clearCanvasForEveryone);
-  window.addEventListener("resize", () => {
+
+  window.addEventListener("resize", async () => {
     setupCanvas();
-    redrawAll();
+    await redrawAll();
   });
 
   setupCanvas();
