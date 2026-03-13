@@ -2,100 +2,362 @@
 <html lang="hu">
 <head>
 <meta charset="UTF-8">
-<title>Mi történetünk ❤️</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A mi történetünk ❤️</title>
 
 <style>
+*{
+  box-sizing:border-box;
+}
+
 body{
-    background: linear-gradient(135deg,#ff758c,#ff7eb3);
-    font-family: Arial;
-    text-align:center;
-    color:white;
-    margin-top:100px;
+  margin:0;
+  min-height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  font-family:Arial, sans-serif;
+  text-align:center;
+  color:white;
+  overflow:hidden;
+  background:
+    linear-gradient(rgba(0,0,0,0.35), rgba(0,0,0,0.35)),
+    url('YOUR_IMAGE_URL') center/cover no-repeat fixed;
+}
+
+.overlay{
+  position:fixed;
+  inset:0;
+  background:linear-gradient(135deg, rgba(255,107,154,0.35), rgba(255,193,214,0.35));
+  z-index:0;
+}
+
+.card{
+  position:relative;
+  z-index:2;
+  width:92%;
+  max-width:650px;
+  background:rgba(255,255,255,0.16);
+  border:1px solid rgba(255,255,255,0.2);
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+  border-radius:28px;
+  padding:28px 20px;
+  box-shadow:0 20px 50px rgba(0,0,0,0.25);
 }
 
 h1{
-    font-size:40px;
+  margin:0 0 10px;
+  font-size:38px;
 }
 
-#timer{
-    font-size:35px;
-    margin-top:30px;
+.sub{
+  margin:0 0 18px;
+  font-size:18px;
 }
 
-.love{
-    font-size:25px;
-    margin-top:20px;
+.grid{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:14px;
+  margin-top:18px;
+}
+
+.box{
+  background:rgba(255,255,255,0.16);
+  border-radius:18px;
+  padding:18px 10px;
+}
+
+.num{
+  font-size:34px;
+  font-weight:bold;
+}
+
+.label{
+  margin-top:6px;
+  font-size:14px;
+  text-transform:uppercase;
+  letter-spacing:1px;
+}
+
+.message{
+  margin-top:22px;
+  font-size:24px;
+  font-weight:bold;
+  line-height:1.4;
+}
+
+.next-anniversary{
+  margin-top:18px;
+  font-size:17px;
+  line-height:1.5;
+}
+
+.buttons{
+  margin-top:22px;
+  display:flex;
+  flex-wrap:wrap;
+  gap:12px;
+  justify-content:center;
+}
+
+button{
+  border:none;
+  border-radius:999px;
+  padding:12px 18px;
+  font-size:15px;
+  font-weight:bold;
+  cursor:pointer;
+  background:white;
+  color:#ff4f84;
+}
+
+button:active{
+  transform:scale(0.97);
+}
+
+.big-heart{
+  margin-top:18px;
+  font-size:60px;
+  cursor:pointer;
+  user-select:none;
+  display:inline-block;
+  transition:transform 0.2s;
+}
+
+.big-heart:hover{
+  transform:scale(1.08);
+}
+
+.footer{
+  margin-top:16px;
+  font-size:13px;
+  opacity:0.9;
 }
 
 .heart{
-    position: fixed;
-    top: -10px;
-    animation: fall 6s linear infinite;
+  position:fixed;
+  top:-10vh;
+  z-index:1;
+  pointer-events:none;
+  animation:fall linear forwards;
+  text-shadow:0 3px 8px rgba(0,0,0,0.25);
 }
 
 @keyframes fall{
-    to{
-        transform: translateY(110vh);
-    }
+  to{
+    transform:translateY(120vh) rotate(360deg);
+  }
+}
+
+.firework{
+  position:fixed;
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  background:white;
+  pointer-events:none;
+  z-index:1;
+  animation:explode 900ms ease-out forwards;
+}
+
+@keyframes explode{
+  0%{
+    transform:translate(0,0) scale(1);
+    opacity:1;
+  }
+  100%{
+    transform:translate(var(--x), var(--y)) scale(0.2);
+    opacity:0;
+  }
+}
+
+@media(min-width:700px){
+  .grid{
+    grid-template-columns:repeat(4,1fr);
+  }
 }
 </style>
 </head>
-
 <body>
 
-<h1>❤️ A mi történetünk ❤️</h1>
-<h2>2023.12.28 óta együtt</h2>
+<div class="overlay"></div>
 
-<div id="timer"></div>
+<div class="card">
+  <h1>❤️ A mi történetünk ❤️</h1>
+  <p class="sub">2023.12.28 óta együtt</p>
 
-<div class="love">
-Szeretlek ❤️
+  <div class="grid">
+    <div class="box">
+      <div class="num" id="days">0</div>
+      <div class="label">nap</div>
+    </div>
+    <div class="box">
+      <div class="num" id="hours">0</div>
+      <div class="label">óra</div>
+    </div>
+    <div class="box">
+      <div class="num" id="minutes">0</div>
+      <div class="label">perc</div>
+    </div>
+    <div class="box">
+      <div class="num" id="seconds">0</div>
+      <div class="label">másodperc</div>
+    </div>
+  </div>
+
+  <div class="message" id="loveMessage">Szeretlek mindennél jobban ❤️</div>
+
+  <div class="next-anniversary" id="anniversaryText"></div>
+
+  <div class="big-heart" onclick="heartClick()">💖</div>
+
+  <div class="buttons">
+    <button onclick="nextMessage()">💌 Új üzenet</button>
+    <button onclick="toggleMusic()">🎵 Zene</button>
+    <button onclick="manualFireworks()">🎆 Tűzijáték</button>
+  </div>
+
+  <div class="footer">Készítve szeretetből ❤️</div>
 </div>
 
-<script>
+<audio id="bgMusic" loop>
+  <source src="YOUR_MUSIC_URL" type="audio/mpeg">
+</audio>
 
-let startDate = new Date("2023-12-28 00:00:00");
+<script>
+const startDate = new Date("2023-12-28T00:00:00");
+const messages = [
+  "Szeretlek mindennél jobban ❤️",
+  "Veled minden nap a kedvenc napom 💖",
+  "Te vagy a legszebb része az életemnek ✨",
+  "Melletted még az idő is szebben telik 🥰",
+  "Te vagy az én kedvenc történetem 💌",
+  "Bárhol is vagy, ott van az otthonom ❤️"
+];
+
+let msgIndex = 0;
+let musicPlaying = false;
 
 function updateTimer(){
+  const now = new Date();
+  let diff = now - startDate;
 
-let now = new Date();
-let diff = now - startDate;
+  if(diff < 0){
+    diff = 0;
+  }
 
-let days = Math.floor(diff / (1000*60*60*24));
-let hours = Math.floor(diff / (1000*60*60) % 24);
-let minutes = Math.floor(diff / (1000*60) % 60);
-let seconds = Math.floor(diff / 1000 % 60);
+  const days = Math.floor(diff / (1000*60*60*24));
+  const hours = Math.floor((diff / (1000*60*60)) % 24);
+  const minutes = Math.floor((diff / (1000*60)) % 60);
+  const seconds = Math.floor((diff / 1000) % 60);
 
-document.getElementById("timer").innerHTML =
-days + " nap " +
-hours + " óra " +
-minutes + " perc " +
-seconds + " másodperc ❤️";
+  document.getElementById("days").textContent = days;
+  document.getElementById("hours").textContent = hours;
+  document.getElementById("minutes").textContent = minutes;
+  document.getElementById("seconds").textContent = seconds;
 
+  updateAnniversary(now);
+  checkAnniversary(now);
 }
 
-setInterval(updateTimer,1000);
-updateTimer();
+function updateAnniversary(now){
+  let next = new Date(now.getFullYear(), 11, 28, 0, 0, 0);
+
+  if(now > next){
+    next = new Date(now.getFullYear() + 1, 11, 28, 0, 0, 0);
+  }
+
+  const diff = next - now;
+  const d = Math.floor(diff / (1000*60*60*24));
+  const h = Math.floor((diff / (1000*60*60)) % 24);
+  const m = Math.floor((diff / (1000*60)) % 60);
+  const s = Math.floor((diff / 1000) % 60);
+
+  const yearCount = next.getFullYear() - 2023;
+
+  document.getElementById("anniversaryText").innerHTML =
+    `A következő, <b>${yearCount}. évfordulóig</b> még ${d} nap, ${h} óra, ${m} perc és ${s} másodperc van.`;
+}
+
+function nextMessage(){
+  msgIndex++;
+  if(msgIndex >= messages.length){
+    msgIndex = 0;
+  }
+  document.getElementById("loveMessage").textContent = messages[msgIndex];
+}
+
+function heartClick(){
+  for(let i=0;i<18;i++){
+    setTimeout(createHeart, i*70);
+  }
+  nextMessage();
+}
 
 function createHeart(){
+  const heart = document.createElement("div");
+  heart.className = "heart";
+  heart.textContent = Math.random() > 0.5 ? "❤️" : "💖";
+  heart.style.left = Math.random()*100 + "vw";
+  heart.style.fontSize = (16 + Math.random()*22) + "px";
+  heart.style.animationDuration = (4 + Math.random()*4) + "s";
+  document.body.appendChild(heart);
 
-let heart = document.createElement("div");
-heart.className = "heart";
-heart.innerHTML = "❤️";
-
-heart.style.left = Math.random()*100 + "vw";
-heart.style.fontSize = (Math.random()*20+15)+"px";
-
-document.body.appendChild(heart);
-
-setTimeout(()=>{
-heart.remove();
-},6000);
-
+  setTimeout(() => {
+    heart.remove();
+  }, 8500);
 }
 
-setInterval(createHeart,300);
+setInterval(createHeart, 320);
 
+function toggleMusic(){
+  const music = document.getElementById("bgMusic");
+
+  if(!musicPlaying){
+    music.play().catch(() => {
+      alert("A böngésző csak felhasználói kattintás után engedi a zenét. Töltsd ki a YOUR_MUSIC_URL részt is.");
+    });
+    musicPlaying = true;
+  }else{
+    music.pause();
+    musicPlaying = false;
+  }
+}
+
+function createFirework(x, y){
+  for(let i=0;i<24;i++){
+    const dot = document.createElement("div");
+    dot.className = "firework";
+    dot.style.left = x + "px";
+    dot.style.top = y + "px";
+
+    const angle = (Math.PI * 2 / 24) * i;
+    const distance = 40 + Math.random() * 90;
+    dot.style.setProperty("--x", Math.cos(angle) * distance + "px");
+    dot.style.setProperty("--y", Math.sin(angle) * distance + "px");
+
+    document.body.appendChild(dot);
+
+    setTimeout(() => dot.remove(), 1000);
+  }
+}
+
+function manualFireworks(){
+  createFirework(window.innerWidth * 0.3, window.innerHeight * 0.3);
+  setTimeout(() => createFirework(window.innerWidth * 0.7, window.innerHeight * 0.35), 250);
+  setTimeout(() => createFirework(window.innerWidth * 0.5, window.innerHeight * 0.25), 500);
+}
+
+function checkAnniversary(now){
+  if(now.getMonth() === 11 && now.getDate() === 28 && now.getHours() === 0 && now.getMinutes() === 0 && now.getSeconds() < 3){
+    manualFireworks();
+  }
+}
+
+updateTimer();
+setInterval(updateTimer, 1000);
 </script>
 
 </body>
