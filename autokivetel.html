@@ -1,188 +1,392 @@
 <!DOCTYPE html>
 <html lang="hu">
 <head>
-<meta charset="UTF-8">
-<title>Autó rendszer (online)</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Autó kivétel rendszer</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f3f4f6;
+      margin: 0;
+      padding: 20px;
+    }
 
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js"></script>
+    h1, h2, h3 {
+      margin-top: 0;
+    }
 
-<style>
-body { font-family: Arial; background:#f2f2f2; padding:20px; }
-.card { background:white; padding:15px; margin-bottom:15px; border-radius:10px; }
-button { padding:8px; margin-top:5px; cursor:pointer; }
-.red { color:red; font-weight:bold; }
-</style>
-</head>
-<body>
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
 
-<h1>Autó rendszer (ONLINE)</h1>
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 18px;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+    }
 
-<div class="card">
-<h3>Új autó</h3>
-<input id="brand" placeholder="Márka">
-<input id="model" placeholder="Típus">
-<button onclick="addCar()">Hozzáadás</button>
+    input, select, button {
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #d1d5db;
+      font-size: 14px;
+      margin: 4px 0;
+    }
 
-<h3>Új név</h3>
-<input id="name" placeholder="Név">
-<button onclick="addPerson()">Hozzáadás</button>
-</div>
+    input, select {
+      width: 100%;
+      max-width: 280px;
+    }
 
-<div class="card">
-<h2>Autók</h2>
-<div id="cars"></div>
-</div>
+    button {
+      cursor: pointer;
+      border: none;
+    }
 
-<div class="card">
-<h2>Emberek</h2>
-<div id="people"></div>
-</div>
+    .btn {
+      background: #2563eb;
+      color: white;
+    }
 
-<script type="module">
+    .btn:hover {
+      background: #1d4ed8;
+    }
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getDatabase, ref, push, set, onValue, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    .btn-danger {
+      background: #dc2626;
+      color: white;
+    }
 
-const firebaseConfig = {
-  apiKey: "AIzaSyBgbixws2rf6VdqjQATVwZsKg0lgiqy0xI",
-  authDomain: "ordog-fizetes.firebaseapp.com",
-  databaseURL: "https://ordog-fizetes-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "ordog-fizetes",
-  storageBucket: "ordog-fizetes.firebasestorage.app",
-  messagingSenderId: "672089263660",
-  appId: "1:672089263660:web:70086de26402ceb3464b89"
-};
+    .btn-danger:hover {
+      background: #b91c1c;
+    }
 
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
+    .btn-success {
+      background: #16a34a;
+      color: white;
+    }
 
-const carsRef = ref(db, "cars");
-const peopleRef = ref(db, "people");
+    .btn-success:hover {
+      background: #15803d;
+    }
 
-// --- ADD ---
-window.addCar = function() {
-  const brand = document.getElementById("brand").value;
-  const model = document.getElementById("model").value;
-  if (!brand || !model) return;
+    .row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
 
-  const newRef = push(carsRef);
-  set(newRef, {
-    brand,
-    model,
-    takenBy: null,
-    takenAt: null,
-    returned: true,
-    penaltyGiven: false
-  });
-};
+    .item {
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 12px;
+      margin-top: 10px;
+      background: #fafafa;
+    }
 
-window.addPerson = function() {
-  const name = document.getElementById("name").value;
-  if (!name) return;
+    .red {
+      color: #dc2626;
+      font-weight: bold;
+    }
 
-  const newRef = push(peopleRef);
-  set(newRef, {
-    name,
-    red: 0
-  });
-};
+    .green {
+      color: #16a34a;
+      font-weight: bold;
+    }
 
-// --- TAKE ---
-window.takeCar = function(carId, personId) {
-  update(ref(db, "cars/" + carId), {
-    takenBy: personId,
-    takenAt: Date.now(),
-    returned: false,
-    penaltyGiven: false
-  });
-};
+    .orange {
+      color: #d97706;
+      font-weight: bold;
+    }
 
-// --- RETURN ---
-window.returnCar = function(carId) {
-  update(ref(db, "cars/" + carId), {
-    returned: true,
-    takenBy: null,
-    takenAt: null
-  });
-};
+    .muted {
+      color: #6b7280;
+      font-size: 13px;
+    }
 
-// --- AUTO PENALTY ---
-function checkPenalty(cars, people) {
-  const now = Date.now();
+    .top-space {
+      margin-top: 10px;
+    }
 
-  Object.entries(cars || {}).forEach(([carId, car]) => {
-    if (!car.returned && car.takenAt) {
-      if (now - car.takenAt > 86400000 && !car.penaltyGiven) {
+    @media (max-width: 600px) {
+      input, select, button {
+        width: 100%;
+        max-width: 100%;
+      }
 
-        const person = people[car.takenBy];
-        if (person) {
-          update(ref(db, "people/" + car.takenBy), {
-            red: (person.red || 0) + 1
-          });
-
-          update(ref(db, "cars/" + carId), {
-            penaltyGiven: true
-          });
-        }
+      .row {
+        flex-direction: column;
+        align-items: stretch;
       }
     }
-  });
-}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Autó kivétel / visszarakás rendszer</h1>
 
-// --- RENDER ---
-let carsData = {};
-let peopleData = {};
-
-onValue(carsRef, (snap) => {
-  carsData = snap.val() || {};
-  render();
-});
-
-onValue(peopleRef, (snap) => {
-  peopleData = snap.val() || {};
-  render();
-});
-
-function render() {
-  checkPenalty(carsData, peopleData);
-
-  const carsDiv = document.getElementById("cars");
-  carsDiv.innerHTML = "";
-
-  Object.entries(carsData).forEach(([id, car]) => {
-    const person = peopleData[car.takenBy];
-
-    carsDiv.innerHTML += `
-      <div style="border:1px solid #ccc; padding:10px; margin:5px;">
-        <b>${car.brand} ${car.model}</b><br>
-
-        ${car.returned ? `
-          <select id="p${id}">
-            ${Object.entries(peopleData).map(([pid, p]) => 
-              `<option value="${pid}">${p.name}</option>`).join("")}
-          </select>
-          <button onclick="takeCar('${id}', document.getElementById('p${id}').value)">
-            Kivette
-          </button>
-        ` : `
-          Kivette: <b>${person ? person.name : ""}</b><br>
-          <button onclick="returnCar('${id}')">Visszarakta</button>
-        `}
+    <div class="card">
+      <h2>Új autó hozzáadása</h2>
+      <div class="row">
+        <input id="brand" type="text" placeholder="Márka pl. Opel">
+        <input id="model" type="text" placeholder="Típus pl. Astra">
+        <button class="btn" onclick="addCar()">Autó hozzáadása</button>
       </div>
-    `;
-  });
 
-  const peopleDiv = document.getElementById("people");
-  peopleDiv.innerHTML = "";
+      <h2 class="top-space">Új ember hozzáadása</h2>
+      <div class="row">
+        <input id="name" type="text" placeholder="Név pl. Kiss János">
+        <button class="btn" onclick="addPerson()">Ember hozzáadása</button>
+      </div>
+    </div>
 
-  Object.values(peopleData).forEach(p => {
-    peopleDiv.innerHTML += `
-      <div>${p.name} - <span class="red">${p.red} piros pont</span></div>
-    `;
-  });
-}
+    <div class="card">
+      <h2>Autók</h2>
+      <div id="cars"></div>
+    </div>
 
-</script>
+    <div class="card">
+      <h2>Emberek / piros pontok</h2>
+      <div id="people"></div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getDatabase, ref, push, set, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBgbixws2rf6VdqjQATVwZsKg0lgiqy0xI",
+      authDomain: "ordog-fizetes.firebaseapp.com",
+      databaseURL: "https://ordog-fizetes-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "ordog-fizetes",
+      storageBucket: "ordog-fizetes.firebasestorage.app",
+      messagingSenderId: "672089263660",
+      appId: "1:672089263660:web:70086de26402ceb3464b89"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    const carsRef = ref(db, "cars");
+    const peopleRef = ref(db, "people");
+
+    let carsData = {};
+    let peopleData = {};
+
+    window.addCar = function () {
+      const brand = document.getElementById("brand").value.trim();
+      const model = document.getElementById("model").value.trim();
+
+      if (!brand || !model) {
+        alert("Add meg a márkát és a típust is.");
+        return;
+      }
+
+      const newRef = push(carsRef);
+      set(newRef, {
+        brand,
+        model,
+        takenBy: null,
+        takenAt: null,
+        returned: true,
+        penaltyGiven: false
+      });
+
+      document.getElementById("brand").value = "";
+      document.getElementById("model").value = "";
+    };
+
+    window.addPerson = function () {
+      const name = document.getElementById("name").value.trim();
+
+      if (!name) {
+        alert("Adj meg egy nevet.");
+        return;
+      }
+
+      const exists = Object.values(peopleData).some(
+        p => (p.name || "").toLowerCase() === name.toLowerCase()
+      );
+
+      if (exists) {
+        alert("Ez a név már létezik.");
+        return;
+      }
+
+      const newRef = push(peopleRef);
+      set(newRef, {
+        name,
+        red: 0
+      });
+
+      document.getElementById("name").value = "";
+    };
+
+    window.takeCar = function (carId, personId) {
+      if (!personId) {
+        alert("Válassz embert.");
+        return;
+      }
+
+      update(ref(db, "cars/" + carId), {
+        takenBy: personId,
+        takenAt: Date.now(),
+        returned: false,
+        penaltyGiven: false
+      });
+    };
+
+    window.returnCar = function (carId) {
+      update(ref(db, "cars/" + carId), {
+        returned: true,
+        takenBy: null,
+        takenAt: null,
+        penaltyGiven: false
+      });
+    };
+
+    window.deletePerson = function (personId) {
+      const hasOpenCar = Object.values(carsData).some(
+        car => car.takenBy === personId && !car.returned
+      );
+
+      if (hasOpenCar) {
+        alert("Ehhez az emberhez még ki van véve autó. Előbb vissza kell rakni.");
+        return;
+      }
+
+      if (!confirm("Biztos törlöd ezt az embert?")) return;
+
+      remove(ref(db, "people/" + personId));
+    };
+
+    window.deleteCar = function (carId) {
+      const car = carsData[carId];
+      if (!car) return;
+
+      if (!car.returned) {
+        alert("A kivett autót előbb vissza kell rakni.");
+        return;
+      }
+
+      if (!confirm("Biztos törlöd ezt az autót?")) return;
+
+      remove(ref(db, "cars/" + carId));
+    };
+
+    function checkPenalty(cars, people) {
+      const now = Date.now();
+
+      Object.entries(cars || {}).forEach(([carId, car]) => {
+        if (!car.returned && car.takenAt) {
+          const passed = now - car.takenAt;
+
+          if (passed > 24 * 60 * 60 * 1000 && !car.penaltyGiven) {
+            const person = people[car.takenBy];
+
+            if (person) {
+              update(ref(db, "people/" + car.takenBy), {
+                red: (person.red || 0) + 1
+              });
+
+              update(ref(db, "cars/" + carId), {
+                penaltyGiven: true
+              });
+            }
+          }
+        }
+      });
+    }
+
+    onValue(carsRef, (snap) => {
+      carsData = snap.val() || {};
+      render();
+    });
+
+    onValue(peopleRef, (snap) => {
+      peopleData = snap.val() || {};
+      render();
+    });
+
+    function render() {
+      checkPenalty(carsData, peopleData);
+
+      const carsDiv = document.getElementById("cars");
+      carsDiv.innerHTML = "";
+
+      if (Object.keys(carsData).length === 0) {
+        carsDiv.innerHTML = "<div class='muted'>Nincs még autó felvéve.</div>";
+      } else {
+        Object.entries(carsData).forEach(([id, car]) => {
+          const person = peopleData[car.takenBy];
+          const overdue = !car.returned && car.takenAt && (Date.now() - car.takenAt > 24 * 60 * 60 * 1000);
+
+          carsDiv.innerHTML += `
+            <div class="item">
+              <div><strong>${car.brand} ${car.model}</strong></div>
+              <div class="muted">Állapot: ${
+                car.returned
+                  ? "<span class='green'>Bent van</span>"
+                  : overdue
+                    ? "<span class='red'>Kint van, 24 óra lejárt</span>"
+                    : "<span class='orange'>Kint van</span>"
+              }</div>
+
+              ${
+                car.returned
+                  ? `
+                    <div class="row top-space">
+                      <select id="p${id}">
+                        <option value="">-- válassz embert --</option>
+                        ${Object.entries(peopleData).map(([pid, p]) =>
+                          `<option value="${pid}">${p.name}</option>`
+                        ).join("")}
+                      </select>
+                      <button class="btn" onclick="takeCar('${id}', document.getElementById('p${id}').value)">
+                        Kivette
+                      </button>
+                      <button class="btn-danger" onclick="deleteCar('${id}')">
+                        Autó törlése
+                      </button>
+                    </div>
+                  `
+                  : `
+                    <div class="top-space">Kivette: <strong>${person ? person.name : "ismeretlen"}</strong></div>
+                    <div class="muted">Kivétel ideje: ${new Date(car.takenAt).toLocaleString("hu-HU")}</div>
+                    <div class="row top-space">
+                      <button class="btn-success" onclick="returnCar('${id}')">Visszarakta</button>
+                    </div>
+                  `
+              }
+            </div>
+          `;
+        });
+      }
+
+      const peopleDiv = document.getElementById("people");
+      peopleDiv.innerHTML = "";
+
+      if (Object.keys(peopleData).length === 0) {
+        peopleDiv.innerHTML = "<div class='muted'>Nincs még ember felvéve.</div>";
+      } else {
+        Object.entries(peopleData).forEach(([pid, p]) => {
+          peopleDiv.innerHTML += `
+            <div class="item">
+              <div class="row">
+                <div><strong>${p.name}</strong> - <span class="red">${p.red || 0} piros pont</span></div>
+                <button class="btn-danger" onclick="deletePerson('${pid}')">Ember törlése</button>
+              </div>
+            </div>
+          `;
+        });
+      }
+    }
+  </script>
 </body>
 </html>
