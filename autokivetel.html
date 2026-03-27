@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<title>Autó rendszer</title>
+<style>
+body { font-family: Arial; background:#f2f2f2; padding:20px; }
+.card { background:white; padding:15px; margin-bottom:15px; border-radius:10px; }
+button { padding:8px; margin-top:5px; cursor:pointer; }
+.red { color:red; font-weight:bold; }
+</style>
+</head>
+<body>
+
+<h1>Autó kivétel rendszer</h1>
+
+<div class="card">
+<h3>Új autó</h3>
+<input id="brand" placeholder="Márka">
+<input id="model" placeholder="Típus">
+<button onclick="addCar()">Hozzáadás</button>
+
+<h3>Új név</h3>
+<input id="name" placeholder="Név">
+<button onclick="addPerson()">Hozzáadás</button>
+</div>
+
+<div class="card">
+<h2>Autók</h2>
+<div id="cars"></div>
+</div>
+
+<div class="card">
+<h2>Emberek (piros pont)</h2>
+<div id="people"></div>
+</div>
+
+<script>
+let data = JSON.parse(localStorage.getItem("autoApp")) || {
+  cars: [],
+  people: []
+};
+
+function save() {
+  localStorage.setItem("autoApp", JSON.stringify(data));
+}
+
+function addCar() {
+  const brand = document.getElementById("brand").value;
+  const model = document.getElementById("model").value;
+  if (!brand || !model) return;
+
+  data.cars.push({
+    id: Date.now(),
+    brand,
+    model,
+    takenBy: null,
+    takenAt: null,
+    returned: true,
+    penaltyGiven: false
+  });
+
+  save();
+  render();
+}
+
+function addPerson() {
+  const name = document.getElementById("name").value;
+  if (!name) return;
+
+  data.people.push({
+    id: Date.now(),
+    name,
+    red: 0
+  });
+
+  save();
+  render();
+}
+
+function takeCar(carId, personId) {
+  const car = data.cars.find(c => c.id == carId);
+  car.takenBy = personId;
+  car.takenAt = Date.now();
+  car.returned = false;
+  car.penaltyGiven = false;
+  save();
+  render();
+}
+
+function returnCar(carId) {
+  const car = data.cars.find(c => c.id == carId);
+  car.returned = true;
+  car.takenBy = null;
+  car.takenAt = null;
+  save();
+  render();
+}
+
+function checkPenalty() {
+  const now = Date.now();
+  data.cars.forEach(car => {
+    if (!car.returned && car.takenAt) {
+      if (now - car.takenAt > 86400000 && !car.penaltyGiven) {
+        const person = data.people.find(p => p.id == car.takenBy);
+        if (person) {
+          person.red++;
+          car.penaltyGiven = true;
+        }
+      }
+    }
+  });
+  save();
+}
+
+function render() {
+  checkPenalty();
+
+  const carsDiv = document.getElementById("cars");
+  carsDiv.innerHTML = "";
+
+  data.cars.forEach(car => {
+    const person = data.people.find(p => p.id == car.takenBy);
+
+    carsDiv.innerHTML += `
+      <div style="border:1px solid #ccc; padding:10px; margin:5px;">
+        <b>${car.brand} ${car.model}</b><br>
+
+        ${car.returned ? `
+          <select id="p${car.id}">
+            ${data.people.map(p => `<option value="${p.id}">${p.name}</option>`).join("")}
+          </select>
+          <button onclick="takeCar(${car.id}, document.getElementById('p${car.id}').value)">
+            Kivette
+          </button>
+        ` : `
+          Kivette: <b>${person ? person.name : ""}</b><br>
+          <button onclick="returnCar(${car.id})">Visszarakta</button>
+        `}
+      </div>
+    `;
+  });
+
+  const peopleDiv = document.getElementById("people");
+  peopleDiv.innerHTML = "";
+
+  data.people.forEach(p => {
+    peopleDiv.innerHTML += `
+      <div>
+        ${p.name} - <span class="red">${p.red} piros pont</span>
+      </div>
+    `;
+  });
+}
+
+render();
+</script>
+
+</body>
+</html>
