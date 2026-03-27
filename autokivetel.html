@@ -2,7 +2,11 @@
 <html lang="hu">
 <head>
 <meta charset="UTF-8">
-<title>Autó rendszer</title>
+<title>Autó rendszer (online)</title>
+
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js"></script>
+
 <style>
 body { font-family: Arial; background:#f2f2f2; padding:20px; }
 .card { background:white; padding:15px; margin-bottom:15px; border-radius:10px; }
@@ -12,7 +16,7 @@ button { padding:8px; margin-top:5px; cursor:pointer; }
 </head>
 <body>
 
-<h1>Autó kivétel rendszer</h1>
+<h1>Autó rendszer (ONLINE)</h1>
 
 <div class="card">
 <h3>Új autó</h3>
@@ -31,27 +35,39 @@ button { padding:8px; margin-top:5px; cursor:pointer; }
 </div>
 
 <div class="card">
-<h2>Emberek (piros pont)</h2>
+<h2>Emberek</h2>
 <div id="people"></div>
 </div>
 
-<script>
-let data = JSON.parse(localStorage.getItem("autoApp")) || {
-  cars: [],
-  people: []
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getDatabase, ref, push, set, onValue, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBgbixws2rf6VdqjQATVwZsKg0lgiqy0xI",
+  authDomain: "ordog-fizetes.firebaseapp.com",
+  databaseURL: "https://ordog-fizetes-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "ordog-fizetes",
+  storageBucket: "ordog-fizetes.firebasestorage.app",
+  messagingSenderId: "672089263660",
+  appId: "1:672089263660:web:70086de26402ceb3464b89"
 };
 
-function save() {
-  localStorage.setItem("autoApp", JSON.stringify(data));
-}
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
 
-function addCar() {
+const carsRef = ref(db, "cars");
+const peopleRef = ref(db, "people");
+
+// --- ADD ---
+window.addCar = function() {
   const brand = document.getElementById("brand").value;
   const model = document.getElementById("model").value;
   if (!brand || !model) return;
 
-  data.cars.push({
-    id: Date.now(),
+  const newRef = push(carsRef);
+  set(newRef, {
     brand,
     model,
     takenBy: null,
@@ -59,83 +75,99 @@ function addCar() {
     returned: true,
     penaltyGiven: false
   });
+};
 
-  save();
-  render();
-}
-
-function addPerson() {
+window.addPerson = function() {
   const name = document.getElementById("name").value;
   if (!name) return;
 
-  data.people.push({
-    id: Date.now(),
+  const newRef = push(peopleRef);
+  set(newRef, {
     name,
     red: 0
   });
+};
 
-  save();
-  render();
-}
+// --- TAKE ---
+window.takeCar = function(carId, personId) {
+  update(ref(db, "cars/" + carId), {
+    takenBy: personId,
+    takenAt: Date.now(),
+    returned: false,
+    penaltyGiven: false
+  });
+};
 
-function takeCar(carId, personId) {
-  const car = data.cars.find(c => c.id == carId);
-  car.takenBy = personId;
-  car.takenAt = Date.now();
-  car.returned = false;
-  car.penaltyGiven = false;
-  save();
-  render();
-}
+// --- RETURN ---
+window.returnCar = function(carId) {
+  update(ref(db, "cars/" + carId), {
+    returned: true,
+    takenBy: null,
+    takenAt: null
+  });
+};
 
-function returnCar(carId) {
-  const car = data.cars.find(c => c.id == carId);
-  car.returned = true;
-  car.takenBy = null;
-  car.takenAt = null;
-  save();
-  render();
-}
-
-function checkPenalty() {
+// --- AUTO PENALTY ---
+function checkPenalty(cars, people) {
   const now = Date.now();
-  data.cars.forEach(car => {
+
+  Object.entries(cars || {}).forEach(([carId, car]) => {
     if (!car.returned && car.takenAt) {
       if (now - car.takenAt > 86400000 && !car.penaltyGiven) {
-        const person = data.people.find(p => p.id == car.takenBy);
+
+        const person = people[car.takenBy];
         if (person) {
-          person.red++;
-          car.penaltyGiven = true;
+          update(ref(db, "people/" + car.takenBy), {
+            red: (person.red || 0) + 1
+          });
+
+          update(ref(db, "cars/" + carId), {
+            penaltyGiven: true
+          });
         }
       }
     }
   });
-  save();
 }
 
+// --- RENDER ---
+let carsData = {};
+let peopleData = {};
+
+onValue(carsRef, (snap) => {
+  carsData = snap.val() || {};
+  render();
+});
+
+onValue(peopleRef, (snap) => {
+  peopleData = snap.val() || {};
+  render();
+});
+
 function render() {
-  checkPenalty();
+  checkPenalty(carsData, peopleData);
 
   const carsDiv = document.getElementById("cars");
   carsDiv.innerHTML = "";
 
-  data.cars.forEach(car => {
-    const person = data.people.find(p => p.id == car.takenBy);
+  Object.entries(carsData).forEach(([id, car]) => {
+    const person = peopleData[car.takenBy];
 
     carsDiv.innerHTML += `
       <div style="border:1px solid #ccc; padding:10px; margin:5px;">
         <b>${car.brand} ${car.model}</b><br>
 
         ${car.returned ? `
-          <select id="p${car.id}">
-            ${data.people.map(p => `<option value="${p.id}">${p.name}</option>`).join("")}
+          <select id="p${id}">
+            ${Object.entries(peopleData).map(([pid, p]) => 
+              `<option value="${pid}">${p.name}</option>`).join("")}
           </select>
-          <button onclick="takeCar(${car.id}, document.getElementById('p${car.id}').value)">
+          <button onclick="takeCar('${id}', document.getElementById('p${id}').value)">
             Kivette
           </button>
         ` : `
           Kivette: <b>${person ? person.name : ""}</b><br>
-          <button onclick="returnCar(${car.id})">Visszarakta</button>
+          <button onclick="returnCar('${id}')">Visszarakta</button>
         `}
       </div>
     `;
@@ -144,17 +176,13 @@ function render() {
   const peopleDiv = document.getElementById("people");
   peopleDiv.innerHTML = "";
 
-  data.people.forEach(p => {
+  Object.values(peopleData).forEach(p => {
     peopleDiv.innerHTML += `
-      <div>
-        ${p.name} - <span class="red">${p.red} piros pont</span>
-      </div>
+      <div>${p.name} - <span class="red">${p.red} piros pont</span></div>
     `;
   });
 }
 
-render();
 </script>
-
 </body>
 </html>
