@@ -176,6 +176,22 @@
     const carsRef = ref(db, "cars");
     const peopleRef = ref(db, "people");
 
+    // 🔥 LOG REF
+    const actionLogRef = ref(db, "actionLog");
+
+    function logAction(muvelet, adat = "") {
+      const ido = new Date().toLocaleString("hu-HU");
+
+      const log = {
+        ido: ido,
+        muvelet: muvelet,
+        adat: adat
+      };
+
+      const id = Date.now();
+      set(ref(db, "actionLog/" + id), log);
+    }
+
     let carsData = {};
     let peopleData = {};
 
@@ -197,6 +213,8 @@
         returned: true,
         penaltyGiven: false
       });
+
+      logAction("Autó hozzáadva", brand + " " + model);
 
       document.getElementById("brand").value = "";
       document.getElementById("model").value = "";
@@ -225,6 +243,8 @@
         red: 0
       });
 
+      logAction("Ember hozzáadva", name);
+
       document.getElementById("name").value = "";
     };
 
@@ -234,21 +254,39 @@
         return;
       }
 
+      const car = carsData[carId];
+      const person = peopleData[personId];
+
       update(ref(db, "cars/" + carId), {
         takenBy: personId,
         takenAt: Date.now(),
         returned: false,
         penaltyGiven: false
       });
+
+      logAction(
+        "Autó kivéve",
+        (car ? car.brand + " " + car.model : carId) +
+        " | Kivette: " + (person ? person.name : personId)
+      );
     };
 
     window.returnCar = function (carId) {
+      const car = carsData[carId];
+      const person = peopleData[car?.takenBy];
+
       update(ref(db, "cars/" + carId), {
         returned: true,
         takenBy: null,
         takenAt: null,
         penaltyGiven: false
       });
+
+      logAction(
+        "Autó visszarakva",
+        (car ? car.brand + " " + car.model : carId) +
+        " | Visszarakta: " + (person ? person.name : "ismeretlen")
+      );
     };
 
     window.deletePerson = function (personId) {
@@ -263,6 +301,9 @@
 
       if (!confirm("Biztos törlöd ezt az embert?")) return;
 
+      const person = peopleData[personId];
+      logAction("Ember törölve", person ? person.name : personId);
+
       remove(ref(db, "people/" + personId));
     };
 
@@ -276,6 +317,8 @@
       }
 
       if (!confirm("Biztos törlöd ezt az autót?")) return;
+
+      logAction("Autó törölve", car.brand + " " + car.model);
 
       remove(ref(db, "cars/" + carId));
     };
@@ -298,6 +341,12 @@
               update(ref(db, "cars/" + carId), {
                 penaltyGiven: true
               });
+
+              logAction(
+                "Piros pont kiosztva",
+                (person.name || "ismeretlen") +
+                " | Autó: " + car.brand + " " + car.model
+              );
             }
           }
         }
