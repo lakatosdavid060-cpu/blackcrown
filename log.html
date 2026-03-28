@@ -11,12 +11,48 @@ font-family:Arial;
 background:#020617;
 color:white;
 padding:20px;
+margin:0;
+}
+
+h2{
+margin-top:0;
+}
+
+.toolbar{
+display:flex;
+gap:10px;
+flex-wrap:wrap;
+margin:15px 0;
+}
+
+button{
+padding:8px 12px;
+border:none;
+border-radius:8px;
+cursor:pointer;
+font-weight:bold;
+}
+
+.orange{
+background:#d97706;
+color:white;
+}
+
+.red{
+background:#dc2626;
+color:white;
+}
+
+.blue{
+background:#2563eb;
+color:white;
 }
 
 table{
 width:100%;
 border-collapse:collapse;
 margin-top:20px;
+background:#0f172a;
 }
 
 th,td{
@@ -28,6 +64,12 @@ text-align:center;
 th{
 background:#1e293b;
 }
+
+.info{
+margin-top:10px;
+color:#94a3b8;
+font-size:13px;
+}
 </style>
 
 </head>
@@ -35,6 +77,16 @@ background:#1e293b;
 <body>
 
 <h2>🚗 Autókivétel log</h2>
+
+<div class="toolbar">
+  <button class="orange" onclick="cleanupLogs(3)">🧹 3 napnál régebbi törlése</button>
+  <button class="orange" onclick="cleanupLogs(7)">🧹 7 napnál régebbi törlése</button>
+  <button class="red" onclick="deleteAllLogs()">❌ Összes autó log törlése</button>
+</div>
+
+<div class="info">
+Csak az autós műveletek jelennek meg. A törlés a Firebase <b>actionLog</b> útvonaláról történik.
+</div>
 
 <table>
 <thead>
@@ -51,7 +103,7 @@ background:#1e293b;
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import { getDatabase, ref, onValue, remove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBgbixws2rf6VdqjQATVwZsKg0lgiqy0xI",
@@ -67,45 +119,86 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
 const autoTabla = document.getElementById("autoTabla");
+const autoLogRef = ref(db,"actionLog");
 
-const autoLogRef = ref(db,"actionLog"); // 🔥 innen jönnek az autó logok is
+let autoLogs = [];
 
 onValue(autoLogRef,(snapshot)=>{
 
-autoTabla.innerHTML="";
+  autoTabla.innerHTML="";
+  autoLogs = [];
 
-if(!snapshot.exists()){
-autoTabla.innerHTML = "<tr><td colspan='3'>Nincs log</td></tr>";
-return;
-}
+  if(!snapshot.exists()){
+    autoTabla.innerHTML = "<tr><td colspan='3'>Nincs log</td></tr>";
+    return;
+  }
 
-let lista = [];
+  snapshot.forEach(child=>{
+    const data = child.val();
+    const key = child.key;
 
-snapshot.forEach(child=>{
-lista.push(child.val());
+    if(!data?.muvelet?.includes("Autó")) return;
+
+    autoLogs.push({
+      key,
+      ...data
+    });
+  });
+
+  autoLogs.sort((a,b)=>Number(b.key) - Number(a.key));
+
+  if(autoLogs.length === 0){
+    autoTabla.innerHTML = "<tr><td colspan='3'>Nincs autós log</td></tr>";
+    return;
+  }
+
+  autoLogs.forEach(data=>{
+
+    const sor = document.createElement("tr");
+
+    sor.innerHTML = `
+      <td>${data.ido || "-"}</td>
+      <td>${data.muvelet || "-"}</td>
+      <td>${data.adat || "-"}</td>
+    `;
+
+    autoTabla.appendChild(sor);
+  });
+
 });
 
-// 🔥 legfrissebb felül
-lista.reverse();
+window.cleanupLogs = async function(nap){
+  if(!confirm(`Biztos törlöd a ${nap} napnál régebbi autó logokat?`)) return;
 
-lista.forEach(data=>{
+  const hatarido = Date.now() - (nap * 24 * 60 * 60 * 1000);
 
-// csak autós logokat mutat
-if(!data.muvelet.includes("Autó")) return;
+  let torolt = 0;
 
-const sor = document.createElement("tr");
+  for (const log of autoLogs) {
+    const timestamp = Number(log.key);
 
-sor.innerHTML = `
-<td>${data.ido}</td>
-<td>${data.muvelet}</td>
-<td>${data.adat || "-"}</td>
-`;
+    if (!isNaN(timestamp) && timestamp < hatarido) {
+      await remove(ref(db, "actionLog/" + log.key));
+      torolt++;
+    }
+  }
 
-autoTabla.appendChild(sor);
+  alert(`Törölve: ${torolt} db ${nap} napnál régebbi autó log.`);
+};
 
-});
+window.deleteAllLogs = async function(){
+  if(!confirm("Biztos törlöd az összes autó logot?")) return;
+  if(prompt("Írd be: TORLES") !== "TORLES") return;
 
-});
+  let torolt = 0;
+
+  for (const log of autoLogs) {
+    await remove(ref(db, "actionLog/" + log.key));
+    torolt++;
+  }
+
+  alert(`Törölve: ${torolt} db autó log.`);
+};
 
 </script>
 
