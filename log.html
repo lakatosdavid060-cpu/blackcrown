@@ -36,10 +36,9 @@ background:#1e293b;
 
 <body>
 
-<h2>📊 Oldal műveleti log</h2>
+<h2>🚗 Autókivétel log</h2>
 
 <table>
-
 <thead>
 <tr>
 <th>Idő</th>
@@ -48,8 +47,7 @@ background:#1e293b;
 </tr>
 </thead>
 
-<tbody id="tabla"></tbody>
-
+<tbody id="autoTabla"></tbody>
 </table>
 
 <script type="module">
@@ -91,6 +89,37 @@ sor.innerHTML = `
 `;
 
 tabla.appendChild(sor);
+
+});
+
+});
+
+const autoTabla = document.getElementById("autoTabla");
+
+const autoLogRef = ref(db,"autoKivetelLog");
+
+onValue(autoLogRef,(snapshot)=>{
+
+autoTabla.innerHTML="";
+
+if(!snapshot.exists()){
+autoTabla.innerHTML = "<tr><td colspan='3'>Nincs autó log</td></tr>";
+return;
+}
+
+snapshot.forEach(child=>{
+
+const data = child.val();
+
+const sor = document.createElement("tr");
+
+sor.innerHTML = `
+<td>${data.ido}</td>
+<td>${data.muvelet}</td>
+<td>${data.adat || "-"}</td>
+`;
+
+autoTabla.appendChild(sor);
 
 });
 
