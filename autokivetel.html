@@ -74,6 +74,15 @@
       background: #15803d;
     }
 
+    .btn-warning {
+      background: #d97706;
+      color: white;
+    }
+
+    .btn-warning:hover {
+      background: #b45309;
+    }
+
     .row {
       display: flex;
       gap: 10px;
@@ -123,6 +132,11 @@
       color: #111827;
     }
 
+    .editor-status {
+      font-weight: bold;
+      margin-left: 8px;
+    }
+
     @media (max-width: 600px) {
       input, select, button {
         width: 100%;
@@ -138,7 +152,13 @@
 </head>
 <body>
   <div class="container">
-    <h1>Autó kivétel / visszarakás rendszer</h1>
+    <div class="row" style="justify-content:space-between; align-items:center;">
+      <h1>Autó kivétel / visszarakás rendszer</h1>
+      <div>
+        <button class="btn-warning" onclick="toggleSzerkesztoMod()">⚙️ Szerkesztő mód</button>
+        <span id="editorStatus" class="editor-status muted">Kikapcsolva</span>
+      </div>
+    </div>
 
     <div class="card rules-card">
       <h2 style="color:#dc2626;">📜 Szabályzat</h2>
@@ -153,7 +173,7 @@
       </div>
     </div>
 
-    <div class="card">
+    <div class="card" id="adminPanel" style="display:none;">
       <h2>Új autó hozzáadása</h2>
       <div class="row">
         <input id="brand" type="text" placeholder="Márka pl. Opel">
@@ -199,7 +219,9 @@
     const carsRef = ref(db, "cars");
     const peopleRef = ref(db, "people");
 
-    const actionLogRef = ref(db, "actionLog");
+    let carsData = {};
+    let peopleData = {};
+    let szerkesztoMod = false;
 
     function logAction(muvelet, adat = "") {
       const ido = new Date().toLocaleString("hu-HU");
@@ -214,10 +236,36 @@
       set(ref(db, "actionLog/" + id), log);
     }
 
-    let carsData = {};
-    let peopleData = {};
+    function szerkesztoCheck() {
+      if (!szerkesztoMod) {
+        alert("Ehhez szerkesztő mód kell.");
+        return false;
+      }
+      return true;
+    }
+
+    window.toggleSzerkesztoMod = function () {
+      if (szerkesztoMod) {
+        szerkesztoMod = false;
+        render();
+        return;
+      }
+
+      const jelszo = prompt("Szerkesztő jelszó:");
+
+      if (jelszo === null) return;
+
+      if (jelszo === "1234") {
+        szerkesztoMod = true;
+        render();
+      } else {
+        alert("Hibás jelszó.");
+      }
+    };
 
     window.addCar = function () {
+      if (!szerkesztoCheck()) return;
+
       const brand = document.getElementById("brand").value.trim();
       const model = document.getElementById("model").value.trim();
 
@@ -243,6 +291,8 @@
     };
 
     window.addPerson = function () {
+      if (!szerkesztoCheck()) return;
+
       const name = document.getElementById("name").value.trim();
 
       if (!name) {
@@ -312,6 +362,8 @@
     };
 
     window.deletePerson = function (personId) {
+      if (!szerkesztoCheck()) return;
+
       const hasOpenCar = Object.values(carsData).some(
         car => car.takenBy === personId && !car.returned
       );
@@ -322,6 +374,7 @@
       }
 
       if (!confirm("Biztos törlöd ezt az embert?")) return;
+      if (prompt("Írd be: TORLES") !== "TORLES") return;
 
       const person = peopleData[personId];
       logAction("Ember törölve", person ? person.name : personId);
@@ -330,6 +383,8 @@
     };
 
     window.deleteCar = function (carId) {
+      if (!szerkesztoCheck()) return;
+
       const car = carsData[carId];
       if (!car) return;
 
@@ -339,6 +394,7 @@
       }
 
       if (!confirm("Biztos törlöd ezt az autót?")) return;
+      if (prompt("Írd be: TORLES") !== "TORLES") return;
 
       logAction("Autó törölve", car.brand + " " + car.model);
 
@@ -388,6 +444,18 @@
     function render() {
       checkPenalty(carsData, peopleData);
 
+      const adminPanel = document.getElementById("adminPanel");
+      const editorStatus = document.getElementById("editorStatus");
+
+      if (adminPanel) {
+        adminPanel.style.display = szerkesztoMod ? "block" : "none";
+      }
+
+      if (editorStatus) {
+        editorStatus.textContent = szerkesztoMod ? "Bekapcsolva" : "Kikapcsolva";
+        editorStatus.className = "editor-status " + (szerkesztoMod ? "green" : "muted");
+      }
+
       const carsDiv = document.getElementById("cars");
       carsDiv.innerHTML = "";
 
@@ -422,9 +490,11 @@
                       <button class="btn" onclick="takeCar('${id}', document.getElementById('p${id}').value)">
                         Kivette
                       </button>
-                      <button class="btn-danger" onclick="deleteCar('${id}')">
-                        Autó törlése
-                      </button>
+                      ${szerkesztoMod ? `
+                        <button class="btn-danger" onclick="deleteCar('${id}')">
+                          Autó törlése
+                        </button>
+                      ` : ""}
                     </div>
                   `
                   : `
@@ -451,7 +521,7 @@
             <div class="item">
               <div class="row">
                 <div><strong>${p.name}</strong> - <span class="red">${p.red || 0} piros pont</span></div>
-                <button class="btn-danger" onclick="deletePerson('${pid}')">Ember törlése</button>
+                ${szerkesztoMod ? `<button class="btn-danger" onclick="deletePerson('${pid}')">Ember törlése</button>` : ""}
               </div>
             </div>
           `;
