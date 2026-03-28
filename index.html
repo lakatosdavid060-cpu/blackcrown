@@ -456,6 +456,9 @@ font-size:13px;
 <button onclick="nullazHeti()">♻️ Heti nullázás</button>
 <button onclick="nullazFo()">🧹 Főmenü nullázás</button>
 <button onclick="loadArchiv()" class="green">📂 Archív lista</button>
+<button onclick="openAutoKivetel()" style="background:#f59e0b;color:white;">
+🚗 Autókivétel
+</button>
 
 <button onclick="clearAllFiz()" class="red">❌ Összes pipa törlése</button>
 <button onclick="toggleMenu()">☰ További</button>
@@ -1112,6 +1115,10 @@ loader.style.display="none";
 },5000);
 
 });
+
+window.openAutoKivetel = function(){
+  window.open("autokivetel.html","_blank");
+};
 </script>
 </body>
 </html>
