@@ -15,7 +15,6 @@
       overflow-x: hidden;
     }
 
-    /* 👹 HÁTTÉR FELIRAT */
     body::before{
       content:"ÖRDÖGÖK";
       position:fixed;
@@ -66,7 +65,7 @@
       box-shadow: 0 2px 8px rgba(0,0,0,0.18);
     }
 
-    input, select, button {
+    input, select, button, textarea {
       padding: 7px 10px;
       border-radius: 7px;
       border: 1px solid #d1d5db;
@@ -75,11 +74,25 @@
       box-sizing: border-box;
     }
 
-    input, select {
+    input, select, textarea {
       width: 100%;
       max-width: 220px;
       background: white;
       color: #111827;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 36px;
+      max-width: 260px;
+    }
+
+    .small-input {
+      max-width: 110px;
+    }
+
+    .wide-input {
+      max-width: 260px;
     }
 
     button {
@@ -187,7 +200,23 @@
       font-weight: bold;
     }
 
-    /* 🔥 LOADER */
+    .return-box {
+      margin-top: 8px;
+      padding: 8px;
+      border-radius: 8px;
+      background: #f1f5f9;
+      border: 1px solid #cbd5e1;
+    }
+
+    .last-return {
+      margin-top: 6px;
+      padding: 6px 8px;
+      border-radius: 6px;
+      background: #eef2ff;
+      color: #334155;
+      font-size: 12px;
+    }
+
     #loader{
       position:fixed;
       top:0;
@@ -264,7 +293,7 @@
     }
 
     @media (max-width: 600px) {
-      input, select, button {
+      input, select, button, textarea {
         width: 100%;
         max-width: 100%;
       }
@@ -294,14 +323,12 @@
 </head>
 <body>
 
-  <!-- 🔥 BETÖLTŐ -->
   <div id="loader">
     <div class="fire-bg"></div>
     <div class="loader-title">ÖRDÖGÖK</div>
     <div class="loader-sub">Rendszer betöltése...</div>
   </div>
 
-  <!-- 👹 HÁTTÉR IKONOK -->
   <div class="devil-bg devil1">👹</div>
   <div class="devil-bg devil2">👹</div>
   <div class="devil-bg devil3">👹</div>
@@ -459,7 +486,12 @@
         takenBy: null,
         takenAt: null,
         returned: true,
-        penaltyGiven: false
+        penaltyGiven: false,
+        lastReturn: {
+          tank: 100,
+          allapot: 100,
+          megjegyzes: ""
+        }
       });
 
       logAction("Autó hozzáadva", brand + " " + model);
@@ -525,17 +557,49 @@
       const car = carsData[carId];
       const person = peopleData[car?.takenBy];
 
+      const tank = parseInt(document.getElementById("tank" + carId)?.value || "", 10);
+      const allapot = parseInt(document.getElementById("allapot" + carId)?.value || "", 10);
+      const megjegyzes = document.getElementById("megjegyzes" + carId)?.value.trim() || "";
+
+      if (isNaN(tank) || tank < 0 || tank > 100) {
+        alert("A tank értéke 0 és 100 között legyen.");
+        return;
+      }
+
+      if (isNaN(allapot) || allapot < 0 || allapot > 100) {
+        alert("Az állapot értéke 0 és 100 között legyen.");
+        return;
+      }
+
+      if (tank < 100) {
+        const ok = confirm("A szabályzat szerint 100%-os tankkal kell visszarakni. Biztosan folytatod?");
+        if (!ok) return;
+      }
+
+      if (allapot < 90) {
+        const ok = confirm("Az autó állapota 90% alatt van. Biztosan így rakod vissza?");
+        if (!ok) return;
+      }
+
       update(ref(db, "cars/" + carId), {
         returned: true,
         takenBy: null,
         takenAt: null,
-        penaltyGiven: false
+        penaltyGiven: false,
+        lastReturn: {
+          tank: tank,
+          allapot: allapot,
+          megjegyzes: megjegyzes
+        }
       });
 
       logAction(
         "Autó visszarakva",
         (car ? car.brand + " " + car.model : carId) +
-        " | Visszarakta: " + (person ? person.name : "ismeretlen")
+        " | Visszarakta: " + (person ? person.name : "ismeretlen") +
+        " | Tank: " + tank + "%" +
+        " | Állapot: " + allapot + "%" +
+        " | Megjegyzés: " + (megjegyzes || "-")
       );
     };
 
@@ -658,6 +722,14 @@
               ${
                 car.returned
                   ? `
+                    ${car.lastReturn ? `
+                      <div class="last-return">
+                        Utolsó visszarakás:
+                        Tank ${car.lastReturn.tank ?? "-"}% |
+                        Állapot ${car.lastReturn.allapot ?? "-"}% |
+                        Megjegyzés: ${car.lastReturn.megjegyzes || "-"}
+                      </div>
+                    ` : ""}
                     <div class="row top-space">
                       <select id="p${id}">
                         <option value="">-- válassz embert --</option>
@@ -681,8 +753,14 @@
                     <div class="countdown orange" data-taken="${car.takenAt}">
                       ⏳ betöltés...
                     </div>
-                    <div class="row top-space">
-                      <button class="btn-success" onclick="returnCar('${id}')">Visszarakta</button>
+
+                    <div class="return-box">
+                      <div class="row">
+                        <input class="small-input" type="number" id="tank${id}" min="0" max="100" placeholder="Tank %">
+                        <input class="small-input" type="number" id="allapot${id}" min="0" max="100" placeholder="Állapot %">
+                        <input class="wide-input" type="text" id="megjegyzes${id}" placeholder="Megjegyzés">
+                        <button class="btn-success" onclick="returnCar('${id}')">Visszarakta</button>
+                      </div>
                     </div>
                   `
               }
