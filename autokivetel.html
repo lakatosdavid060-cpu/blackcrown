@@ -248,13 +248,11 @@
 
     function logAction(muvelet, adat = "") {
       const ido = new Date().toLocaleString("hu-HU");
-
       const log = {
         ido: ido,
         muvelet: muvelet,
         adat: adat
       };
-
       const id = Date.now();
       set(ref(db, "actionLog/" + id), log);
     }
@@ -278,6 +276,21 @@
       return `${h}ó ${m}p ${s}mp`;
     }
 
+    function updateCountdowns() {
+      document.querySelectorAll("[data-taken]").forEach(el => {
+        const takenAt = parseInt(el.getAttribute("data-taken"), 10);
+        const remaining = (24 * 60 * 60 * 1000) - (Date.now() - takenAt);
+
+        if (remaining <= 0) {
+          el.innerHTML = "⛔ LEJÁRT!";
+          el.className = "countdown red";
+        } else {
+          el.innerHTML = `⏳ Hátralévő idő: ${formatTime(remaining)}`;
+          el.className = "countdown orange";
+        }
+      });
+    }
+
     window.toggleSzerkesztoMod = function () {
       if (szerkesztoMod) {
         szerkesztoMod = false;
@@ -286,7 +299,6 @@
       }
 
       const jelszo = prompt("Szerkesztő jelszó:");
-
       if (jelszo === null) return;
 
       if (jelszo === "1234") {
@@ -500,16 +512,6 @@
           const person = peopleData[car.takenBy];
           const overdue = !car.returned && car.takenAt && (Date.now() - car.takenAt > 24 * 60 * 60 * 1000);
 
-          let countdown = "";
-
-          if (!car.returned && car.takenAt) {
-            const remaining = (24 * 60 * 60 * 1000) - (Date.now() - car.takenAt);
-
-            countdown = remaining > 0
-              ? `<div class="countdown orange">⏳ Hátralévő idő: ${formatTime(remaining)}</div>`
-              : `<div class="countdown red">⛔ LEJÁRT!</div>`;
-          }
-
           carsDiv.innerHTML += `
             <div class="item">
               <div><strong>${car.brand} ${car.model}</strong></div>
@@ -544,7 +546,9 @@
                   : `
                     <div class="top-space">Kivette: <strong>${person ? person.name : "ismeretlen"}</strong></div>
                     <div class="muted">Kivétel ideje: ${new Date(car.takenAt).toLocaleString("hu-HU")}</div>
-                    ${countdown}
+                    <div class="countdown orange" data-taken="${car.takenAt}">
+                      ⏳ betöltés...
+                    </div>
                     <div class="row top-space">
                       <button class="btn-success" onclick="returnCar('${id}')">Visszarakta</button>
                     </div>
@@ -572,10 +576,12 @@
           `;
         });
       }
+
+      updateCountdowns();
     }
 
     setInterval(() => {
-      render();
+      updateCountdowns();
     }, 1000);
   </script>
 </body>
