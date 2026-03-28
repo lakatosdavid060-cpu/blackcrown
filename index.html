@@ -502,14 +502,32 @@ text-align:center;">
 ✅ Mindenki kifizetve. Lezárhatod a hetet.
 </div>
 
-<div id="nincsFizetve" style="
-display:none;
-background:#7f1d1d;
-color:white;
-padding:8px;
-border-radius:8px;
-margin-bottom:10px;
-font-weight:bold;">
+<div id="nincsFizetveWrap" style="display:none;margin-bottom:10px;">
+  <button onclick="toggleNincsFizetve()" id="nincsFizetveBtn" style="
+    width:100%;
+    background:#7f1d1d;
+    color:white;
+    padding:10px;
+    border:none;
+    border-radius:8px;
+    font-weight:bold;
+    text-align:left;
+    cursor:pointer;
+  ">
+    ⚠️ Még nincs kifizetve <span id="nincsArrow" style="float:right;">▼</span>
+  </button>
+
+  <div id="nincsFizetve" style="
+    display:none;
+    background:#450a0a;
+    color:white;
+    padding:10px;
+    border-radius:8px;
+    margin-top:5px;
+    font-weight:bold;
+    line-height:1.6;
+  ">
+  </div>
 </div>
 
 <table>
