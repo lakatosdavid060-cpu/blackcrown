@@ -3,10 +3,9 @@
 
 <head>
 <meta charset="UTF-8">
-<title>Heti log</title>
+<title>Autókivétel log</title>
 
 <style>
-
 body{
 font-family:Arial;
 background:#020617;
@@ -29,7 +28,6 @@ text-align:center;
 th{
 background:#1e293b;
 }
-
 </style>
 
 </head>
@@ -68,48 +66,32 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-const tabla = document.getElementById("tabla");
-
-const logRef = ref(db,"actionLog");
-
-onValue(logRef,(snapshot)=>{
-
-tabla.innerHTML="";
-
-snapshot.forEach(child=>{
-
-const data = child.val();
-
-const sor = document.createElement("tr");
-
-sor.innerHTML = `
-<td>${data.ido}</td>
-<td>${data.muvelet}</td>
-<td>${data.adat}</td>
-`;
-
-tabla.appendChild(sor);
-
-});
-
-});
-
 const autoTabla = document.getElementById("autoTabla");
 
-const autoLogRef = ref(db,"autoKivetelLog");
+const autoLogRef = ref(db,"actionLog"); // 🔥 innen jönnek az autó logok is
 
 onValue(autoLogRef,(snapshot)=>{
 
 autoTabla.innerHTML="";
 
 if(!snapshot.exists()){
-autoTabla.innerHTML = "<tr><td colspan='3'>Nincs autó log</td></tr>";
+autoTabla.innerHTML = "<tr><td colspan='3'>Nincs log</td></tr>";
 return;
 }
 
-snapshot.forEach(child=>{
+let lista = [];
 
-const data = child.val();
+snapshot.forEach(child=>{
+lista.push(child.val());
+});
+
+// 🔥 legfrissebb felül
+lista.reverse();
+
+lista.forEach(data=>{
+
+// csak autós logokat mutat
+if(!data.muvelet.includes("Autó")) return;
 
 const sor = document.createElement("tr");
 
