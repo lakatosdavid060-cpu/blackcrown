@@ -1137,6 +1137,19 @@ loader.style.display="none";
 window.openAutoKivetel = function(){
   window.open("autokivetel.html","_blank");
 };
+
+window.toggleNincsFizetve = function(){
+  const box = document.getElementById("nincsFizetve");
+  const arrow = document.getElementById("nincsArrow");
+
+  if(box.style.display === "none" || box.style.display === ""){
+    box.style.display = "block";
+    arrow.innerText = "▲";
+  } else {
+    box.style.display = "none";
+    arrow.innerText = "▼";
+  }
+};
 </script>
 </body>
 </html>
