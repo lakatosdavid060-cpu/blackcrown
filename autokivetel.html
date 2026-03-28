@@ -9,37 +9,48 @@
       font-family: Arial, sans-serif;
       background: #f3f4f6;
       margin: 0;
-      padding: 20px;
+      padding: 10px;
+      font-size: 14px;
     }
 
     h1, h2, h3 {
-      margin-top: 0;
+      margin: 0 0 8px 0;
+      line-height: 1.2;
+    }
+
+    h1 {
+      font-size: 24px;
+    }
+
+    h2 {
+      font-size: 18px;
     }
 
     .container {
-      max-width: 1100px;
+      max-width: 950px;
       margin: 0 auto;
     }
 
     .card {
       background: white;
-      border-radius: 12px;
-      padding: 18px;
-      margin-bottom: 18px;
-      box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     }
 
     input, select, button {
-      padding: 10px;
-      border-radius: 8px;
+      padding: 7px 10px;
+      border-radius: 7px;
       border: 1px solid #d1d5db;
-      font-size: 14px;
-      margin: 4px 0;
+      font-size: 13px;
+      margin: 2px 0;
+      box-sizing: border-box;
     }
 
     input, select {
       width: 100%;
-      max-width: 280px;
+      max-width: 220px;
     }
 
     button {
@@ -85,16 +96,16 @@
 
     .row {
       display: flex;
-      gap: 10px;
+      gap: 8px;
       flex-wrap: wrap;
       align-items: center;
     }
 
     .item {
       border: 1px solid #e5e7eb;
-      border-radius: 10px;
-      padding: 12px;
-      margin-top: 10px;
+      border-radius: 8px;
+      padding: 10px;
+      margin-top: 8px;
       background: #fafafa;
     }
 
@@ -115,11 +126,11 @@
 
     .muted {
       color: #6b7280;
-      font-size: 13px;
+      font-size: 12px;
     }
 
     .top-space {
-      margin-top: 10px;
+      margin-top: 6px;
     }
 
     .rules-card {
@@ -128,13 +139,21 @@
     }
 
     .rules-text {
-      line-height: 1.8;
+      line-height: 1.6;
       color: #111827;
+      font-size: 13px;
     }
 
     .editor-status {
       font-weight: bold;
-      margin-left: 8px;
+      margin-left: 6px;
+      font-size: 12px;
+    }
+
+    .countdown {
+      margin-top: 6px;
+      font-size: 13px;
+      font-weight: bold;
     }
 
     @media (max-width: 600px) {
@@ -147,12 +166,16 @@
         flex-direction: column;
         align-items: stretch;
       }
+
+      h1 {
+        font-size: 20px;
+      }
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <div class="row" style="justify-content:space-between; align-items:center;">
+    <div class="row" style="justify-content:space-between; align-items:center; margin-bottom:8px;">
       <h1>Autó kivétel / visszarakás rendszer</h1>
       <div>
         <button class="btn-warning" onclick="toggleSzerkesztoMod()">⚙️ Szerkesztő mód</button>
@@ -176,7 +199,7 @@
     <div class="card" id="adminPanel" style="display:none;">
       <h2>Új autó hozzáadása</h2>
       <div class="row">
-        <input id="brand" type="text" placeholder="Márka pl. Audi">
+        <input id="brand" type="text" placeholder="Márka pl. Opel">
         <input id="model" type="text" placeholder="Rendszám pl. AAA-00">
         <button class="btn" onclick="addCar()">Autó hozzáadása</button>
       </div>
@@ -244,6 +267,17 @@
       return true;
     }
 
+    function formatTime(ms) {
+      if (ms <= 0) return "LEJÁRT";
+
+      const totalSec = Math.floor(ms / 1000);
+      const h = Math.floor(totalSec / 3600);
+      const m = Math.floor((totalSec % 3600) / 60);
+      const s = totalSec % 60;
+
+      return `${h}ó ${m}p ${s}mp`;
+    }
+
     window.toggleSzerkesztoMod = function () {
       if (szerkesztoMod) {
         szerkesztoMod = false;
@@ -255,7 +289,7 @@
 
       if (jelszo === null) return;
 
-      if (jelszo === "ordogok123456789") {
+      if (jelszo === "1234") {
         szerkesztoMod = true;
         render();
       } else {
@@ -466,6 +500,16 @@
           const person = peopleData[car.takenBy];
           const overdue = !car.returned && car.takenAt && (Date.now() - car.takenAt > 24 * 60 * 60 * 1000);
 
+          let countdown = "";
+
+          if (!car.returned && car.takenAt) {
+            const remaining = (24 * 60 * 60 * 1000) - (Date.now() - car.takenAt);
+
+            countdown = remaining > 0
+              ? `<div class="countdown orange">⏳ Hátralévő idő: ${formatTime(remaining)}</div>`
+              : `<div class="countdown red">⛔ LEJÁRT!</div>`;
+          }
+
           carsDiv.innerHTML += `
             <div class="item">
               <div><strong>${car.brand} ${car.model}</strong></div>
@@ -500,6 +544,7 @@
                   : `
                     <div class="top-space">Kivette: <strong>${person ? person.name : "ismeretlen"}</strong></div>
                     <div class="muted">Kivétel ideje: ${new Date(car.takenAt).toLocaleString("hu-HU")}</div>
+                    ${countdown}
                     <div class="row top-space">
                       <button class="btn-success" onclick="returnCar('${id}')">Visszarakta</button>
                     </div>
@@ -528,6 +573,10 @@
         });
       }
     }
+
+    setInterval(() => {
+      render();
+    }, 1000);
   </script>
 </body>
 </html>
