@@ -113,6 +113,16 @@
       margin-top: 10px;
     }
 
+    .rules-card {
+      border: 2px solid #dc2626;
+      background: #fff7f7;
+    }
+
+    .rules-text {
+      line-height: 1.8;
+      color: #111827;
+    }
+
     @media (max-width: 600px) {
       input, select, button {
         width: 100%;
@@ -129,6 +139,19 @@
 <body>
   <div class="container">
     <h1>Autó kivétel / visszarakás rendszer</h1>
+
+    <div class="card rules-card">
+      <h2 style="color:#dc2626;">📜 Szabályzat</h2>
+      <div class="rules-text">
+        <div>⛽ Az autót <strong>megtankolva, 100%-os állapotban</strong> kell visszarakni.</div>
+        <div>🔧 Az autót <strong>megszerelve</strong> kell visszarakni.</div>
+        <div>⚠️ <strong>90% állapot alatt</strong> az autó nem rakható vissza rendesen.</div>
+        <div>🔴 Piros pont akkor jár, ha az autót <strong>24 órán belül</strong> nem teszed vissza.</div>
+        <div>💵 Akinek összegyűlik <strong>5 piros pontja</strong>, annak <strong>1000$</strong> pénzbírság jár.</div>
+        <div>💵 Amennyiben eléri a <strong>10 piros pontot</strong>, annak <strong>1500$</strong> pénzbírság jár.</div>
+        <div>📈 Ezután a bírság tovább emelkedik a piros pontok számával.</div>
+      </div>
+    </div>
 
     <div class="card">
       <h2>Új autó hozzáadása</h2>
@@ -176,7 +199,6 @@
     const carsRef = ref(db, "cars");
     const peopleRef = ref(db, "people");
 
-    // 🔥 LOG REF
     const actionLogRef = ref(db, "actionLog");
 
     function logAction(muvelet, adat = "") {
