@@ -502,32 +502,14 @@ text-align:center;">
 ✅ Mindenki kifizetve. Lezárhatod a hetet.
 </div>
 
-<div id="nincsFizetveWrap" style="display:none;margin-bottom:10px;">
-  <button onclick="toggleNincsFizetve()" id="nincsFizetveBtn" style="
-    width:100%;
-    background:#7f1d1d;
-    color:white;
-    padding:10px;
-    border:none;
-    border-radius:8px;
-    font-weight:bold;
-    text-align:left;
-    cursor:pointer;
-  ">
-    ⚠️ Még nincs kifizetve <span id="nincsArrow" style="float:right;">▼</span>
-  </button>
-
-  <div id="nincsFizetve" style="
-    display:none;
-    background:#450a0a;
-    color:white;
-    padding:10px;
-    border-radius:8px;
-    margin-top:5px;
-    font-weight:bold;
-    line-height:1.6;
-  ">
-  </div>
+<div id="nincsFizetve" style="
+display:none;
+background:#7f1d1d;
+color:white;
+padding:8px;
+border-radius:8px;
+margin-bottom:10px;
+font-weight:bold;">
 </div>
 
 <table>
@@ -896,23 +878,28 @@ statusBox.style.display="block";
 statusBox.style.display="none";
 }
 
-const nincsWrap = document.getElementById("nincsFizetveWrap");
 const nincsBox = document.getElementById("nincsFizetve");
-const nincsArrow = document.getElementById("nincsArrow");
 
 const nincsLista = adatok
-  .filter(t => !heti[t.nev]?.fizetett)
-  .map(t => t.nev);
+.filter(t => !heti[t.nev]?.fizetett)
+.map(t => t.nev);
 
 if(nincsLista.length > 0){
-  nincsWrap.style.display = "block";
-  nincsBox.innerHTML = nincsLista.join("<br>");
-} else {
-  nincsWrap.style.display = "none";
-  nincsBox.style.display = "none";
-  nincsArrow.innerText = "▼";
+
+nincsBox.style.display="block";
+
+nincsBox.innerHTML =
+"⚠️ Még nincs kifizetve:<br><br>" +
+nincsLista.join("<br>");
+
+}else{
+
+
+nincsBox.style.display="none";
+
 }
-};   // EZ HIÁNYZOTT -> render() 
+
+}
   
 window.toggleHelp=function(){
 const panel=document.getElementById("helpPanel");
@@ -1132,112 +1119,5 @@ loader.style.display="none";
 window.openAutoKivetel = function(){
   window.open("autokivetel.html","_blank");
 };
-
-window.toggleNincsFizetve = function(){
-  const box = document.getElementById("nincsFizetve");
-  const arrow = document.getElementById("nincsArrow");
-
-  if(box.style.display === "none" || box.style.display === ""){
-    box.style.display = "block";
-    arrow.innerText = "▲";
-  } else {
-    box.style.display = "none";
-    arrow.innerText = "▼";
-  }
-};
 </script>
 </body>
-</html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
