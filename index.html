@@ -896,27 +896,21 @@ statusBox.style.display="block";
 statusBox.style.display="none";
 }
 
+const nincsWrap = document.getElementById("nincsFizetveWrap");
 const nincsBox = document.getElementById("nincsFizetve");
+const nincsArrow = document.getElementById("nincsArrow");
 
 const nincsLista = adatok
-.filter(t => !heti[t.nev]?.fizetett)
-.map(t => t.nev);
+  .filter(t => !heti[t.nev]?.fizetett)
+  .map(t => t.nev);
 
 if(nincsLista.length > 0){
-
-nincsBox.style.display="block";
-
-nincsBox.innerHTML =
-"⚠️ Még nincs kifizetve:<br><br>" +
-nincsLista.join("<br>");
-
-}else{
-
-
-nincsBox.style.display="none";
-
-}
-
+  nincsWrap.style.display = "block";
+  nincsBox.innerHTML = nincsLista.join("<br>");
+} else {
+  nincsWrap.style.display = "none";
+  nincsBox.style.display = "none";
+  nincsArrow.innerText = "▼";
 }
   
 window.toggleHelp=function(){
