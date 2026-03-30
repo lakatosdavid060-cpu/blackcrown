@@ -371,6 +371,16 @@
         <input id="name" type="text" placeholder="Név pl. Kiss János">
         <button class="btn" onclick="addPerson()">Ember hozzáadása</button>
       </div>
+
+      <h2 class="top-space">Piros pont osztás</h2>
+      <div class="row">
+        <select id="penaltyPerson">
+          <option value="">-- válassz embert --</option>
+        </select>
+        <input id="penaltyAmount" type="number" class="small-input" min="1" value="1" placeholder="Db">
+        <button class="btn-danger" onclick="giveRedPoint()">Piros pont adása</button>
+        <button class="btn-warning" onclick="giveAllRedPoint()">Mindenkinek +1</button>
+      </div>
     </div>
 
     <div class="card">
@@ -531,6 +541,59 @@
       logAction("Ember hozzáadva", name);
 
       document.getElementById("name").value = "";
+    };
+
+    window.giveRedPoint = function () {
+      if (!szerkesztoCheck()) return;
+
+      const personId = document.getElementById("penaltyPerson").value;
+      const amount = parseInt(document.getElementById("penaltyAmount").value || "1", 10);
+
+      if (!personId) {
+        alert("Válassz embert.");
+        return;
+      }
+
+      if (isNaN(amount) || amount < 1) {
+        alert("Adj meg legalább 1 piros pontot.");
+        return;
+      }
+
+      const person = peopleData[personId];
+      if (!person) {
+        alert("Az illető nem található.");
+        return;
+      }
+
+      update(ref(db, "people/" + personId), {
+        red: (person.red || 0) + amount
+      });
+
+      logAction(
+        "Piros pont kézzel kiosztva",
+        (person.name || "ismeretlen") + " | +" + amount + " piros pont"
+      );
+    };
+
+    window.giveAllRedPoint = function () {
+      if (!szerkesztoCheck()) return;
+
+      const ids = Object.keys(peopleData);
+      if (ids.length === 0) {
+        alert("Nincs még ember felvéve.");
+        return;
+      }
+
+      if (!confirm("Biztosan mindenkinek adsz 1 piros pontot?")) return;
+
+      ids.forEach((pid) => {
+        const person = peopleData[pid];
+        update(ref(db, "people/" + pid), {
+          red: (person.red || 0) + 1
+        });
+      });
+
+      logAction("Kollektív piros pont kiosztva", "Mindenkinek +1 piros pont");
     };
 
     window.takeCar = function (carId, personId) {
@@ -699,6 +762,15 @@
       if (editorStatus) {
         editorStatus.textContent = szerkesztoMod ? "Bekapcsolva" : "Kikapcsolva";
         editorStatus.className = "editor-status " + (szerkesztoMod ? "green" : "muted");
+      }
+
+      const penaltySelect = document.getElementById("penaltyPerson");
+      if (penaltySelect) {
+        penaltySelect.innerHTML =
+          `<option value="">-- válassz embert --</option>` +
+          Object.entries(peopleData).map(([pid, p]) =>
+            `<option value="${pid}">${p.name}</option>`
+          ).join("");
       }
 
       const carsDiv = document.getElementById("cars");
