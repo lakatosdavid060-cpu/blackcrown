@@ -709,6 +709,37 @@
       remove(ref(db, "cars/" + carId));
     };
 
+    window.markCarIn = function (carId) {
+      if (!szerkesztoCheck()) return;
+
+      const car = carsData[carId];
+      if (!car) return;
+
+      update(ref(db, "cars/" + carId), {
+        returned: true,
+        takenBy: null,
+        takenAt: null,
+        penaltyGiven: false
+      });
+
+      logAction("Autó bentnek jelölve", car.brand + " " + car.model);
+    };
+
+    window.markCarOut = function (carId) {
+      if (!szerkesztoCheck()) return;
+
+      const car = carsData[carId];
+      if (!car) return;
+
+      update(ref(db, "cars/" + carId), {
+        returned: false,
+        penaltyGiven: false,
+        takenAt: car.takenAt || Date.now()
+      });
+
+      logAction("Autó kintnek jelölve", car.brand + " " + car.model);
+    };
+
     function checkPenalty(cars, people) {
       const now = Date.now();
 
@@ -816,6 +847,11 @@
                         Kivette
                       </button>
                       ${szerkesztoMod ? `
+                        <button class="btn-warning" onclick="markCarOut('${id}')">
+                          Kintnek jelölés
+                        </button>
+                      ` : ""}
+                      ${szerkesztoMod ? `
                         <button class="btn-danger" onclick="deleteCar('${id}')">
                           Autó törlése
                         </button>
@@ -835,6 +871,9 @@
                         <input class="small-input" type="number" id="allapot${id}" min="0" max="100" placeholder="Állapot %">
                         <input class="wide-input" type="text" id="megjegyzes${id}" placeholder="Megjegyzés">
                         <button class="btn-success" onclick="returnCar('${id}')">Visszarakta</button>
+                        ${szerkesztoMod ? `
+                          <button class="btn-warning" onclick="markCarIn('${id}')">Bentnek jelölés</button>
+                        ` : ""}
                       </div>
                     </div>
                   `
