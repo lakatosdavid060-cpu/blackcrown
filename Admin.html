@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Discord Próbapanel</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Arial, sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(88, 101, 242, 0.22), transparent 30%),
+        radial-gradient(circle at bottom right, rgba(87, 242, 135, 0.12), transparent 25%),
+        #0f1115;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .card {
+      width: 100%;
+      max-width: 720px;
+      background: #1b1f27;
+      border: 1px solid #2b3240;
+      border-radius: 22px;
+      padding: 30px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 32px;
+      text-align: center;
+    }
+
+    .subtitle {
+      margin: 0 0 26px;
+      text-align: center;
+      color: #aab3c5;
+      line-height: 1.5;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .full {
+      grid-column: 1 / -1;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 700;
+      color: #dfe6f3;
+    }
+
+    input, textarea, select {
+      width: 100%;
+      border: 1px solid #313949;
+      background: #11151c;
+      color: white;
+      border-radius: 12px;
+      padding: 14px 15px;
+      font-size: 15px;
+      outline: none;
+      transition: border-color .2s, transform .2s;
+    }
+
+    input:focus, textarea:focus, select:focus {
+      border-color: #5865f2;
+      transform: translateY(-1px);
+    }
+
+    textarea {
+      min-height: 120px;
+      resize: vertical;
+    }
+
+    .checkbox-row {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      margin-top: 18px;
+      color: #c8d0df;
+      font-size: 14px;
+      line-height: 1.45;
+    }
+
+    .checkbox-row input {
+      width: auto;
+      margin-top: 3px;
+    }
+
+    button {
+      width: 100%;
+      margin-top: 22px;
+      border: none;
+      border-radius: 14px;
+      padding: 15px;
+      background: linear-gradient(135deg, #5865f2, #4752c4);
+      color: white;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform .2s, opacity .2s;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      opacity: 0.96;
+    }
+
+    button:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .status {
+      min-height: 22px;
+      margin-top: 16px;
+      text-align: center;
+      font-weight: 700;
+    }
+
+    .success { color: #57f287; }
+    .error { color: #ed4245; }
+
+    .note {
+      margin-top: 18px;
+      color: #96a0b5;
+      font-size: 12px;
+      text-align: center;
+      line-height: 1.5;
+    }
+
+    @media (max-width: 700px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .card {
+        padding: 22px;
+      }
+
+      h1 {
+        font-size: 26px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Discord Próbapanel</h1>
+    <p class="subtitle">
+      Egyszerű egyfájlos HTML űrlap, ami elküldi az adatokat a Discord csatornádba webhookkal.
+    </p>
+
+    <form id="discordForm">
+      <div class="grid">
+        <div>
+          <label for="name">Név</label>
+          <input type="text" id="name" placeholder="Pl. Minta Béla" required />
+        </div>
+
+        <div>
+          <label for="discord">Discord név</label>
+          <input type="text" id="discord" placeholder="Pl. valaki_1234" required />
+        </div>
+
+        <div>
+          <label for="age">Életkor</label>
+          <input type="number" id="age" min="10" max="99" placeholder="Pl. 18" required />
+        </div>
+
+        <div>
+          <label for="type">Típus</label>
+          <select id="type" required>
+            <option value="">Válassz</option>
+            <option value="Teszt">Teszt</option>
+            <option value="Jelentkezés">Jelentkezés</option>
+            <option value="Kérdés">Kérdés</option>
+            <option value="Visszajelzés">Visszajelzés</option>
+          </select>
+        </div>
+
+        <div class="full">
+          <label for="message">Üzenet</label>
+          <textarea id="message" placeholder="Írd ide az üzenetet..." required></textarea>
+        </div>
+      </div>
+
+      <div class="checkbox-row">
+        <input type="checkbox" id="accept" required />
+        <label for="accept">Tudomásul veszem, hogy ez csak teszt / saját használat.</label>
+      </div>
+
+      <button type="submit" id="submitBtn">Küldés Discordra</button>
+      <div class="status" id="status"></div>
+    </form>
+
+    <div class="note">
+      Fontos: nyilvános használatra inkább backendes megoldás kell, hogy a webhook ne látszódjon a forráskódban.
+    </div>
+  </div>
+
+  <script>
+    const WEBHOOK_URL = "https://discord.com/api/webhooks/1488436818239160350/jWmCU94AoTmJ1GLrxpVZQTTqM03Ibh4oGtXxqMxOkt2COj5nCXZwiIzoWB0Tmu1Pwm_l";
+
+    const form = document.getElementById("discordForm");
+    const statusEl = document.getElementById("status");
+    const submitBtn = document.getElementById("submitBtn");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      if (!WEBHOOK_URL || WEBHOOK_URL.includes("IDE_IRD_AZ_UJ_WEBHOOKOT")) {
+        statusEl.textContent = "Előbb írd be az új webhook URL-t a kódba.";
+        statusEl.className = "status error";
+        return;
+      }
+
+      const name = document.getElementById("name").value.trim();
+      const discord = document.getElementById("discord").value.trim();
+      const age = document.getElementById("age").value.trim();
+      const type = document.getElementById("type").value;
+      const message = document.getElementById("message").value.trim();
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Küldés...";
+      statusEl.textContent = "";
+      statusEl.className = "status";
+
+      const payload = {
+        username: "Webes Panel",
+        embeds: [
+          {
+            title: "Új beküldés a weboldalról",
+            color: 5793266,
+            fields: [
+              { name: "Név", value: name || "Nincs megadva", inline: true },
+              { name: "Discord", value: discord || "Nincs megadva", inline: true },
+              { name: "Életkor", value: age || "Nincs megadva", inline: true },
+              { name: "Típus", value: type || "Nincs megadva", inline: true },
+              { name: "Üzenet", value: message || "Nincs megadva", inline: false }
+            ],
+            footer: {
+              text: "Discord HTML panel"
+            },
+            timestamp: new Date().toISOString()
+          }
+        ]
+      };
+
+      try {
+        const res = await fetch(WEBHOOK_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(payload)
+        });
+
+        if (res.ok) {
+          statusEl.textContent = "Sikeresen elküldve a Discordra.";
+          statusEl.className = "status success";
+          form.reset();
+        } else {
+          statusEl.textContent = "Hiba történt. Nézd meg, jó-e a webhook URL.";
+          statusEl.className = "status error";
+        }
+      } catch (err) {
+        statusEl.textContent = "Nem sikerült csatlakozni a Discordhoz.";
+        statusEl.className = "status error";
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Küldés Discordra";
+      }
+    });
+  </script>
+</body>
+</html>
