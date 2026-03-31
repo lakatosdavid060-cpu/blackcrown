@@ -3,290 +3,1716 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Discord Próbapanel</title>
+  <title>Discord Ultra Control Panel</title>
+  <meta name="theme-color" content="#5865F2" />
   <style>
-    * {
-      box-sizing: border-box;
+    :root{
+      --bg-1:#0b0f17;
+      --bg-2:#121826;
+      --panel:#151c2c;
+      --panel-2:#111827;
+      --card:#1a2335;
+      --line:rgba(255,255,255,.08);
+      --text:#f3f7ff;
+      --muted:#9fb0d0;
+      --accent:#5865F2;
+      --accent-2:#7c5cff;
+      --ok:#57F287;
+      --warn:#FEE75C;
+      --bad:#ED4245;
+      --shadow:0 20px 60px rgba(0,0,0,.35);
+      --radius:22px;
+      --radius-sm:14px;
     }
 
-    body {
-      margin: 0;
-      min-height: 100vh;
-      font-family: Arial, sans-serif;
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{
+      margin:0;
+      font-family:Inter,Segoe UI,Arial,sans-serif;
+      color:var(--text);
       background:
-        radial-gradient(circle at top left, rgba(88, 101, 242, 0.22), transparent 30%),
-        radial-gradient(circle at bottom right, rgba(87, 242, 135, 0.12), transparent 25%),
-        #0f1115;
-      color: #fff;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 24px;
+        radial-gradient(circle at 10% 10%, rgba(88,101,242,.18), transparent 22%),
+        radial-gradient(circle at 90% 15%, rgba(87,242,135,.10), transparent 20%),
+        radial-gradient(circle at 70% 75%, rgba(124,92,255,.12), transparent 22%),
+        linear-gradient(135deg,var(--bg-1),var(--bg-2));
+      min-height:100vh;
+      overflow-x:hidden;
     }
 
-    .card {
-      width: 100%;
-      max-width: 720px;
-      background: #1b1f27;
-      border: 1px solid #2b3240;
-      border-radius: 22px;
-      padding: 30px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+    body.light{
+      --bg-1:#eef3ff;
+      --bg-2:#dae5ff;
+      --panel:#ffffff;
+      --panel-2:#f7faff;
+      --card:#f6f8ff;
+      --line:rgba(0,0,0,.08);
+      --text:#162033;
+      --muted:#50607f;
+      --shadow:0 18px 45px rgba(34,56,120,.15);
     }
 
-    h1 {
-      margin: 0 0 8px;
-      font-size: 32px;
-      text-align: center;
+    .bg-grid, .bg-orbs{
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+      z-index:0;
     }
 
-    .subtitle {
-      margin: 0 0 26px;
-      text-align: center;
-      color: #aab3c5;
-      line-height: 1.5;
+    .bg-grid{
+      background-image:
+        linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+      background-size:32px 32px;
+      mask-image: radial-gradient(circle at center, black 35%, transparent 95%);
     }
 
-    .grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
+    body.light .bg-grid{
+      background-image:
+        linear-gradient(rgba(0,0,0,.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,0,0,.035) 1px, transparent 1px);
     }
 
-    .full {
-      grid-column: 1 / -1;
+    .orb{
+      position:absolute;
+      border-radius:50%;
+      filter: blur(50px);
+      opacity:.45;
+      animation: float 14s ease-in-out infinite;
+    }
+    .orb.o1{width:260px;height:260px;background:#5865F2;left:-40px;top:80px}
+    .orb.o2{width:220px;height:220px;background:#7c5cff;right:-30px;top:180px;animation-delay:-4s}
+    .orb.o3{width:240px;height:240px;background:#57F287;left:20%;bottom:-50px;animation-delay:-8s}
+    @keyframes float{
+      0%,100%{transform:translateY(0) translateX(0)}
+      50%{transform:translateY(-18px) translateX(12px)}
     }
 
-    label {
-      display: block;
-      margin-bottom: 8px;
-      font-weight: 700;
-      color: #dfe6f3;
+    .app{
+      position:relative;
+      z-index:1;
+      max-width:1400px;
+      margin:0 auto;
+      padding:26px;
+      display:grid;
+      grid-template-columns:280px 1fr;
+      gap:22px;
     }
 
-    input, textarea, select {
-      width: 100%;
-      border: 1px solid #313949;
-      background: #11151c;
-      color: white;
-      border-radius: 12px;
-      padding: 14px 15px;
-      font-size: 15px;
-      outline: none;
-      transition: border-color .2s, transform .2s;
+    .sidebar, .main-card{
+      background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.015));
+      border:1px solid var(--line);
+      box-shadow:var(--shadow);
+      backdrop-filter: blur(14px);
     }
 
-    input:focus, textarea:focus, select:focus {
-      border-color: #5865f2;
-      transform: translateY(-1px);
+    .sidebar{
+      position:sticky;
+      top:22px;
+      height:calc(100vh - 44px);
+      border-radius:28px;
+      padding:22px;
+      overflow:auto;
     }
 
-    textarea {
-      min-height: 120px;
-      resize: vertical;
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:14px;
+      margin-bottom:18px;
     }
 
-    .checkbox-row {
-      display: flex;
-      gap: 10px;
-      align-items: flex-start;
-      margin-top: 18px;
-      color: #c8d0df;
-      font-size: 14px;
-      line-height: 1.45;
+    .brand-badge{
+      width:56px;height:56px;border-radius:18px;
+      background:linear-gradient(135deg,var(--accent),var(--accent-2));
+      display:grid;place-items:center;
+      font-size:24px;font-weight:900;color:#fff;
+      box-shadow:0 10px 24px rgba(88,101,242,.35);
     }
 
-    .checkbox-row input {
-      width: auto;
-      margin-top: 3px;
+    .brand h1{
+      font-size:18px;
+      margin:0;
+      line-height:1.1;
     }
 
-    button {
-      width: 100%;
-      margin-top: 22px;
-      border: none;
-      border-radius: 14px;
-      padding: 15px;
-      background: linear-gradient(135deg, #5865f2, #4752c4);
-      color: white;
-      font-size: 16px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: transform .2s, opacity .2s;
+    .brand p{
+      margin:4px 0 0;
+      color:var(--muted);
+      font-size:13px;
     }
 
-    button:hover {
-      transform: translateY(-1px);
-      opacity: 0.96;
+    .server-card{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:20px;
+      padding:16px;
+      margin:16px 0 18px;
     }
 
-    button:disabled {
-      opacity: 0.7;
-      cursor: not-allowed;
-      transform: none;
+    .server-top{
+      display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;
     }
 
-    .status {
-      min-height: 22px;
-      margin-top: 16px;
-      text-align: center;
-      font-weight: 700;
+    .server-meta{
+      display:flex;align-items:center;gap:12px;
     }
 
-    .success { color: #57f287; }
-    .error { color: #ed4245; }
-
-    .note {
-      margin-top: 18px;
-      color: #96a0b5;
-      font-size: 12px;
-      text-align: center;
-      line-height: 1.5;
+    .server-logo{
+      width:44px;height:44px;border-radius:14px;
+      background:linear-gradient(135deg,#2d3c68,#5865F2);
+      display:grid;place-items:center;font-weight:900;
     }
 
-    @media (max-width: 700px) {
-      .grid {
-        grid-template-columns: 1fr;
+    .pill{
+      display:inline-flex;align-items:center;gap:8px;
+      background:rgba(87,242,135,.12);
+      color:var(--ok);
+      border:1px solid rgba(87,242,135,.18);
+      border-radius:999px;
+      padding:7px 12px;
+      font-size:12px;font-weight:700;
+    }
+
+    .dot{
+      width:8px;height:8px;border-radius:50%;background:currentColor;
+      box-shadow:0 0 12px currentColor;
+    }
+
+    .progress{
+      height:10px;background:rgba(255,255,255,.07);
+      border-radius:999px;overflow:hidden;
+    }
+    body.light .progress{background:rgba(0,0,0,.08)}
+    .progress > span{
+      display:block;height:100%;
+      background:linear-gradient(90deg,var(--accent),var(--accent-2));
+      width:76%;
+      border-radius:999px;
+    }
+
+    .nav{
+      display:grid;
+      gap:8px;
+      margin-top:14px;
+    }
+
+    .nav a{
+      text-decoration:none;color:var(--text);
+      padding:12px 14px;border-radius:14px;
+      border:1px solid transparent;
+      background:transparent;
+      transition:.2s ease;
+      font-weight:700;
+      font-size:14px;
+    }
+
+    .nav a:hover, .nav a.active{
+      background:var(--card);
+      border-color:var(--line);
+      transform:translateX(3px);
+    }
+
+    .sidebar-footer{
+      margin-top:18px;
+      display:grid;
+      gap:10px;
+    }
+
+    .tiny{
+      font-size:12px;color:var(--muted);line-height:1.5;
+    }
+
+    .btn, button{
+      border:none;cursor:pointer;
+      border-radius:16px;
+      padding:13px 16px;
+      font-weight:800;
+      transition:.2s ease;
+      font-size:14px;
+    }
+
+    .btn:hover, button:hover{transform:translateY(-1px)}
+    .btn-primary{
+      color:#fff;
+      background:linear-gradient(135deg,var(--accent),var(--accent-2));
+      box-shadow:0 12px 24px rgba(88,101,242,.25);
+    }
+    .btn-secondary{
+      background:var(--card);
+      color:var(--text);
+      border:1px solid var(--line);
+    }
+    .btn-danger{
+      background:linear-gradient(135deg,#ed4245,#c53030);
+      color:#fff;
+    }
+    .btn-ghost{
+      background:transparent;
+      color:var(--text);
+      border:1px solid var(--line);
+    }
+
+    .content{
+      display:grid;
+      gap:22px;
+    }
+
+    .hero{
+      border-radius:30px;
+      overflow:hidden;
+      position:relative;
+    }
+
+    .hero-inner{
+      padding:28px;
+      background:
+        linear-gradient(135deg, rgba(88,101,242,.18), rgba(124,92,255,.12)),
+        linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.015));
+      border:1px solid var(--line);
+      box-shadow:var(--shadow);
+      backdrop-filter: blur(14px);
+    }
+
+    .hero-top{
+      display:flex;justify-content:space-between;gap:18px;align-items:flex-start;flex-wrap:wrap;
+    }
+
+    .title{
+      font-size:34px;
+      line-height:1.05;
+      margin:0;
+    }
+
+    .subtitle{
+      margin:12px 0 0;
+      color:var(--muted);
+      max-width:760px;
+      line-height:1.6;
+    }
+
+    .hero-actions{
+      display:flex;gap:10px;flex-wrap:wrap;
+    }
+
+    .stats{
+      display:grid;
+      grid-template-columns:repeat(4, 1fr);
+      gap:16px;
+      margin-top:20px;
+    }
+
+    .stat{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:22px;
+      padding:18px;
+      position:relative;
+      overflow:hidden;
+    }
+
+    .stat::after{
+      content:"";
+      position:absolute;
+      inset:auto -20px -20px auto;
+      width:80px;height:80px;border-radius:50%;
+      background:radial-gradient(circle, rgba(88,101,242,.24), transparent 70%);
+    }
+
+    .stat .k{
+      font-size:13px;color:var(--muted);font-weight:700;
+    }
+    .stat .v{
+      margin-top:8px;font-size:30px;font-weight:900;
+    }
+    .stat .s{
+      margin-top:6px;font-size:13px;color:var(--ok);font-weight:700;
+    }
+
+    .grid-2{
+      display:grid;
+      grid-template-columns:1.2fr .8fr;
+      gap:22px;
+    }
+
+    .panel{
+      background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.015));
+      border:1px solid var(--line);
+      box-shadow:var(--shadow);
+      backdrop-filter: blur(14px);
+      border-radius:26px;
+      padding:22px;
+    }
+
+    .panel-head{
+      display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;
+      margin-bottom:18px;
+    }
+    .panel-head h2{
+      margin:0;font-size:22px;
+    }
+    .panel-head p{
+      margin:6px 0 0;color:var(--muted);font-size:14px;
+    }
+
+    .tabs{
+      display:flex;gap:10px;flex-wrap:wrap;
+    }
+    .tab-btn{
+      background:var(--card);
+      color:var(--text);
+      border:1px solid var(--line);
+    }
+    .tab-btn.active{
+      background:linear-gradient(135deg,var(--accent),var(--accent-2));
+      color:#fff;
+    }
+
+    .tab-pane{display:none}
+    .tab-pane.active{display:block}
+
+    .form-grid{
+      display:grid;
+      grid-template-columns:repeat(2, 1fr);
+      gap:16px;
+    }
+
+    .form-group.full{grid-column:1/-1}
+
+    label{
+      display:block;
+      margin:0 0 8px;
+      font-size:14px;
+      font-weight:800;
+      color:var(--text);
+    }
+
+    .hint{
+      color:var(--muted);
+      font-size:12px;
+      margin-top:7px;
+      line-height:1.45;
+    }
+
+    input, select, textarea{
+      width:100%;
+      background:var(--panel-2);
+      color:var(--text);
+      border:1px solid var(--line);
+      border-radius:16px;
+      padding:14px 15px;
+      outline:none;
+      font-size:14px;
+      transition:.2s ease;
+    }
+
+    input:focus, select:focus, textarea:focus{
+      border-color:rgba(88,101,242,.65);
+      box-shadow:0 0 0 4px rgba(88,101,242,.12);
+      transform:translateY(-1px);
+    }
+
+    textarea{
+      min-height:130px;
+      resize:vertical;
+    }
+
+    .row{
+      display:flex;gap:12px;flex-wrap:wrap;align-items:center;
+    }
+
+    .checks{
+      display:grid;
+      gap:10px;
+      margin-top:10px;
+    }
+
+    .check{
+      display:flex;
+      gap:10px;
+      align-items:flex-start;
+      background:var(--card);
+      border:1px solid var(--line);
+      padding:12px 14px;
+      border-radius:16px;
+    }
+
+    .check input{
+      width:auto;
+      margin-top:2px;
+      transform:scale(1.05);
+    }
+
+    .counter{
+      margin-top:7px;
+      text-align:right;
+      font-size:12px;
+      color:var(--muted);
+    }
+
+    .embed-preview{
+      background:rgba(47,49,54,.9);
+      border-left:4px solid var(--accent);
+      border-radius:16px;
+      padding:16px;
+      display:grid;
+      gap:10px;
+    }
+
+    body.light .embed-preview{
+      background:#eef3ff;
+    }
+
+    .embed-title{
+      font-size:18px;font-weight:900;
+    }
+    .embed-desc{
+      color:var(--muted);line-height:1.55;
+      white-space:pre-wrap;
+      word-break:break-word;
+    }
+
+    .embed-fields{
+      display:grid;
+      grid-template-columns:repeat(2,1fr);
+      gap:12px;
+    }
+
+    .embed-field{
+      background:rgba(255,255,255,.03);
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:12px;
+    }
+    .embed-field b{
+      display:block;margin-bottom:6px;
+    }
+
+    .history-list{
+      display:grid;
+      gap:12px;
+      max-height:480px;
+      overflow:auto;
+      padding-right:4px;
+    }
+
+    .history-item{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:18px;
+      padding:14px;
+    }
+
+    .history-item h4{
+      margin:0 0 8px;
+      font-size:15px;
+    }
+
+    .history-item p{
+      margin:0;
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.5;
+      white-space:pre-wrap;
+      word-break:break-word;
+    }
+
+    .history-meta{
+      margin-top:10px;
+      display:flex;gap:8px;flex-wrap:wrap;
+    }
+
+    .badge{
+      display:inline-flex;align-items:center;gap:7px;
+      border:1px solid var(--line);
+      border-radius:999px;
+      padding:7px 11px;
+      font-size:12px;
+      background:rgba(255,255,255,.03);
+      color:var(--text);
+      font-weight:700;
+    }
+
+    .faq{
+      display:grid;
+      gap:12px;
+    }
+
+    .faq-item{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:18px;
+      overflow:hidden;
+    }
+    .faq-q{
+      width:100%;
+      text-align:left;
+      background:transparent;
+      color:var(--text);
+      padding:16px;
+      border:none;
+      font-size:15px;
+      font-weight:900;
+    }
+    .faq-a{
+      display:none;
+      padding:0 16px 16px;
+      color:var(--muted);
+      line-height:1.6;
+    }
+    .faq-item.open .faq-a{display:block}
+
+    .toast-wrap{
+      position:fixed;
+      right:18px;
+      bottom:18px;
+      z-index:50;
+      display:grid;
+      gap:10px;
+      width:min(420px, calc(100vw - 36px));
+    }
+
+    .toast{
+      background:var(--panel);
+      border:1px solid var(--line);
+      border-radius:18px;
+      box-shadow:var(--shadow);
+      padding:14px 16px;
+      display:flex;gap:12px;align-items:flex-start;
+      animation: toastIn .22s ease;
+    }
+    @keyframes toastIn{
+      from{opacity:0; transform:translateY(10px)}
+      to{opacity:1; transform:translateY(0)}
+    }
+
+    .toast.good{border-color:rgba(87,242,135,.22)}
+    .toast.bad{border-color:rgba(237,66,69,.25)}
+    .toast.warn{border-color:rgba(254,231,92,.25)}
+
+    .toast-icon{
+      width:34px;height:34px;border-radius:12px;display:grid;place-items:center;font-weight:900;
+      flex-shrink:0;
+    }
+    .toast.good .toast-icon{background:rgba(87,242,135,.14);color:var(--ok)}
+    .toast.bad .toast-icon{background:rgba(237,66,69,.14);color:var(--bad)}
+    .toast.warn .toast-icon{background:rgba(254,231,92,.14);color:#c59b00}
+
+    .toast b{
+      display:block;margin-bottom:4px;
+    }
+    .toast span{
+      color:var(--muted);font-size:13px;line-height:1.5;
+    }
+
+    .modal{
+      position:fixed; inset:0; background:rgba(0,0,0,.55);
+      display:none; place-items:center; z-index:60; padding:20px;
+    }
+    .modal.open{display:grid}
+    .modal-card{
+      width:min(840px,100%);
+      max-height:88vh;
+      overflow:auto;
+      background:var(--panel);
+      border:1px solid var(--line);
+      border-radius:24px;
+      box-shadow:var(--shadow);
+      padding:24px;
+    }
+
+    .rules-list{
+      display:grid;gap:12px;
+    }
+    .rule{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:16px;
+      padding:14px;
+      line-height:1.6;
+    }
+
+    .footer-note{
+      color:var(--muted);
+      font-size:12px;
+      text-align:center;
+      line-height:1.6;
+      margin-top:10px;
+    }
+
+    .hide{display:none!important}
+
+    @media (max-width:1100px){
+      .app{
+        grid-template-columns:1fr;
       }
-
-      .card {
-        padding: 22px;
+      .sidebar{
+        position:relative; top:auto; height:auto;
       }
+      .stats{
+        grid-template-columns:repeat(2,1fr);
+      }
+      .grid-2{
+        grid-template-columns:1fr;
+      }
+    }
 
-      h1 {
-        font-size: 26px;
+    @media (max-width:700px){
+      .app{padding:14px}
+      .hero-inner,.panel,.sidebar{padding:18px}
+      .title{font-size:28px}
+      .form-grid,.embed-fields,.stats{
+        grid-template-columns:1fr;
       }
     }
   </style>
 </head>
 <body>
-  <div class="card">
-    <h1>Discord Próbapanel</h1>
-    <p class="subtitle">
-      Egyszerű egyfájlos HTML űrlap, ami elküldi az adatokat a Discord csatornádba webhookkal.
-    </p>
+  <div class="bg-grid"></div>
+  <div class="bg-orbs">
+    <div class="orb o1"></div>
+    <div class="orb o2"></div>
+    <div class="orb o3"></div>
+  </div>
 
-    <form id="discordForm">
-      <div class="grid">
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-badge">D</div>
         <div>
-          <label for="name">Név</label>
-          <input type="text" id="name" placeholder="Pl. Minta Béla" required />
-        </div>
-
-        <div>
-          <label for="discord">Discord név</label>
-          <input type="text" id="discord" placeholder="Pl. valaki_1234" required />
-        </div>
-
-        <div>
-          <label for="age">Életkor</label>
-          <input type="number" id="age" min="10" max="99" placeholder="Pl. 18" required />
-        </div>
-
-        <div>
-          <label for="type">Típus</label>
-          <select id="type" required>
-            <option value="">Válassz</option>
-            <option value="Teszt">Teszt</option>
-            <option value="Jelentkezés">Jelentkezés</option>
-            <option value="Kérdés">Kérdés</option>
-            <option value="Visszajelzés">Visszajelzés</option>
-          </select>
-        </div>
-
-        <div class="full">
-          <label for="message">Üzenet</label>
-          <textarea id="message" placeholder="Írd ide az üzenetet..." required></textarea>
+          <h1>Discord Ultra Panel</h1>
+          <p>One-file HTML control center</p>
         </div>
       </div>
 
-      <div class="checkbox-row">
-        <input type="checkbox" id="accept" required />
-        <label for="accept">Tudomásul veszem, hogy ez csak teszt / saját használat.</label>
+      <div class="server-card">
+        <div class="server-top">
+          <div class="server-meta">
+            <div class="server-logo">S</div>
+            <div>
+              <div style="font-weight:900">Shadow Realm</div>
+              <div class="tiny">Teszt / admin / ticket / apply</div>
+            </div>
+          </div>
+          <div class="pill"><span class="dot"></span> ONLINE</div>
+        </div>
+        <div class="tiny" style="margin-bottom:8px">Szerver aktivitás</div>
+        <div class="progress"><span></span></div>
       </div>
 
-      <button type="submit" id="submitBtn">Küldés Discordra</button>
-      <div class="status" id="status"></div>
-    </form>
+      <nav class="nav">
+        <a href="#dashboard" class="active">🏠 Dashboard</a>
+        <a href="#forms">🧾 Beküldő panel</a>
+        <a href="#preview">🪄 Embed preview</a>
+        <a href="#history">🕘 Előzmények</a>
+        <a href="#faq">❓ FAQ</a>
+      </nav>
 
-    <div class="note">
-      Fontos: nyilvános használatra inkább backendes megoldás kell, hogy a webhook ne látszódjon a forráskódban.
+      <div class="sidebar-footer">
+        <button class="btn btn-primary" id="themeToggle">🌙 Theme váltás</button>
+        <button class="btn btn-secondary" id="openRulesBtn">📜 Szabályzat</button>
+        <button class="btn btn-secondary" id="exportBtn">💾 Előzmények export</button>
+        <button class="btn btn-danger" id="clearHistoryBtn">🗑️ Előzmények törlése</button>
+        <div class="tiny">
+          Állítsd be a saját új webhook URL-ed a kódban. A régi kiszivárgott linket ne használd.
+        </div>
+      </div>
+    </aside>
+
+    <main class="content">
+      <section class="hero" id="dashboard">
+        <div class="hero-inner">
+          <div class="hero-top">
+            <div>
+              <h2 class="title">Brutál egyfájlos Discord webpanel</h2>
+              <p class="subtitle">
+                Jelentkezés, ticket, report, suggestion és announcement builder egyetlen HTML fájlban.
+                Mentés helyben, Discord-szerű kinézet, preview, több tab és látványos dashboard.
+              </p>
+            </div>
+            <div class="hero-actions">
+              <a href="#forms" class="btn btn-primary" style="text-decoration:none">🚀 Beküldés indítása</a>
+              <button class="btn btn-secondary" id="demoFillBtn">⚡ Demo adatok</button>
+            </div>
+          </div>
+
+          <div class="stats">
+            <div class="stat">
+              <div class="k">Mai beküldések</div>
+              <div class="v" id="statToday">0</div>
+              <div class="s">+ aktív panel</div>
+            </div>
+            <div class="stat">
+              <div class="k">Összes helyi mentés</div>
+              <div class="v" id="statTotal">0</div>
+              <div class="s">localStorage alapú</div>
+            </div>
+            <div class="stat">
+              <div class="k">Jelenlegi mód</div>
+              <div class="v" id="statTheme">Dark</div>
+              <div class="s">egy kattintással vált</div>
+            </div>
+            <div class="stat">
+              <div class="k">Webhook státusz</div>
+              <div class="v" id="statHook">WAIT</div>
+              <div class="s">helyi beállítástól függ</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="grid-2" id="forms">
+        <div class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>Beküldő központ</h2>
+              <p>Válassz panelt, töltsd ki, nézd meg a previewt, majd küldd Discordra.</p>
+            </div>
+            <div class="tabs">
+              <button class="btn tab-btn active" data-tab="apply">Jelentkezés</button>
+              <button class="btn tab-btn" data-tab="ticket">Ticket</button>
+              <button class="btn tab-btn" data-tab="report">Report</button>
+              <button class="btn tab-btn" data-tab="suggestion">Ötlet</button>
+              <button class="btn tab-btn" data-tab="announce">Announcement</button>
+            </div>
+          </div>
+
+          <div class="tab-pane active" id="tab-apply">
+            <form id="applyForm" class="smart-form" data-type="Jelentkezés">
+              <div class="form-grid">
+                <div class="form-group">
+                  <label>Név</label>
+                  <input type="text" name="name" placeholder="Pl. Minta Béla" required />
+                </div>
+                <div class="form-group">
+                  <label>Discord név</label>
+                  <input type="text" name="discord" placeholder="Pl. valaki_1234" required />
+                </div>
+                <div class="form-group">
+                  <label>Életkor</label>
+                  <input type="number" name="age" min="10" max="99" placeholder="Pl. 18" required />
+                </div>
+                <div class="form-group">
+                  <label>Játék / terület</label>
+                  <select name="area" required>
+                    <option value="">Válassz</option>
+                    <option>Gaming</option>
+                    <option>Közösség</option>
+                    <option>Moderáció</option>
+                    <option>Fejlesztés</option>
+                    <option>Grafika</option>
+                    <option>Teszt</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Tapasztalat</label>
+                  <select name="level" required>
+                    <option value="">Válassz</option>
+                    <option>Kezdő</option>
+                    <option>Közepes</option>
+                    <option>Haladó</option>
+                    <option>Profi</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Aktivitás</label>
+                  <select name="activity" required>
+                    <option value="">Válassz</option>
+                    <option>Napi</option>
+                    <option>Heti több alkalom</option>
+                    <option>Hétvégi</option>
+                    <option>Változó</option>
+                  </select>
+                </div>
+                <div class="form-group full">
+                  <label>Miért csatlakoznál?</label>
+                  <textarea name="reason" maxlength="700" placeholder="Írd le részletesen..." required></textarea>
+                  <div class="counter">0 / 700</div>
+                </div>
+                <div class="form-group full">
+                  <label>Mit érdemes tudni rólad?</label>
+                  <textarea name="about" maxlength="700" placeholder="Pár mondat magadról..." required></textarea>
+                  <div class="counter">0 / 700</div>
+                </div>
+              </div>
+
+              <div class="checks">
+                <label class="check">
+                  <input type="checkbox" name="rules" required />
+                  <span>Elfogadom a szerver szabályzatát.</span>
+                </label>
+                <label class="check">
+                  <input type="checkbox" name="truth" required />
+                  <span>Valós adatokat adtam meg.</span>
+                </label>
+              </div>
+
+              <div class="row" style="margin-top:16px">
+                <button type="submit" class="btn btn-primary">📨 Jelentkezés küldése</button>
+                <button type="button" class="btn btn-secondary reset-form">↺ Űrlap ürítése</button>
+              </div>
+            </form>
+          </div>
+
+          <div class="tab-pane" id="tab-ticket">
+            <form id="ticketForm" class="smart-form" data-type="Ticket">
+              <div class="form-grid">
+                <div class="form-group">
+                  <label>Név</label>
+                  <input type="text" name="name" placeholder="Pl. Minta Béla" required />
+                </div>
+                <div class="form-group">
+                  <label>Discord név</label>
+                  <input type="text" name="discord" placeholder="Pl. valaki_1234" required />
+                </div>
+                <div class="form-group">
+                  <label>Kategória</label>
+                  <select name="category" required>
+                    <option value="">Válassz</option>
+                    <option>Technikai hiba</option>
+                    <option>Rang / szerep</option>
+                    <option>Jelentkezés</option>
+                    <option>Panasz</option>
+                    <option>Partnerkapcsolat</option>
+                    <option>Egyéb</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Prioritás</label>
+                  <select name="priority" required>
+                    <option value="">Válassz</option>
+                    <option>Low</option>
+                    <option>Normal</option>
+                    <option>High</option>
+                    <option>Urgent</option>
+                  </select>
+                </div>
+                <div class="form-group full">
+                  <label>Probléma leírása</label>
+                  <textarea name="details" maxlength="1200" placeholder="Írd le pontosan, mi a gond..." required></textarea>
+                  <div class="counter">0 / 1200</div>
+                </div>
+              </div>
+              <div class="checks">
+                <label class="check">
+                  <input type="checkbox" name="accept" required />
+                  <span>Tudomásul veszem, hogy a ticket visszaélésszerű használata moderációhoz vezethet.</span>
+                </label>
+              </div>
+              <div class="row" style="margin-top:16px">
+                <button type="submit" class="btn btn-primary">🎫 Ticket küldése</button>
+                <button type="button" class="btn btn-secondary reset-form">↺ Űrlap ürítése</button>
+              </div>
+            </form>
+          </div>
+
+          <div class="tab-pane" id="tab-report">
+            <form id="reportForm" class="smart-form" data-type="Report">
+              <div class="form-grid">
+                <div class="form-group">
+                  <label>Te neved</label>
+                  <input type="text" name="reporter" placeholder="Pl. Te" required />
+                </div>
+                <div class="form-group">
+                  <label>Te Discord neved</label>
+                  <input type="text" name="reporterDiscord" placeholder="Pl. te_1234" required />
+                </div>
+                <div class="form-group">
+                  <label>Jelentett személy</label>
+                  <input type="text" name="target" placeholder="Pl. RosszArc" required />
+                </div>
+                <div class="form-group">
+                  <label>Vétség típusa</label>
+                  <select name="issue" required>
+                    <option value="">Válassz</option>
+                    <option>Spam</option>
+                    <option>Zaklatás</option>
+                    <option>Csalás</option>
+                    <option>Toxikus viselkedés</option>
+                    <option>Szabályszegés</option>
+                    <option>Egyéb</option>
+                  </select>
+                </div>
+                <div class="form-group full">
+                  <label>Bizonyíték / részletek</label>
+                  <textarea name="proof" maxlength="1200" placeholder="Írd le mi történt, mikor, hol..." required></textarea>
+                  <div class="counter">0 / 1200</div>
+                </div>
+              </div>
+              <div class="checks">
+                <label class="check">
+                  <input type="checkbox" name="confirm" required />
+                  <span>A report jóhiszeműen történik, nem hamis vád.</span>
+                </label>
+              </div>
+              <div class="row" style="margin-top:16px">
+                <button type="submit" class="btn btn-primary">🚨 Report küldése</button>
+                <button type="button" class="btn btn-secondary reset-form">↺ Űrlap ürítése</button>
+              </div>
+            </form>
+          </div>
+
+          <div class="tab-pane" id="tab-suggestion">
+            <form id="suggestionForm" class="smart-form" data-type="Ötlet">
+              <div class="form-grid">
+                <div class="form-group">
+                  <label>Név</label>
+                  <input type="text" name="name" placeholder="Pl. Minta Béla" required />
+                </div>
+                <div class="form-group">
+                  <label>Discord név</label>
+                  <input type="text" name="discord" placeholder="Pl. valaki_1234" required />
+                </div>
+                <div class="form-group">
+                  <label>Ötlet kategória</label>
+                  <select name="category" required>
+                    <option value="">Válassz</option>
+                    <option>Új csatorna</option>
+                    <option>Bot funkció</option>
+                    <option>Esemény</option>
+                    <option>Szabályzat</option>
+                    <option>Design</option>
+                    <option>Egyéb</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Hasznosság</label>
+                  <select name="impact" required>
+                    <option value="">Válassz</option>
+                    <option>Kisebb</option>
+                    <option>Közepes</option>
+                    <option>Nagy</option>
+                    <option>Game changer</option>
+                  </select>
+                </div>
+                <div class="form-group full">
+                  <label>Ötlet leírása</label>
+                  <textarea name="idea" maxlength="1000" placeholder="Írd le az ötleted..." required></textarea>
+                  <div class="counter">0 / 1000</div>
+                </div>
+              </div>
+              <div class="row" style="margin-top:16px">
+                <button type="submit" class="btn btn-primary">💡 Ötlet küldése</button>
+                <button type="button" class="btn btn-secondary reset-form">↺ Űrlap ürítése</button>
+              </div>
+            </form>
+          </div>
+
+          <div class="tab-pane" id="tab-announce">
+            <form id="announceForm" class="smart-form" data-type="Announcement">
+              <div class="form-grid">
+                <div class="form-group">
+                  <label>Cím</label>
+                  <input type="text" name="title" placeholder="Pl. Új esemény indul" required />
+                </div>
+                <div class="form-group">
+                  <label>Szint</label>
+                  <select name="level" required>
+                    <option value="">Válassz</option>
+                    <option>Info</option>
+                    <option>Update</option>
+                    <option>Important</option>
+                    <option>Critical</option>
+                  </select>
+                </div>
+                <div class="form-group full">
+                  <label>Leírás</label>
+                  <textarea name="description" maxlength="1200" placeholder="Írd meg a bejelentést..." required></textarea>
+                  <div class="counter">0 / 1200</div>
+                </div>
+                <div class="form-group">
+                  <label>Szerző</label>
+                  <input type="text" name="author" placeholder="Pl. Admin Team" required />
+                </div>
+                <div class="form-group">
+                  <label>Megjelenés</label>
+                  <select name="style" required>
+                    <option value="">Válassz</option>
+                    <option>Standard</option>
+                    <option>Event</option>
+                    <option>Alert</option>
+                    <option>Patch Notes</option>
+                  </select>
+                </div>
+              </div>
+              <div class="row" style="margin-top:16px">
+                <button type="submit" class="btn btn-primary">📢 Announcement küldése</button>
+                <button type="button" class="btn btn-secondary reset-form">↺ Űrlap ürítése</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <div class="panel" id="preview">
+          <div class="panel-head">
+            <div>
+              <h2>Élő embed preview</h2>
+              <p>A kitöltött mezők alapján itt rögtön látod a várható Discord-szerű kimenetet.</p>
+            </div>
+          </div>
+
+          <div class="embed-preview">
+            <div class="badge">🛰️ Web preview</div>
+            <div class="embed-title" id="previewTitle">Nincs kiválasztott űrlap</div>
+            <div class="embed-desc" id="previewDesc">Kezdj el gépelni valamelyik panelen.</div>
+            <div class="embed-fields" id="previewFields"></div>
+          </div>
+
+          <div style="margin-top:18px">
+            <label>Webhook URL állapot</label>
+            <input id="webhookInput" type="password" placeholder="YOUR_NEW_DISCORD_WEBHOOK_URL" />
+            <div class="hint">
+              Ide ideiglenesen is beírhatod helyben, vagy a kódban a konstansba. Ezt ne oszd meg senkivel.
+            </div>
+          </div>
+
+          <div class="checks">
+            <label class="check">
+              <input type="checkbox" id="saveLocal" checked />
+              <span>Küldés előtt mentse el helyi előzményként</span>
+            </label>
+            <label class="check">
+              <input type="checkbox" id="useBrowserMode" checked />
+              <span>Próbálja közvetlenül böngészőből küldeni a webhookra</span>
+            </label>
+          </div>
+
+          <div class="footer-note">
+            Ha a böngésző CORS hibát dob, az nem feltétlen a kód hibája, hanem a közvetlen webhook-hívás korlátja.
+          </div>
+        </div>
+      </section>
+
+      <section class="grid-2" id="history">
+        <div class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>Helyi előzmények</h2>
+              <p>A beküldések metaadatai a böngészőben eltárolódnak.</p>
+            </div>
+          </div>
+          <div class="history-list" id="historyList"></div>
+        </div>
+
+        <div class="panel" id="faq">
+          <div class="panel-head">
+            <div>
+              <h2>Gyakori kérdések</h2>
+              <p>Gyors válaszok a használathoz.</p>
+            </div>
+          </div>
+
+          <div class="faq">
+            <div class="faq-item open">
+              <button class="faq-q">Miért lehet CORS hiba?</button>
+              <div class="faq-a">
+                Mert a Discord webhook közvetlen böngészős hívása nem minden környezetben engedett. Frontend-only tesztre elmegy,
+                de a stabil, publikus megoldás backend vagy proxy.
+              </div>
+            </div>
+
+            <div class="faq-item">
+              <button class="faq-q">Miért ne tegyem publikusan a webhookot?</button>
+              <div class="faq-a">
+                Mert aki megszerzi, tud írni a csatornádba. Olyan, mint egy titkos kulcs.
+              </div>
+            </div>
+
+            <div class="faq-item">
+              <button class="faq-q">Mit tud még fejleszteni ezen?</button>
+              <div class="faq-a">
+                Belépés Discorddal, role kezelés, admin statok, ticket státusz, adatbázis, valós szerver API, jogosultságok.
+              </div>
+            </div>
+
+            <div class="faq-item">
+              <button class="faq-q">Lehet ebből később profi dashboard?</button>
+              <div class="faq-a">
+                Igen. Ez nagyon jó frontend alap egy Node.js/Express + Discord bot + adatbázis projekthez.
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="modal" id="rulesModal">
+    <div class="modal-card">
+      <div class="panel-head">
+        <div>
+          <h2>Szerver szabályzat</h2>
+          <p>Példa szabályzat, amit szabadon átírhatsz.</p>
+        </div>
+        <button class="btn btn-secondary" id="closeRulesBtn">Bezárás</button>
+      </div>
+
+      <div class="rules-list">
+        <div class="rule"><b>1.</b> Tiszteld a többi tagot, nincs zaklatás, nincs sértegetés.</div>
+        <div class="rule"><b>2.</b> Nincs spam, flood vagy reklám engedély nélkül.</div>
+        <div class="rule"><b>3.</b> Tilos a csalás, átverés, hamis report és manipuláció.</div>
+        <div class="rule"><b>4.</b> A staff döntéseit kulturáltan lehet megkérdőjelezni, de nem toxikusan.</div>
+        <div class="rule"><b>5.</b> A ticket és report rendszerrel visszaélni tilos.</div>
+        <div class="rule"><b>6.</b> Káros, NSFW vagy illegális tartalom nem megengedett.</div>
+      </div>
     </div>
   </div>
 
+  <div class="toast-wrap" id="toastWrap"></div>
+
   <script>
-    const WEBHOOK_URL = "https://discord.com/api/webhooks/1488436818239160350/jWmCU94AoTmJ1GLrxpVZQTTqM03Ibh4oGtXxqMxOkt2COj5nCXZwiIzoWB0Tmu1Pwm_l";
+    // === ÁLLÍTSD ÁT HELYBEN ===
+    const DEFAULT_WEBHOOK_URL = "https://discord.com/api/webhooks/1488436818239160350/jWmCU94AoTmJ1GLrxpVZQTTqM03Ibh4oGtXxqMxOkt2COj5nCXZwiIzoWB0Tmu1Pwm_l";
 
-    const form = document.getElementById("discordForm");
-    const statusEl = document.getElementById("status");
-    const submitBtn = document.getElementById("submitBtn");
+    const LS_KEY_HISTORY = "discord_ultra_panel_history_v1";
+    const LS_KEY_THEME = "discord_ultra_panel_theme_v1";
 
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
+    const themeToggle = document.getElementById("themeToggle");
+    const openRulesBtn = document.getElementById("openRulesBtn");
+    const closeRulesBtn = document.getElementById("closeRulesBtn");
+    const rulesModal = document.getElementById("rulesModal");
+    const exportBtn = document.getElementById("exportBtn");
+    const clearHistoryBtn = document.getElementById("clearHistoryBtn");
+    const demoFillBtn = document.getElementById("demoFillBtn");
+    const webhookInput = document.getElementById("webhookInput");
+    const historyList = document.getElementById("historyList");
+    const saveLocalCheckbox = document.getElementById("saveLocal");
+    const useBrowserModeCheckbox = document.getElementById("useBrowserMode");
 
-      if (!WEBHOOK_URL || WEBHOOK_URL.includes("IDE_IRD_AZ_UJ_WEBHOOKOT")) {
-        statusEl.textContent = "Előbb írd be az új webhook URL-t a kódba.";
-        statusEl.className = "status error";
+    const previewTitle = document.getElementById("previewTitle");
+    const previewDesc = document.getElementById("previewDesc");
+    const previewFields = document.getElementById("previewFields");
+
+    const statToday = document.getElementById("statToday");
+    const statTotal = document.getElementById("statTotal");
+    const statTheme = document.getElementById("statTheme");
+    const statHook = document.getElementById("statHook");
+
+    function getWebhookUrl() {
+      const typed = webhookInput.value.trim();
+      if (typed) return typed;
+      return DEFAULT_WEBHOOK_URL.trim();
+    }
+
+    function isWebhookConfigured() {
+      const hook = getWebhookUrl();
+      return hook && !hook.includes("YOUR_NEW_DISCORD_WEBHOOK_URL");
+    }
+
+    function safeText(value) {
+      return String(value ?? "").trim() || "Nincs megadva";
+    }
+
+    function getHistory() {
+      try {
+        return JSON.parse(localStorage.getItem(LS_KEY_HISTORY) || "[]");
+      } catch {
+        return [];
+      }
+    }
+
+    function setHistory(list) {
+      localStorage.setItem(LS_KEY_HISTORY, JSON.stringify(list));
+    }
+
+    function showToast(type, title, text) {
+      const wrap = document.getElementById("toastWrap");
+      const div = document.createElement("div");
+      div.className = `toast ${type}`;
+      div.innerHTML = `
+        <div class="toast-icon">${type === "good" ? "✓" : type === "bad" ? "!" : "i"}</div>
+        <div>
+          <b>${title}</b>
+          <span>${text}</span>
+        </div>
+      `;
+      wrap.appendChild(div);
+      setTimeout(() => {
+        div.style.opacity = "0";
+        div.style.transform = "translateY(8px)";
+        setTimeout(() => div.remove(), 220);
+      }, 3800);
+    }
+
+    function formatDate(dateStr) {
+      const d = new Date(dateStr);
+      return d.toLocaleString("hu-HU");
+    }
+
+    function updateStats() {
+      const history = getHistory();
+      statTotal.textContent = history.length;
+
+      const today = new Date();
+      const todayKey = today.toLocaleDateString("hu-HU");
+      const todayCount = history.filter(item => new Date(item.createdAt).toLocaleDateString("hu-HU") === todayKey).length;
+      statToday.textContent = todayCount;
+
+      const isLight = document.body.classList.contains("light");
+      statTheme.textContent = isLight ? "Light" : "Dark";
+
+      statHook.textContent = isWebhookConfigured() ? "READY" : "WAIT";
+    }
+
+    function renderHistory() {
+      const history = getHistory().slice().reverse();
+      historyList.innerHTML = "";
+
+      if (!history.length) {
+        historyList.innerHTML = `
+          <div class="history-item">
+            <h4>Még nincs helyi előzmény</h4>
+            <p>Beküldés után itt jelennek meg a tételek.</p>
+          </div>
+        `;
+        updateStats();
         return;
       }
 
-      const name = document.getElementById("name").value.trim();
-      const discord = document.getElementById("discord").value.trim();
-      const age = document.getElementById("age").value.trim();
-      const type = document.getElementById("type").value;
-      const message = document.getElementById("message").value.trim();
+      history.forEach((item, index) => {
+        const el = document.createElement("div");
+        el.className = "history-item";
+        const compact = JSON.stringify(item.payloadSummary, null, 2);
 
-      submitBtn.disabled = true;
-      submitBtn.textContent = "Küldés...";
-      statusEl.textContent = "";
-      statusEl.className = "status";
+        el.innerHTML = `
+          <h4>${item.type}</h4>
+          <p>${compact}</p>
+          <div class="history-meta">
+            <span class="badge">🕒 ${formatDate(item.createdAt)}</span>
+            <span class="badge">#${history.length - index}</span>
+            <span class="badge">${item.status}</span>
+          </div>
+        `;
+        historyList.appendChild(el);
+      });
 
-      const payload = {
-        username: "Webes Panel",
-        embeds: [
-          {
-            title: "Új beküldés a weboldalról",
-            color: 5793266,
-            fields: [
-              { name: "Név", value: name || "Nincs megadva", inline: true },
-              { name: "Discord", value: discord || "Nincs megadva", inline: true },
-              { name: "Életkor", value: age || "Nincs megadva", inline: true },
-              { name: "Típus", value: type || "Nincs megadva", inline: true },
-              { name: "Üzenet", value: message || "Nincs megadva", inline: false }
-            ],
-            footer: {
-              text: "Discord HTML panel"
-            },
-            timestamp: new Date().toISOString()
-          }
-        ]
+      updateStats();
+    }
+
+    function saveHistoryEntry(entry) {
+      const history = getHistory();
+      history.push(entry);
+      setHistory(history);
+      renderHistory();
+    }
+
+    function exportHistory() {
+      const history = getHistory();
+      const blob = new Blob([JSON.stringify(history, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "discord-ultra-panel-history.json";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      showToast("good", "Export kész", "Az előzmények JSON fájlba letöltve.");
+    }
+
+    function clearHistory() {
+      localStorage.removeItem(LS_KEY_HISTORY);
+      renderHistory();
+      showToast("warn", "Előzmények törölve", "A helyi mentések eltávolítva.");
+    }
+
+    function applyStoredTheme() {
+      const theme = localStorage.getItem(LS_KEY_THEME);
+      if (theme === "light") document.body.classList.add("light");
+      else document.body.classList.remove("light");
+      updateThemeButton();
+      updateStats();
+    }
+
+    function updateThemeButton() {
+      const light = document.body.classList.contains("light");
+      themeToggle.textContent = light ? "🌞 Theme váltás" : "🌙 Theme váltás";
+    }
+
+    function toggleTheme() {
+      document.body.classList.toggle("light");
+      localStorage.setItem(LS_KEY_THEME, document.body.classList.contains("light") ? "light" : "dark");
+      updateThemeButton();
+      updateStats();
+    }
+
+    function setupTabs() {
+      const buttons = document.querySelectorAll(".tab-btn");
+      const panes = document.querySelectorAll(".tab-pane");
+
+      buttons.forEach(btn => {
+        btn.addEventListener("click", () => {
+          buttons.forEach(b => b.classList.remove("active"));
+          panes.forEach(p => p.classList.remove("active"));
+          btn.classList.add("active");
+          document.getElementById(`tab-${btn.dataset.tab}`).classList.add("active");
+          updatePreviewFromActiveForm();
+        });
+      });
+    }
+
+    function setupNavHighlight() {
+      const navLinks = document.querySelectorAll(".nav a");
+      navLinks.forEach(link => {
+        link.addEventListener("click", () => {
+          navLinks.forEach(a => a.classList.remove("active"));
+          link.classList.add("active");
+        });
+      });
+    }
+
+    function updateTextCounters() {
+      document.querySelectorAll("textarea[maxlength]").forEach(textarea => {
+        const counter = textarea.parentElement.querySelector(".counter");
+        const render = () => {
+          if (counter) counter.textContent = `${textarea.value.length} / ${textarea.maxLength}`;
+        };
+        textarea.addEventListener("input", render);
+        render();
+      });
+    }
+
+    function getFormDataObject(form) {
+      const fd = new FormData(form);
+      const obj = {};
+      for (const [key, value] of fd.entries()) {
+        obj[key] = value;
+      }
+      form.querySelectorAll('input[type="checkbox"]').forEach(chk => {
+        obj[chk.name || chk.id] = chk.checked;
+      });
+      return obj;
+    }
+
+    function summarizeForPreview(type, obj) {
+      const entries = Object.entries(obj)
+        .filter(([_, v]) => typeof v !== "boolean" && String(v).trim() !== "")
+        .slice(0, 8);
+
+      let desc = "Nincs tartalom.";
+      if (type === "Jelentkezés") desc = obj.reason || obj.about || "Jelentkezési adatlap";
+      else if (type === "Ticket") desc = obj.details || "Ticket leírás";
+      else if (type === "Report") desc = obj.proof || "Report leírás";
+      else if (type === "Ötlet") desc = obj.idea || "Ötlet leírás";
+      else if (type === "Announcement") desc = obj.description || "Announcement";
+
+      return {
+        title: type,
+        desc,
+        fields: entries
       };
+    }
 
-      try {
-        const res = await fetch(WEBHOOK_URL, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
+    function renderPreview(type, obj) {
+      const data = summarizeForPreview(type, obj);
+      previewTitle.textContent = data.title || "Preview";
+      previewDesc.textContent = data.desc || "Nincs tartalom.";
+      previewFields.innerHTML = "";
+
+      data.fields.forEach(([k, v]) => {
+        const div = document.createElement("div");
+        div.className = "embed-field";
+        div.innerHTML = `<b>${escapeHtml(k)}</b><div>${escapeHtml(String(v))}</div>`;
+        previewFields.appendChild(div);
+      });
+
+      if (!data.fields.length) {
+        previewFields.innerHTML = `<div class="embed-field"><b>Üres</b><div>Kezdj el gépelni valamelyik űrlapon.</div></div>`;
+      }
+    }
+
+    function updatePreviewFromActiveForm() {
+      const activePane = document.querySelector(".tab-pane.active");
+      const form = activePane?.querySelector("form");
+      if (!form) {
+        renderPreview("Nincs kiválasztott űrlap", {});
+        return;
+      }
+      renderPreview(form.dataset.type || "Beküldés", getFormDataObject(form));
+    }
+
+    function setupLivePreview() {
+      document.querySelectorAll(".smart-form").forEach(form => {
+        form.addEventListener("input", () => renderPreview(form.dataset.type, getFormDataObject(form)));
+        form.addEventListener("change", () => renderPreview(form.dataset.type, getFormDataObject(form)));
+      });
+      updatePreviewFromActiveForm();
+    }
+
+    function colorByType(type) {
+      switch (type) {
+        case "Jelentkezés": return 0x5865F2;
+        case "Ticket": return 0xFEE75C;
+        case "Report": return 0xED4245;
+        case "Ötlet": return 0x57F287;
+        case "Announcement": return 0x7c5cff;
+        default: return 0x5865F2;
+      }
+    }
+
+    function buildDiscordPayload(type, obj) {
+      const fields = Object.entries(obj)
+        .filter(([_, v]) => typeof v !== "boolean" && String(v).trim() !== "")
+        .slice(0, 25)
+        .map(([k, v]) => ({
+          name: prettifyKey(k),
+          value: String(v).slice(0, 1024),
+          inline: String(v).length < 38
+        }));
+
+      let desc = "";
+      if (type === "Jelentkezés") desc = `Új jelentkezés érkezett a webes panelből.`;
+      if (type === "Ticket") desc = `Új ticket / segítségkérés érkezett.`;
+      if (type === "Report") desc = `Új report érkezett moderátori ellenőrzésre.`;
+      if (type === "Ötlet") desc = `Új javaslat érkezett a közösségtől.`;
+      if (type === "Announcement") desc = `Új announcement készült a panelből.`;
+
+      return {
+        username: "Ultra Web Panel",
+        embeds: [{
+          title: `📨 ${type}`,
+          description: desc,
+          color: colorByType(type),
+          fields,
+          footer: {
+            text: "Discord Ultra Panel • HTML Edition"
           },
-          body: JSON.stringify(payload)
+          timestamp: new Date().toISOString()
+        }]
+      };
+    }
+
+    function prettifyKey(key) {
+      const map = {
+        name: "Név",
+        discord: "Discord név",
+        age: "Életkor",
+        area: "Terület",
+        level: "Szint",
+        activity: "Aktivitás",
+        reason: "Miért csatlakozna?",
+        about: "Róla",
+        category: "Kategória",
+        priority: "Prioritás",
+        details: "Részletek",
+        reporter: "Bejelentő",
+        reporterDiscord: "Bejelentő Discord",
+        target: "Jelentett személy",
+        issue: "Vétség",
+        proof: "Bizonyíték",
+        impact: "Hasznosság",
+        idea: "Ötlet",
+        title: "Cím",
+        description: "Leírás",
+        author: "Szerző",
+        style: "Stílus"
+      };
+      return map[key] || key;
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    async function trySendWebhook(payload) {
+      const webhook = getWebhookUrl();
+
+      if (!isWebhookConfigured()) {
+        throw new Error("Nincs beállított webhook URL.");
+      }
+
+      if (!useBrowserModeCheckbox.checked) {
+        throw new Error("A közvetlen böngészős küldés ki van kapcsolva.");
+      }
+
+      // Megjegyzés:
+      // Discord webhook + browser = CORS problémák előfordulhatnak.
+      // Itt JSON fetch-et próbálunk. Ha ez hibázik, azt jelezzük a usernek.
+      const res = await fetch(webhook, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) {
+        throw new Error(`Webhook hiba: ${res.status}`);
+      }
+
+      return true;
+    }
+
+    function setupForms() {
+      document.querySelectorAll(".smart-form").forEach(form => {
+        form.addEventListener("submit", async (e) => {
+          e.preventDefault();
+
+          const type = form.dataset.type || "Beküldés";
+          const obj = getFormDataObject(form);
+          const payload = buildDiscordPayload(type, obj);
+
+          const historyEntry = {
+            type,
+            createdAt: new Date().toISOString(),
+            status: "pending",
+            payloadSummary: obj
+          };
+
+          if (saveLocalCheckbox.checked) {
+            saveHistoryEntry(historyEntry);
+          }
+
+          const submitBtn = form.querySelector('button[type="submit"]');
+          const originalText = submitBtn.textContent;
+          submitBtn.disabled = true;
+          submitBtn.textContent = "Küldés...";
+
+          try {
+            await trySendWebhook(payload);
+
+            if (saveLocalCheckbox.checked) {
+              const history = getHistory();
+              if (history.length) {
+                history[history.length - 1].status = "sent";
+                setHistory(history);
+              }
+            }
+
+            renderHistory();
+            showToast("good", "Sikeres küldés", `${type} elküldve a Discord webhookra.`);
+            form.reset();
+            updateTextCounters();
+            updatePreviewFromActiveForm();
+          } catch (err) {
+            if (saveLocalCheckbox.checked) {
+              const history = getHistory();
+              if (history.length) {
+                history[history.length - 1].status = "failed";
+                setHistory(history);
+              }
+            }
+
+            renderHistory();
+            showToast(
+              "bad",
+              "Küldési hiba",
+              `${type} nem ment át. Oka lehet hibás webhook, CORS, vagy böngészős tiltás.`
+            );
+            console.error(err);
+          } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+          }
         });
 
-        if (res.ok) {
-          statusEl.textContent = "Sikeresen elküldve a Discordra.";
-          statusEl.className = "status success";
-          form.reset();
-        } else {
-          statusEl.textContent = "Hiba történt. Nézd meg, jó-e a webhook URL.";
-          statusEl.className = "status error";
+        form.querySelectorAll(".reset-form").forEach(btn => {
+          btn.addEventListener("click", () => {
+            form.reset();
+            updateTextCounters();
+            updatePreviewFromActiveForm();
+          });
+        });
+      });
+    }
+
+    function setupFaq() {
+      document.querySelectorAll(".faq-q").forEach(btn => {
+        btn.addEventListener("click", () => {
+          btn.parentElement.classList.toggle("open");
+        });
+      });
+    }
+
+    function setupModal() {
+      openRulesBtn.addEventListener("click", () => rulesModal.classList.add("open"));
+      closeRulesBtn.addEventListener("click", () => rulesModal.classList.remove("open"));
+      rulesModal.addEventListener("click", (e) => {
+        if (e.target === rulesModal) rulesModal.classList.remove("open");
+      });
+    }
+
+    function fillDemoData() {
+      const activeForm = document.querySelector(".tab-pane.active form");
+      if (!activeForm) return;
+
+      const type = activeForm.dataset.type;
+      const map = {
+        "Jelentkezés": {
+          name: "Teszt Elek",
+          discord: "teszt_1337",
+          age: "19",
+          area: "Gaming",
+          level: "Haladó",
+          activity: "Napi",
+          reason: "Szeretnék aktív tag lenni, eseményeken részt venni és segíteni a közösség fejlődését.",
+          about: "Barátságos vagyok, sokat vagyok gépnél, szeretem az épített rendszereket és a jó közösségeket."
+        },
+        "Ticket": {
+          name: "Teszt Elek",
+          discord: "teszt_1337",
+          category: "Technikai hiba",
+          priority: "High",
+          details: "A weboldalon egyes gombok mobilon furán törnek, és néha a küldés sem indul elsőre."
+        },
+        "Report": {
+          reporter: "Teszt Elek",
+          reporterDiscord: "teszt_1337",
+          target: "rosszarc99",
+          issue: "Spam",
+          proof: "Többször floodolt ugyanazzal az üzenettel, és több tagot pingelt feleslegesen."
+        },
+        "Ötlet": {
+          name: "Teszt Elek",
+          discord: "teszt_1337",
+          category: "Bot funkció",
+          impact: "Nagy",
+          idea: "Lehetne automata event-emlékeztető és aktivitás alapú role kiosztás."
+        },
+        "Announcement": {
+          title: "Tavaszi közösségi esemény",
+          level: "Important",
+          description: "Szombaton indul a közös event. Lesz nyeremény, voice activity és külön rangok a résztvevőknek.",
+          author: "Admin Team",
+          style: "Event"
         }
-      } catch (err) {
-        statusEl.textContent = "Nem sikerült csatlakozni a Discordhoz.";
-        statusEl.className = "status error";
-      } finally {
-        submitBtn.disabled = false;
-        submitBtn.textContent = "Küldés Discordra";
-      }
-    });
+      };
+
+      const values = map[type] || {};
+      Object.entries(values).forEach(([name, value]) => {
+        const field = activeForm.elements[name];
+        if (field) field.value = value;
+      });
+
+      activeForm.querySelectorAll('input[type="checkbox"]').forEach(chk => {
+        chk.checked = true;
+      });
+
+      updateTextCounters();
+      updatePreviewFromActiveForm();
+      showToast("good", "Demo betöltve", "Minta adatok behelyezve az aktív panelbe.");
+    }
+
+    themeToggle.addEventListener("click", toggleTheme);
+    exportBtn.addEventListener("click", exportHistory);
+    clearHistoryBtn.addEventListener("click", clearHistory);
+    demoFillBtn.addEventListener("click", fillDemoData);
+    webhookInput.addEventListener("input", updateStats);
+
+    applyStoredTheme();
+    setupTabs();
+    setupNavHighlight();
+    updateTextCounters();
+    setupLivePreview();
+    setupForms();
+    setupFaq();
+    setupModal();
+    renderHistory();
   </script>
 </body>
 </html>
