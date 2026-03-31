@@ -500,9 +500,6 @@
         takenAt: null,
         returned: true,
         penaltyGiven: false,
-        reserved: false,
-        reservedBy: null,
-        reservedAt: null,
         lastReturn: {
           tank: 100,
           allapot: 100,
@@ -600,49 +597,6 @@
       logAction("Kollektív piros pont kiosztva", "Mindenkinek +1 piros pont");
     };
 
-    window.reserveCar = function (carId, personId) {
-      if (!personId) {
-        alert("Válassz embert.");
-        return;
-      }
-
-      const car = carsData[carId];
-      const person = peopleData[personId];
-
-      if (!car || !car.returned) {
-        alert("Csak bent lévő autó foglalható le.");
-        return;
-      }
-
-      update(ref(db, "cars/" + carId), {
-        reserved: true,
-        reservedBy: personId,
-        reservedAt: Date.now()
-      });
-
-      logAction(
-        "Autó lefoglalva",
-        (car ? car.brand + " " + car.model : carId) +
-        " | Lefoglalta: " + (person ? person.name : personId)
-      );
-    };
-
-    window.unreserveCar = function (carId) {
-      const car = carsData[carId];
-      if (!car) return;
-
-      update(ref(db, "cars/" + carId), {
-        reserved: false,
-        reservedBy: null,
-        reservedAt: null
-      });
-
-      logAction(
-        "Autó foglalás törölve",
-        car.brand + " " + car.model
-      );
-    };
-
     window.takeCar = function (carId, personId) {
       if (!personId) {
         alert("Válassz embert.");
@@ -656,10 +610,7 @@
         takenBy: personId,
         takenAt: Date.now(),
         returned: false,
-        penaltyGiven: false,
-        reserved: false,
-        reservedBy: null,
-        reservedAt: null
+        penaltyGiven: false
       });
 
       logAction(
@@ -702,9 +653,6 @@
         takenBy: null,
         takenAt: null,
         penaltyGiven: false,
-        reserved: false,
-        reservedBy: null,
-        reservedAt: null,
         lastReturn: {
           tank: tank,
           allapot: allapot,
@@ -773,10 +721,7 @@
         returned: true,
         takenBy: null,
         takenAt: null,
-        penaltyGiven: false,
-        reserved: false,
-        reservedBy: null,
-        reservedAt: null
+        penaltyGiven: false
       });
 
       logAction("Autó bentnek jelölve", car.brand + " " + car.model);
@@ -791,10 +736,7 @@
       update(ref(db, "cars/" + carId), {
         returned: false,
         penaltyGiven: false,
-        takenAt: car.takenAt || Date.now(),
-        reserved: false,
-        reservedBy: null,
-        reservedAt: null
+        takenAt: car.takenAt || Date.now()
       });
 
       logAction("Autó kintnek jelölve", car.brand + " " + car.model);
@@ -872,7 +814,6 @@
       } else {
         Object.entries(carsData).forEach(([id, car]) => {
           const person = peopleData[car.takenBy];
-          const reservedPerson = peopleData[car.reservedBy];
           const overdue = !car.returned && car.takenAt && (Date.now() - car.takenAt > 24 * 60 * 60 * 1000);
 
           carsDiv.innerHTML += `
@@ -880,9 +821,7 @@
               <div><strong>${car.brand} ${car.model}</strong></div>
               <div class="muted">Állapot: ${
                 car.returned
-                  ? car.reserved
-                    ? "<span class='orange'>Lefoglalt</span>"
-                    : "<span class='green'>Bent van</span>"
+                  ? "<span class='green'>Bent van</span>"
                   : overdue
                     ? "<span class='red'>Kint van, 24 óra lejárt</span>"
                     : "<span class='orange'>Kint van</span>"
@@ -900,35 +839,16 @@
                         Megjegyzés: ${car.lastReturn.megjegyzes || "-"}
                       </div>
                     ` : ""}
-
-                    ${car.reserved ? `
-                      <div class="top-space">Lefoglalta: <strong>${reservedPerson ? reservedPerson.name : "ismeretlen"}</strong></div>
-                      <div class="muted">Foglalás ideje: ${car.reservedAt ? new Date(car.reservedAt).toLocaleString("hu-HU") : "-"}</div>
-                    ` : ""}
-
                     <div class="row top-space">
                       <select id="p${id}">
                         <option value="">-- válassz embert --</option>
                         ${Object.entries(peopleData).map(([pid, p]) =>
-                          `<option value="${pid}" ${car.reservedBy === pid ? "selected" : ""}>${p.name}</option>`
+                          `<option value="${pid}">${p.name}</option>`
                         ).join("")}
                       </select>
                       <button class="btn" onclick="takeCar('${id}', document.getElementById('p${id}').value)">
                         Kivette
                       </button>
-                      ${
-                        !car.reserved
-                          ? `
-                            <button class="btn-warning" onclick="reserveCar('${id}', document.getElementById('p${id}').value)">
-                              Lefoglalta
-                            </button>
-                          `
-                          : `
-                            <button class="btn-danger" onclick="unreserveCar('${id}')">
-                              Foglalás törlése
-                            </button>
-                          `
-                      }
                       ${szerkesztoMod ? `
                         <button class="btn-warning" onclick="markCarOut('${id}')">
                           Kintnek jelölés
