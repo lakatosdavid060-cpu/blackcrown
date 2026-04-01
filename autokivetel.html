@@ -623,6 +623,7 @@
     window.returnCar = function (carId) {
       const car = carsData[carId];
       const person = peopleData[car?.takenBy];
+      const takenById = car.takenBy;
 
       const tank = parseInt(document.getElementById("tank" + carId)?.value || "", 10);
       const allapot = parseInt(document.getElementById("allapot" + carId)?.value || "", 10);
@@ -660,6 +661,29 @@
           byName: person ? person.name : "ismeretlen"
         }
       });
+
+      let penalty = 0;
+
+      if (tank < 90) penalty++;
+      if (allapot < 90) penalty++;
+
+      if (penalty > 0 && takenById) {
+        const person = peopleData[takenById];
+
+        if (person) {
+          update(ref(db, "people/" + takenById), {
+            red: (person.red || 0) + penalty
+          });
+
+          logAction(
+            "Piros pont visszarakás miatt",
+            (person.name || "ismeretlen") +
+            " | +" + penalty +
+            " | Tank: " + tank + "%" +
+            " | Állapot: " + allapot + "%"
+          );
+        }
+      }
 
       logAction(
         "Autó visszarakva",
