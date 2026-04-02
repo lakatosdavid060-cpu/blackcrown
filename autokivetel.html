@@ -333,9 +333,6 @@
       width:100%;
       height:100%;
       background:#020617;
-      background-size: cover;
-      background-position: center;
-      background-repeat: no-repeat;
       display:flex;
       flex-direction:column;
       align-items:center;
@@ -350,6 +347,33 @@
       inset:0;
       background:rgba(2,6,23,0.62);
       z-index:0;
+    }
+
+    .loader-image-box{
+      position:relative;
+      z-index:2;
+      width:260px;
+      height:160px;
+      margin-bottom:24px;
+      border-radius:18px;
+      overflow:hidden;
+      border:2px solid rgba(255,255,255,0.18);
+      background:rgba(255,255,255,0.08);
+      box-shadow:
+        0 12px 30px rgba(0,0,0,0.35),
+        0 0 25px rgba(239,68,68,0.18),
+        inset 0 0 0 1px rgba(255,255,255,0.08);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+
+    .loader-image-box img{
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      display:block;
+      transition: opacity 0.4s ease;
+      opacity:1;
     }
 
     .loader-title{
@@ -440,6 +464,12 @@
         text-align:center;
       }
 
+      .loader-image-box{
+        width:200px;
+        height:130px;
+        margin-bottom:18px;
+      }
+
       body::before{
         font-size:42px;
         letter-spacing:6px;
@@ -452,6 +482,9 @@
 
   <div id="loader">
     <div class="fire-bg"></div>
+    <div class="loader-image-box">
+      <img id="loaderImage" src="kepek/kep1.png" alt="Betöltő kép">
+    </div>
     <div class="loader-title">ÖRDÖGÖK</div>
     <div class="loader-sub">Rendszer betöltése...</div>
   </div>
@@ -558,9 +591,15 @@
     let szerkesztoMod = false;
 
     function setLoaderImage(index) {
-      const loader = document.getElementById("loader");
-      if (!loader) return;
-      loader.style.backgroundImage = `url('${loaderImages[index]}')`;
+      const img = document.getElementById("loaderImage");
+      if (!img) return;
+
+      img.style.opacity = "0";
+
+      setTimeout(() => {
+        img.src = loaderImages[index];
+        img.style.opacity = "1";
+      }, 200);
     }
 
     function startLoaderSlideshow() {
@@ -574,7 +613,7 @@
           currentLoaderImage = 0;
         }
         setLoaderImage(currentLoaderImage);
-      }, 800);
+      }, 1200);
     }
 
     function logAction(muvelet, adat = "") {
