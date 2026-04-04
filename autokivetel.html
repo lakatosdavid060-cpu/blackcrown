@@ -543,6 +543,11 @@
       </div>
     </div>
 
+    <div class="card">
+      <h2>🚨 Értesítések / fekete pontok</h2>
+      <div id="notifications"></div>
+    </div>
+
     <div class="card" id="adminPanel" style="display:none;">
       <h2>Új autó hozzáadása</h2>
       <div class="row">
@@ -598,6 +603,7 @@
 
     const carsRef = ref(db, "cars");
     const peopleRef = ref(db, "people");
+    const actionLogRef = ref(db, "actionLog");
 
     const loaderImages = [
       "kepek/kep1.png",
@@ -613,6 +619,7 @@
     let loaderInterval = null;
     let carsData = {};
     let peopleData = {};
+    let actionLogData = {};
     let szerkesztoMod = false;
 
     function setLoaderImage(index) {
@@ -1153,6 +1160,11 @@
       render();
     });
 
+    onValue(actionLogRef, (snap) => {
+      actionLogData = snap.val() || {};
+      render();
+    });
+
     function render() {
       checkPenalty(carsData, peopleData);
 
@@ -1175,6 +1187,29 @@
           Object.entries(peopleData).map(([pid, p]) =>
             `<option value="${pid}">${p.name}</option>`
           ).join("");
+      }
+
+      const notificationsDiv = document.getElementById("notifications");
+      if (notificationsDiv) {
+        const notifications = Object.entries(actionLogData || {})
+          .map(([id, log]) => ({ id, ...log }))
+          .filter(log =>
+            (log.muvelet || "").toLowerCase().includes("fekete pont")
+          )
+          .sort((a, b) => Number(b.id) - Number(a.id))
+          .slice(0, 15);
+
+        if (notifications.length === 0) {
+          notificationsDiv.innerHTML = "<div class='muted'>Még nincs fekete pontos értesítés.</div>";
+        } else {
+          notificationsDiv.innerHTML = notifications.map(log => `
+            <div class="item">
+              <div><strong>${log.muvelet || "Értesítés"}</strong></div>
+              <div class="muted">${log.ido || "-"}</div>
+              <div class="top-space">${log.adat || "-"}</div>
+            </div>
+          `).join("");
+        }
       }
 
       const carsDiv = document.getElementById("cars");
