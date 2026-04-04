@@ -739,6 +739,7 @@
         returned: true,
         penaltyGiven: false,
         reservePenaltyGiven: false,
+        garageReserved: false,
         lastReturn: {
           tank: 100,
           allapot: 100,
@@ -852,7 +853,8 @@
         penaltyGiven: false,
         reservedBy: null,
         reservedAt: null,
-        reservePenaltyGiven: false
+        reservePenaltyGiven: false,
+        garageReserved: false
       });
 
       logAction(
@@ -884,7 +886,8 @@
         reservePenaltyGiven: false,
         takenBy: null,
         takenAt: null,
-        returned: true
+        returned: true,
+        garageReserved: false
       });
 
       logAction(
@@ -901,13 +904,28 @@
       update(ref(db, "cars/" + carId), {
         reservedBy: null,
         reservedAt: null,
-        reservePenaltyGiven: false
+        reservePenaltyGiven: false,
+        garageReserved: false
       });
 
       logAction(
         "Autó foglalás törölve",
         (car ? car.brand + " " + car.model : carId) +
         " | Foglaló: " + (person ? person.name : "ismeretlen")
+      );
+    };
+
+    window.markGarageReserved = function (carId) {
+      const car = carsData[carId];
+      if (!car) return;
+
+      update(ref(db, "cars/" + carId), {
+        garageReserved: true
+      });
+
+      logAction(
+        "Autó garázsba került",
+        (car ? car.brand + " " + car.model : carId) + " | Lefoglalt garázsba került"
       );
     };
 
@@ -948,6 +966,7 @@
         reservedBy: null,
         reservedAt: null,
         reservePenaltyGiven: false,
+        garageReserved: false,
         lastReturn: {
           tank: tank,
           allapot: allapot,
@@ -1042,7 +1061,8 @@
         penaltyGiven: false,
         reservedBy: null,
         reservedAt: null,
-        reservePenaltyGiven: false
+        reservePenaltyGiven: false,
+        garageReserved: false
       });
 
       logAction("Autó bentnek jelölve", car.brand + " " + car.model);
@@ -1060,7 +1080,8 @@
         reservedAt: null,
         reservePenaltyGiven: false,
         penaltyGiven: false,
-        takenAt: car.takenAt || Date.now()
+        takenAt: car.takenAt || Date.now(),
+        garageReserved: false
       });
 
       logAction("Autó kintnek jelölve", car.brand + " " + car.model);
@@ -1180,7 +1201,9 @@
                     ? "<span class='green'>Bent van</span>"
                     : overdue
                       ? "<span class='black'>Kint van, 24 óra lejárt</span>"
-                      : "<span class='orange'>Kint van</span>"
+                      : car.garageReserved
+                        ? "<span class='purple'>📌 Lefoglalt garázsba került</span>"
+                        : "<span class='orange'>Kint van</span>"
               }</div>
 
               ${
@@ -1270,6 +1293,13 @@
                           <input class="small-input" type="number" id="allapot${id}" min="0" max="100" placeholder="Állapot %">
                           <input class="wide-input" type="text" id="megjegyzes${id}" placeholder="Megjegyzés">
                           <button class="btn-success" onclick="returnCar('${id}')">Visszarakta</button>
+
+                          ${
+                            !car.garageReserved
+                              ? `<button class="btn-reserve" onclick="markGarageReserved('${id}')">Lefoglalt garázsba került</button>`
+                              : `<button class="btn-reserve" disabled>Lefoglalt garázsba került</button>`
+                          }
+
                           ${szerkesztoMod ? `
                             <button class="btn-warning" onclick="markCarIn('${id}')">Bentnek jelölés</button>
                           ` : ""}
