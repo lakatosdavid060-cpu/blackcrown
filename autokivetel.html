@@ -1200,7 +1200,9 @@
                   : car.returned
                     ? "<span class='green'>Bent van</span>"
                     : overdue
-                      ? "<span class='black'>Kint van, 24 óra lejárt</span>"
+                      ? (car.garageReserved
+                          ? "<span class='black'>📌 Lefoglalt garázsba került, 24 óra lejárt</span>"
+                          : "<span class='black'>Kint van, 24 óra lejárt</span>")
                       : car.garageReserved
                         ? "<span class='purple'>📌 Lefoglalt garázsba került</span>"
                         : "<span class='orange'>Kint van</span>"
@@ -1264,9 +1266,6 @@
                         </select>
                         <button class="btn" onclick="takeCar('${id}', document.getElementById('p${id}').value)">
                           Kivette
-                        </button>
-                        <button class="btn-reserve" onclick="reserveCar('${id}', document.getElementById('p${id}').value)">
-                          Lefoglalta
                         </button>
                         ${szerkesztoMod ? `
                           <button class="btn-warning" onclick="markCarOut('${id}')">
