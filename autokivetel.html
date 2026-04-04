@@ -545,7 +545,14 @@
 
     <div class="card">
       <h2>🚨 Értesítések / fekete pontok</h2>
-      <div id="notifications"></div>
+
+      <div id="latestNotification"></div>
+
+      <button id="toggleNotificationsBtn" class="btn-warning" onclick="toggleNotifications()" style="margin-top:8px;">
+        Összes megtekintése
+      </button>
+
+      <div id="allNotifications" style="display:none; margin-top:10px;"></div>
     </div>
 
     <div class="card" id="adminPanel" style="display:none;">
@@ -621,6 +628,7 @@
     let peopleData = {};
     let actionLogData = {};
     let szerkesztoMod = false;
+    let showAllNotifications = false;
 
     function setLoaderImage(index) {
       const img = document.getElementById("loaderImage");
@@ -722,6 +730,11 @@
       } else {
         alert("Hibás jelszó.");
       }
+    };
+
+    window.toggleNotifications = function () {
+      showAllNotifications = !showAllNotifications;
+      render();
     };
 
     window.addCar = function () {
@@ -1189,26 +1202,50 @@
           ).join("");
       }
 
-      const notificationsDiv = document.getElementById("notifications");
-      if (notificationsDiv) {
-        const notifications = Object.entries(actionLogData || {})
-          .map(([id, log]) => ({ id, ...log }))
-          .filter(log =>
-            (log.muvelet || "").toLowerCase().includes("fekete pont")
-          )
-          .sort((a, b) => Number(b.id) - Number(a.id))
-          .slice(0, 15);
+      const latestDiv = document.getElementById("latestNotification");
+      const allDiv = document.getElementById("allNotifications");
+      const toggleBtn = document.getElementById("toggleNotificationsBtn");
 
-        if (notifications.length === 0) {
-          notificationsDiv.innerHTML = "<div class='muted'>Még nincs fekete pontos értesítés.</div>";
-        } else {
-          notificationsDiv.innerHTML = notifications.map(log => `
+      const notifications = Object.entries(actionLogData || {})
+        .map(([id, log]) => ({ id, ...log }))
+        .filter(log =>
+          (log.muvelet || "").toLowerCase().includes("fekete pont")
+        )
+        .sort((a, b) => Number(b.id) - Number(a.id));
+
+      if (notifications.length === 0) {
+        latestDiv.innerHTML = "<div class='muted'>Nincs még fekete pontos esemény.</div>";
+        allDiv.innerHTML = "";
+        allDiv.style.display = "none";
+        if (toggleBtn) toggleBtn.style.display = "none";
+      } else {
+        if (toggleBtn) {
+          toggleBtn.style.display = "inline-block";
+          toggleBtn.textContent = showAllNotifications ? "Összes elrejtése" : "Összes megtekintése";
+        }
+
+        const latest = notifications[0];
+
+        latestDiv.innerHTML = `
+          <div class="item" style="border:2px solid #ef4444; box-shadow: 0 0 20px rgba(239,68,68,0.18);">
+            <div><strong>${latest.muvelet || "Értesítés"}</strong></div>
+            <div class="muted">${latest.ido || "-"}</div>
+            <div class="top-space">${latest.adat || "-"}</div>
+          </div>
+        `;
+
+        if (showAllNotifications) {
+          allDiv.style.display = "block";
+          allDiv.innerHTML = notifications.slice(0, 20).map(log => `
             <div class="item">
               <div><strong>${log.muvelet || "Értesítés"}</strong></div>
               <div class="muted">${log.ido || "-"}</div>
               <div class="top-space">${log.adat || "-"}</div>
             </div>
           `).join("");
+        } else {
+          allDiv.style.display = "none";
+          allDiv.innerHTML = "";
         }
       }
 
