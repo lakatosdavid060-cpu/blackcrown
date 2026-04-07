@@ -3,426 +3,281 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Ordogok Prémium Dashboard</title>
+  <title>Főoldal</title>
   <style>
     * {
       box-sizing: border-box;
-      margin: 0;
-      padding: 0;
+    }
+
+    :root {
+      --bg: #0f1115;
+      --panel: #171a21;
+      --panel-hover: #1e222b;
+      --border: #2a2f3a;
+      --text: #f5f7fb;
+      --muted: #9aa3b2;
+      --accent: #ffffff;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+      --radius: 18px;
     }
 
     body {
-      font-family: Arial, sans-serif;
-      background: #0b1220;
-      color: white;
+      margin: 0;
       min-height: 100vh;
-      display: flex;
-    }
-
-    .sidebar {
-      width: 270px;
-      background: linear-gradient(180deg, #111827, #0f172a);
-      border-right: 1px solid rgba(255,255,255,0.08);
-      padding: 24px 18px;
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-      box-shadow: 4px 0 20px rgba(0,0,0,0.25);
-    }
-
-    .logo {
-      font-size: 28px;
-      font-weight: bold;
-      color: #60a5fa;
-    }
-
-    .logo span {
-      color: white;
-    }
-
-    .side-info {
-      font-size: 13px;
-      color: #94a3b8;
-      line-height: 1.5;
-    }
-
-    .menu {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .menu a {
-      text-decoration: none;
-      color: white;
-      padding: 13px 14px;
-      border-radius: 12px;
-      background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(255,255,255,0.05);
-      transition: 0.25s ease;
-    }
-
-    .menu a:hover {
-      background: #2563eb;
-      transform: translateX(4px);
-      box-shadow: 0 10px 20px rgba(37,99,235,0.35);
-    }
-
-    .main {
-      flex: 1;
-      padding: 24px;
+      font-family: Arial, sans-serif;
       background:
-        radial-gradient(circle at top right, rgba(37,99,235,0.15), transparent 25%),
-        radial-gradient(circle at bottom left, rgba(168,85,247,0.12), transparent 25%),
-        #0b1220;
+        radial-gradient(circle at top, rgba(255,255,255,0.04), transparent 30%),
+        linear-gradient(180deg, #0d0f14 0%, #11141b 100%);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 20px;
     }
 
-    .topbar {
-      display: flex;
-      justify-content: space-between;
-      align-items: stretch;
-      gap: 20px;
-      flex-wrap: wrap;
+    .wrap {
+      width: 100%;
+      max-width: 760px;
+    }
+
+    .box {
+      background: rgba(23, 26, 33, 0.88);
+      border: 1px solid var(--border);
+      border-radius: 28px;
+      padding: 34px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+    }
+
+    .top {
+      text-align: center;
       margin-bottom: 28px;
     }
 
-    .top-left {
-      flex: 1;
-      min-width: 280px;
-    }
-
-    .top-left h1 {
-      font-size: 32px;
-      margin-bottom: 8px;
-    }
-
-    .top-left p {
-      color: #94a3b8;
-      margin-bottom: 16px;
-    }
-
-    .search-box {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-
-    .search-box input {
-      flex: 1;
-      min-width: 220px;
-      padding: 12px 14px;
-      border-radius: 12px;
-      border: 1px solid rgba(255,255,255,0.08);
-      background: rgba(255,255,255,0.05);
-      color: white;
-      outline: none;
-    }
-
-    .search-box input::placeholder {
-      color: #94a3b8;
-    }
-
-    .search-box button {
-      padding: 12px 16px;
-      border: none;
-      border-radius: 12px;
-      background: #2563eb;
-      color: white;
-      font-weight: bold;
-      cursor: pointer;
-      transition: 0.2s ease;
-    }
-
-    .search-box button:hover {
-      background: #1d4ed8;
-    }
-
-    .profile-card {
-      min-width: 260px;
-      background: rgba(255,255,255,0.05);
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 18px;
-      padding: 18px;
-      box-shadow: 0 10px 24px rgba(0,0,0,0.2);
-    }
-
-    .profile-title {
-      font-size: 18px;
-      margin-bottom: 8px;
-    }
-
-    .profile-sub {
-      color: #94a3b8;
-      font-size: 14px;
-      margin-bottom: 14px;
-    }
-
-    .clock {
-      font-size: 28px;
-      font-weight: bold;
-      margin-bottom: 6px;
-      color: #60a5fa;
-    }
-
-    .date {
-      color: #cbd5e1;
-      font-size: 14px;
-    }
-
-    .stats {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 18px;
-      margin-bottom: 24px;
-    }
-
-    .stat-box {
-      background: rgba(255,255,255,0.05);
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 16px;
-      padding: 18px;
-    }
-
-    .stat-box h3 {
-      font-size: 14px;
-      color: #94a3b8;
-      margin-bottom: 10px;
-      font-weight: normal;
-    }
-
-    .stat-box .value {
-      font-size: 26px;
-      font-weight: bold;
-      color: #60a5fa;
-    }
-
-    .cards {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      gap: 22px;
-    }
-
-    .card {
-      background: rgba(255,255,255,0.05);
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 18px;
-      padding: 22px;
-      box-shadow: 0 10px 24px rgba(0,0,0,0.2);
-      transition: 0.25s ease;
-    }
-
-    .card:hover {
-      transform: translateY(-5px);
-      border-color: rgba(96,165,250,0.45);
-      box-shadow: 0 16px 30px rgba(0,0,0,0.28);
-    }
-
-    .card .icon {
-      font-size: 34px;
-      margin-bottom: 14px;
-    }
-
-    .card h3 {
-      font-size: 20px;
-      margin-bottom: 10px;
-    }
-
-    .card p {
-      color: #cbd5e1;
-      font-size: 14px;
-      line-height: 1.5;
-      margin-bottom: 16px;
-      min-height: 42px;
-    }
-
-    .card a {
+    .badge {
       display: inline-block;
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 18px;
+      background: rgba(255,255,255,0.02);
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      font-size: 38px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+
+    .subtitle {
+      margin: 0;
+      color: var(--muted);
+      font-size: 16px;
+      line-height: 1.5;
+    }
+
+    .grid {
+      display: grid;
+      gap: 14px;
+      margin-top: 30px;
+    }
+
+    .link-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
       text-decoration: none;
-      color: white;
-      background: #2563eb;
-      padding: 10px 14px;
-      border-radius: 10px;
-      font-size: 14px;
-      font-weight: bold;
-      transition: 0.2s ease;
+      color: var(--text);
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px 20px;
+      transition: 0.22s ease;
     }
 
-    .card a:hover {
-      background: #1d4ed8;
+    .link-card:hover {
+      transform: translateY(-2px);
+      background: var(--panel-hover);
+      border-color: #3a4150;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.22);
     }
 
-    .footer-box {
-      margin-top: 24px;
-      padding: 18px;
-      border-radius: 16px;
+    .left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      min-width: 0;
+    }
+
+    .icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
       background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(255,255,255,0.07);
-      color: #94a3b8;
+      border: 1px solid rgba(255,255,255,0.06);
+      flex-shrink: 0;
+    }
+
+    .text {
+      min-width: 0;
+    }
+
+    .title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 5px;
+    }
+
+    .desc {
+      color: var(--muted);
       font-size: 14px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
-    .hidden {
-      display: none;
+    .arrow {
+      flex-shrink: 0;
+      font-size: 22px;
+      color: #c6cedb;
+      opacity: 0.8;
+      transition: transform 0.2s ease;
     }
 
-    @media (max-width: 900px) {
-      body {
-        flex-direction: column;
+    .link-card:hover .arrow {
+      transform: translateX(4px);
+    }
+
+    .footer {
+      margin-top: 24px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    @media (max-width: 640px) {
+      .box {
+        padding: 22px;
+        border-radius: 22px;
       }
 
-      .sidebar {
-        width: 100%;
-        border-right: none;
-        border-bottom: 1px solid rgba(255,255,255,0.08);
+      h1 {
+        font-size: 30px;
       }
 
-      .menu a:hover {
-        transform: none;
+      .subtitle {
+        font-size: 15px;
+      }
+
+      .link-card {
+        padding: 16px;
+      }
+
+      .title {
+        font-size: 16px;
+      }
+
+      .desc {
+        white-space: normal;
+      }
+
+      .icon {
+        width: 44px;
+        height: 44px;
+        font-size: 20px;
       }
     }
   </style>
 </head>
 <body>
+  <div class="wrap">
+    <div class="box">
+      <div class="top">
+        <div class="badge">Gyors elérés</div>
+        <h1>Főoldal</h1>
+        <p class="subtitle">Itt egy helyen eléred az összes fontos oldalt külön gombokkal.</p>
+      </div>
 
-  <aside class="sidebar">
-    <div class="logo">👑 <span>Ordogok</span></div>
+      <div class="grid">
+        <a class="link-card" href="https://ordogok.vercel.app/pdf_kompakt.html" target="_blank">
+          <div class="left">
+            <div class="icon">📄</div>
+            <div class="text">
+              <div class="title">PDF Kompakt</div>
+              <div class="desc">PDF kezelő oldal megnyitása</div>
+            </div>
+          </div>
+          <div class="arrow">›</div>
+        </a>
 
-    <div class="side-info">
-      Prémium vezérlőpult<br>
-      Gyors elérés minden fontos oldalhoz
+        <a class="link-card" href="https://ordogok.vercel.app/autokivetel.html" target="_blank">
+          <div class="left">
+            <div class="icon">🚗</div>
+            <div class="text">
+              <div class="title">Autókivétel</div>
+              <div class="desc">Autókivétel felület megnyitása</div>
+            </div>
+          </div>
+          <div class="arrow">›</div>
+        </a>
+
+        <a class="link-card" href="https://lakatosdavid060-cpu.github.io/blackcrown/rablas.html" target="_blank">
+          <div class="left">
+            <div class="icon">💰</div>
+            <div class="text">
+              <div class="title">Rablás</div>
+              <div class="desc">Rablás oldal megnyitása</div>
+            </div>
+          </div>
+          <div class="arrow">›</div>
+        </a>
+
+        <a class="link-card" href="https://lakatosdavid060-cpu.github.io/blackcrown/" target="_blank">
+          <div class="left">
+            <div class="icon">👑</div>
+            <div class="text">
+              <div class="title">Ordogok</div>
+              <div class="desc">Ördögök főoldal megnyitása</div>
+            </div>
+          </div>
+          <div class="arrow">›</div>
+        </a>
+
+        <a class="link-card" href="https://lakatosdavid060-cpu.github.io/blackcrown/log.html" target="_blank">
+          <div class="left">
+            <div class="icon">📜</div>
+            <div class="text">
+              <div class="title">Log</div>
+              <div class="desc">Napló oldal megnyitása</div>
+            </div>
+          </div>
+          <div class="arrow">›</div>
+        </a>
+
+        <a class="link-card" href="https://console.firebase.google.com/u/0/project/ordog-fizetes/database/ordog-fizetes-default-rtdb/data" target="_blank">
+          <div class="left">
+            <div class="icon">🔥</div>
+            <div class="text">
+              <div class="title">Firebase adatbázis</div>
+              <div class="desc">Realtime Database megnyitása</div>
+            </div>
+          </div>
+          <div class="arrow">›</div>
+        </a>
+      </div>
+
+      <div class="footer">
+        Egyszerű • letisztult • gyors
+      </div>
     </div>
-
-    <nav class="menu">
-      <a href="https://ordogok.vercel.app/pdf_kompakt.html" target="_blank">📄 PDF Kompakt</a>
-      <a href="https://ordogok.vercel.app/autokivetel.html" target="_blank">🚗 Autókivétel</a>
-      <a href="https://lakatosdavid060-cpu.github.io/blackcrown/rablas.html" target="_blank">💰 Rablás</a>
-      <a href="https://lakatosdavid060-cpu.github.io/blackcrown/" target="_blank">👑 BlackCrown főoldal</a>
-      <a href="https://lakatosdavid060-cpu.github.io/blackcrown/log.html" target="_blank">📜 Log</a>
-      <a href="https://console.firebase.google.com/u/0/project/ordog-fizetes/database/ordog-fizetes-default-rtdb/data" target="_blank">🔥 Firebase adatbázis</a>
-    </nav>
-  </aside>
-
-  <main class="main">
-    <div class="topbar">
-      <div class="top-left">
-        <h1>Prémium Dashboard</h1>
-        <p>Egy helyen az összes fontos oldal és gyors funkció.</p>
-
-        <div class="search-box">
-          <input type="text" id="searchInput" placeholder="Keresés az oldalak között...">
-          <button onclick="filterCards()">Keresés</button>
-        </div>
-      </div>
-
-      <div class="profile-card">
-        <div class="profile-title">Admin profil</div>
-        <div class="profile-sub">Rendszer állapot: online</div>
-        <div class="clock" id="clock">00:00:00</div>
-        <div class="date" id="date">Betöltés...</div>
-      </div>
-    </div>
-
-    <section class="stats">
-      <div class="stat-box">
-        <h3>Összes oldal</h3>
-        <div class="value">6</div>
-      </div>
-      <div class="stat-box">
-        <h3>Rendszer</h3>
-        <div class="value">Aktív</div>
-      </div>
-      <div class="stat-box">
-        <h3>Állapot</h3>
-        <div class="value">Stabil</div>
-      </div>
-    </section>
-
-    <section class="cards" id="cardContainer">
-      <div class="card" data-name="pdf kompakt">
-        <div class="icon">📄</div>
-        <h3>PDF Kompakt</h3>
-        <p>Gyors hozzáférés a kompakt PDF felülethez.</p>
-        <a href="https://ordogok.vercel.app/pdf_kompakt.html" target="_blank">Megnyitás</a>
-      </div>
-
-      <div class="card" data-name="autokivetel autó kivétel">
-        <div class="icon">🚗</div>
-        <h3>Autókivétel</h3>
-        <p>Autókivétel oldal közvetlen eléréssel.</p>
-        <a href="https://ordogok.vercel.app/autokivetel.html" target="_blank">Megnyitás</a>
-      </div>
-
-      <div class="card" data-name="rablas rablás">
-        <div class="icon">💰</div>
-        <h3>Rablás</h3>
-        <p>A rablás funkció külön oldala.</p>
-        <a href="https://lakatosdavid060-cpu.github.io/blackcrown/rablas.html" target="_blank">Megnyitás</a>
-      </div>
-
-      <div class="card" data-name="blackcrown főoldal">
-        <div class="icon">👑</div>
-        <h3>BlackCrown főoldal</h3>
-        <p>A rendszer főoldala és központi belépési pontja.</p>
-        <a href="https://lakatosdavid060-cpu.github.io/blackcrown/" target="_blank">Megnyitás</a>
-      </div>
-
-      <div class="card" data-name="log napló">
-        <div class="icon">📜</div>
-        <h3>Log</h3>
-        <p>Naplózott események és információk megtekintése.</p>
-        <a href="https://lakatosdavid060-cpu.github.io/blackcrown/log.html" target="_blank">Megnyitás</a>
-      </div>
-
-      <div class="card" data-name="firebase adatbazis adatbázis">
-        <div class="icon">🔥</div>
-        <h3>Firebase adatbázis</h3>
-        <p>Közvetlen ugrás a realtime adatbázis kezelőfelületre.</p>
-        <a href="https://console.firebase.google.com/u/0/project/ordog-fizetes/database/ordog-fizetes-default-rtdb/data" target="_blank">Megnyitás</a>
-      </div>
-    </section>
-
-    <div class="footer-box">
-      Tipp: ezt a dashboardot beállíthatod kezdőlapnak is, így minden fontos linked azonnal elérhető lesz.
-    </div>
-  </main>
-
-  <script>
-    function updateClock() {
-      const now = new Date();
-
-      const time = now.toLocaleTimeString('hu-HU');
-      const date = now.toLocaleDateString('hu-HU', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        weekday: 'long'
-      });
-
-      document.getElementById('clock').textContent = time;
-      document.getElementById('date').textContent = date;
-    }
-
-    setInterval(updateClock, 1000);
-    updateClock();
-
-    function filterCards() {
-      const input = document.getElementById('searchInput').value.toLowerCase();
-      const cards = document.querySelectorAll('.card');
-
-      cards.forEach(card => {
-        const name = card.getAttribute('data-name').toLowerCase();
-        const title = card.querySelector('h3').textContent.toLowerCase();
-
-        if (name.includes(input) || title.includes(input)) {
-          card.classList.remove('hidden');
-        } else {
-          card.classList.add('hidden');
-        }
-      });
-    }
-
-    document.getElementById('searchInput').addEventListener('keyup', filterCards);
-  </script>
-
+  </div>
 </body>
 </html>
