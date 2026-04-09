@@ -7,68 +7,84 @@
 
 <style>
 body{
-font-family:Arial;
-background:#020617;
-color:white;
-padding:20px;
-margin:0;
+  font-family:Arial;
+  background:#020617;
+  color:white;
+  padding:20px;
+  margin:0;
 }
 
 h2{
-margin-top:0;
+  margin-top:0;
 }
 
 .toolbar{
-display:flex;
-gap:10px;
-flex-wrap:wrap;
-margin:15px 0;
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin:15px 0;
 }
 
 button{
-padding:8px 12px;
-border:none;
-border-radius:8px;
-cursor:pointer;
-font-weight:bold;
+  padding:8px 12px;
+  border:none;
+  border-radius:8px;
+  cursor:pointer;
+  font-weight:bold;
+}
+
+button:disabled{
+  opacity:0.45;
+  cursor:not-allowed;
 }
 
 .orange{
-background:#d97706;
-color:white;
+  background:#d97706;
+  color:white;
 }
 
 .red{
-background:#dc2626;
-color:white;
+  background:#dc2626;
+  color:white;
 }
 
-.blue{
-background:#2563eb;
-color:white;
+.green{
+  background:#16a34a;
+  color:white;
+}
+
+.gray{
+  background:#475569;
+  color:white;
 }
 
 table{
-width:100%;
-border-collapse:collapse;
-margin-top:20px;
-background:#0f172a;
+  width:100%;
+  border-collapse:collapse;
+  margin-top:20px;
+  background:#0f172a;
 }
 
 th,td{
-border:1px solid #334155;
-padding:8px;
-text-align:center;
+  border:1px solid #334155;
+  padding:8px;
+  text-align:center;
 }
 
 th{
-background:#1e293b;
+  background:#1e293b;
 }
 
 .info{
-margin-top:10px;
-color:#94a3b8;
-font-size:13px;
+  margin-top:10px;
+  color:#94a3b8;
+  font-size:13px;
+}
+
+.status{
+  margin-top:10px;
+  font-size:14px;
+  font-weight:bold;
 }
 </style>
 
@@ -79,21 +95,25 @@ font-size:13px;
 <h2>🚗 Autókivétel log</h2>
 
 <div class="toolbar">
-  <button class="orange" onclick="cleanupLogs(3)">🧹 3 napnál régebbi törlése</button>
-  <button class="orange" onclick="cleanupLogs(7)">🧹 7 napnál régebbi törlése</button>
-  <button class="red" onclick="deleteAllLogs()">❌ Összes autó log törlése</button>
+  <button id="editModeBtn" class="gray" onclick="toggleEditMode()">🔐 Szerkesztő üzemmód: KI</button>
+  <button id="btn3nap" class="orange" onclick="cleanupLogs(3)" disabled>🧹 3 napnál régebbi törlése</button>
+  <button id="btn7nap" class="orange" onclick="cleanupLogs(7)" disabled>🧹 7 napnál régebbi törlése</button>
+  <button id="btnTorolMindent" class="red" onclick="deleteAllLogs()" disabled>❌ Összes autó log törlése</button>
 </div>
 
+<div class="status" id="editStatus">Szerkesztő mód jelenleg: KI</div>
+
 <div class="info">
-Csak az autós műveletek jelennek meg. A törlés a Firebase <b>actionLog</b> útvonaláról történik.
+  Csak az autós műveletek jelennek meg. A törlés a Firebase <b>actionLog</b> útvonaláról történik.
+  A törlési műveletek csak szerkesztő üzemmódban használhatók.
 </div>
 
 <table>
 <thead>
 <tr>
-<th>Idő</th>
-<th>Művelet</th>
-<th>Adat</th>
+  <th>Idő</th>
+  <th>Művelet</th>
+  <th>Adat</th>
 </tr>
 </thead>
 
@@ -119,13 +139,55 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
 const autoTabla = document.getElementById("autoTabla");
-const autoLogRef = ref(db,"actionLog");
+const autoLogRef = ref(db, "actionLog");
+
+const editModeBtn = document.getElementById("editModeBtn");
+const editStatus = document.getElementById("editStatus");
+const btn3nap = document.getElementById("btn3nap");
+const btn7nap = document.getElementById("btn7nap");
+const btnTorolMindent = document.getElementById("btnTorolMindent");
 
 let autoLogs = [];
+let editMode = false;
 
-onValue(autoLogRef,(snapshot)=>{
+const EDIT_PASSWORD = "1234"; // <-- ezt írd át
 
-  autoTabla.innerHTML="";
+function updateEditModeUI(){
+  btn3nap.disabled = !editMode;
+  btn7nap.disabled = !editMode;
+  btnTorolMindent.disabled = !editMode;
+
+  if(editMode){
+    editModeBtn.textContent = "🔓 Szerkesztő üzemmód: BE";
+    editModeBtn.className = "green";
+    editStatus.textContent = "Szerkesztő mód jelenleg: BE";
+    editStatus.style.color = "#4ade80";
+  } else {
+    editModeBtn.textContent = "🔐 Szerkesztő üzemmód: KI";
+    editModeBtn.className = "gray";
+    editStatus.textContent = "Szerkesztő mód jelenleg: KI";
+    editStatus.style.color = "#f87171";
+  }
+}
+
+window.toggleEditMode = function(){
+  if(!editMode){
+    const jelszo = prompt("Add meg a szerkesztő mód jelszavát:");
+    if(jelszo !== EDIT_PASSWORD){
+      alert("Hibás jelszó!");
+      return;
+    }
+    editMode = true;
+  } else {
+    editMode = false;
+  }
+
+  updateEditModeUI();
+};
+
+onValue(autoLogRef, (snapshot)=>{
+
+  autoTabla.innerHTML = "";
   autoLogs = [];
 
   if(!snapshot.exists()){
@@ -153,7 +215,6 @@ onValue(autoLogRef,(snapshot)=>{
   }
 
   autoLogs.forEach(data=>{
-
     const sor = document.createElement("tr");
 
     sor.innerHTML = `
@@ -168,10 +229,14 @@ onValue(autoLogRef,(snapshot)=>{
 });
 
 window.cleanupLogs = async function(nap){
+  if(!editMode){
+    alert("A törlés csak szerkesztő üzemmódban engedélyezett.");
+    return;
+  }
+
   if(!confirm(`Biztos törlöd a ${nap} napnál régebbi autó logokat?`)) return;
 
   const hatarido = Date.now() - (nap * 24 * 60 * 60 * 1000);
-
   let torolt = 0;
 
   for (const log of autoLogs) {
@@ -187,6 +252,11 @@ window.cleanupLogs = async function(nap){
 };
 
 window.deleteAllLogs = async function(){
+  if(!editMode){
+    alert("Az összes törlés csak szerkesztő üzemmódban engedélyezett.");
+    return;
+  }
+
   if(!confirm("Biztos törlöd az összes autó logot?")) return;
   if(prompt("Írd be: TORLES") !== "TORLES") return;
 
@@ -199,6 +269,8 @@ window.deleteAllLogs = async function(){
 
   alert(`Törölve: ${torolt} db autó log.`);
 };
+
+updateEditModeUI();
 
 </script>
 
