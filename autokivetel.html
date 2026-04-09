@@ -518,6 +518,18 @@
   <div class="devil-bg devil3">👹</div>
 
   <div class="container">
+
+    <div class="card">
+      <h2>🔐 Bejelentkezés</h2>
+      <div class="row">
+        <input id="loginUsername" type="text" placeholder="Felhasználónév">
+        <input id="loginPassword" type="password" placeholder="Jelszó">
+        <button class="btn" onclick="login()">Belépés</button>
+        <button class="btn-danger" onclick="logout()">Kilépés</button>
+      </div>
+      <div id="currentUserBox" class="top-space muted">Nincs bejelentkezve</div>
+    </div>
+
     <div class="row" style="justify-content:space-between; align-items:center; margin-bottom:8px;">
       <h1>Autó kivétel / visszarakás rendszer</h1>
       <div>
@@ -566,6 +578,8 @@
       <h2 class="top-space">Új ember hozzáadása</h2>
       <div class="row">
         <input id="name" type="text" placeholder="Név pl. Kiss János">
+        <input id="username" type="text" placeholder="Felhasználónév pl. kissj">
+        <input id="password" type="password" placeholder="Jelszó">
         <button class="btn" onclick="addPerson()">Ember hozzáadása</button>
       </div>
 
@@ -630,6 +644,9 @@
     let szerkesztoMod = false;
     let showAllNotifications = false;
 
+    let currentUser = null;
+    let currentPersonId = null;
+
     function setLoaderImage(index) {
       const img = document.getElementById("loaderImage");
       if (!img) return;
@@ -675,6 +692,19 @@
       return true;
     }
 
+    function refreshCurrentUserFromStorage() {
+      const savedId = localStorage.getItem("currentPersonId");
+
+      if (!savedId || !peopleData[savedId]) {
+        currentUser = null;
+        currentPersonId = null;
+        return;
+      }
+
+      currentPersonId = savedId;
+      currentUser = peopleData[savedId];
+    }
+
     function formatTime(ms) {
       if (ms <= 0) return "LEJÁRT";
 
@@ -713,6 +743,43 @@
         }
       });
     }
+
+    window.login = function () {
+      const username = document.getElementById("loginUsername").value.trim();
+      const password = document.getElementById("loginPassword").value.trim();
+
+      if (!username || !password) {
+        alert("Add meg a felhasználónevet és a jelszót.");
+        return;
+      }
+
+      const found = Object.entries(peopleData).find(([pid, p]) =>
+        (p.username || "") === username && (p.password || "") === password
+      );
+
+      if (!found) {
+        alert("Hibás felhasználónév vagy jelszó.");
+        return;
+      }
+
+      currentPersonId = found[0];
+      currentUser = found[1];
+      localStorage.setItem("currentPersonId", currentPersonId);
+
+      logAction("Bejelentkezés", currentUser.name || "ismeretlen");
+      render();
+    };
+
+    window.logout = function () {
+      if (currentUser) {
+        logAction("Kijelentkezés", currentUser.name || "ismeretlen");
+      }
+
+      currentUser = null;
+      currentPersonId = null;
+      localStorage.removeItem("currentPersonId");
+      render();
+    };
 
     window.toggleSzerkesztoMod = function () {
       if (szerkesztoMod) {
@@ -778,30 +845,45 @@
       if (!szerkesztoCheck()) return;
 
       const name = document.getElementById("name").value.trim();
+      const username = document.getElementById("username").value.trim();
+      const password = document.getElementById("password").value.trim();
 
-      if (!name) {
-        alert("Adj meg egy nevet.");
+      if (!name || !username || !password) {
+        alert("Add meg a nevet, felhasználónevet és jelszót.");
         return;
       }
 
-      const exists = Object.values(peopleData).some(
+      const nameExists = Object.values(peopleData).some(
         p => (p.name || "").toLowerCase() === name.toLowerCase()
       );
 
-      if (exists) {
+      if (nameExists) {
         alert("Ez a név már létezik.");
+        return;
+      }
+
+      const usernameExists = Object.values(peopleData).some(
+        p => (p.username || "").toLowerCase() === username.toLowerCase()
+      );
+
+      if (usernameExists) {
+        alert("Ez a felhasználónév már létezik.");
         return;
       }
 
       const newRef = push(peopleRef);
       set(newRef, {
         name,
+        username,
+        password,
         red: 0
       });
 
-      logAction("Ember hozzáadva", name);
+      logAction("Ember hozzáadva", `${name} | felhasználónév: ${username}`);
 
       document.getElementById("name").value = "";
+      document.getElementById("username").value = "";
+      document.getElementById("password").value = "";
     };
 
     window.giveRedPoint = function () {
@@ -857,17 +939,34 @@
       logAction("Kollektív fekete pont kiosztva", "Mindenkinek +1 fekete pont");
     };
 
-    window.takeCar = function (carId, personId) {
-      if (!personId) {
-        alert("Válassz embert.");
+    window.takeCar = function (carId) {
+      refreshCurrentUserFromStorage();
+
+      if (!currentUser || !currentPersonId) {
+        alert("Előbb jelentkezz be.");
         return;
       }
 
       const car = carsData[carId];
-      const person = peopleData[personId];
+      const person = peopleData[currentPersonId];
+
+      if (!car) {
+        alert("Az autó nem található.");
+        return;
+      }
+
+      if (!car.returned && car.takenBy !== currentPersonId) {
+        alert("Ez az autó már ki van véve.");
+        return;
+      }
+
+      if (car.reservedBy && car.reservedBy !== currentPersonId) {
+        alert("Ez az autó más által van lefoglalva.");
+        return;
+      }
 
       update(ref(db, "cars/" + carId), {
-        takenBy: personId,
+        takenBy: currentPersonId,
         takenAt: Date.now(),
         returned: false,
         penaltyGiven: false,
@@ -880,18 +979,20 @@
       logAction(
         "Autó kivéve",
         (car ? car.brand + " " + car.model : carId) +
-        " | Kivette: " + (person ? person.name : personId)
+        " | Kivette: " + (person ? person.name : "ismeretlen")
       );
     };
 
-    window.reserveCar = function (carId, personId) {
-      if (!personId) {
-        alert("Válassz embert.");
+    window.reserveCar = function (carId) {
+      refreshCurrentUserFromStorage();
+
+      if (!currentUser || !currentPersonId) {
+        alert("Foglaláshoz be kell jelentkezned.");
         return;
       }
 
       const car = carsData[carId];
-      const person = peopleData[personId];
+      const person = peopleData[currentPersonId];
 
       if (!car) return;
 
@@ -900,8 +1001,13 @@
         return;
       }
 
+      if (car.reservedBy && car.reservedBy !== currentPersonId) {
+        alert("Ez az autó már le van foglalva.");
+        return;
+      }
+
       update(ref(db, "cars/" + carId), {
-        reservedBy: personId,
+        reservedBy: currentPersonId,
         reservedAt: Date.now(),
         reservePenaltyGiven: false,
         takenBy: null,
@@ -913,13 +1019,22 @@
       logAction(
         "Autó lefoglalva",
         (car ? car.brand + " " + car.model : carId) +
-        " | Lefoglalta: " + (person ? person.name : personId)
+        " | Lefoglalta: " + (person ? person.name : currentPersonId)
       );
     };
 
     window.cancelReserve = function (carId) {
+      refreshCurrentUserFromStorage();
+
       const car = carsData[carId];
       const person = peopleData[car?.reservedBy];
+
+      if (!car) return;
+
+      if (!szerkesztoMod && car.reservedBy !== currentPersonId) {
+        alert("Csak a foglaló vagy szerkesztő mód törölheti a foglalást.");
+        return;
+      }
 
       update(ref(db, "cars/" + carId), {
         reservedBy: null,
@@ -936,8 +1051,15 @@
     };
 
     window.markGarageReserved = function (carId) {
+      refreshCurrentUserFromStorage();
+
       const car = carsData[carId];
       if (!car) return;
+
+      if (!szerkesztoMod && car.takenBy !== currentPersonId) {
+        alert("Csak az jelölheti ezt, aki kivette az autót.");
+        return;
+      }
 
       update(ref(db, "cars/" + carId), {
         garageReserved: true
@@ -950,7 +1072,21 @@
     };
 
     window.returnCar = function (carId) {
+      refreshCurrentUserFromStorage();
+
+      if (!currentUser || !currentPersonId) {
+        alert("Visszarakáshoz be kell jelentkezned.");
+        return;
+      }
+
       const car = carsData[carId];
+      if (!car) return;
+
+      if (!szerkesztoMod && car.takenBy !== currentPersonId) {
+        alert("Csak az rakhatja vissza az autót, aki kivette.");
+        return;
+      }
+
       const person = peopleData[car?.takenBy];
       const takenById = car.takenBy;
 
@@ -1001,16 +1137,16 @@
       if (allapot < 90) penalty++;
 
       if (penalty > 0 && takenById) {
-        const person = peopleData[takenById];
+        const takenPerson = peopleData[takenById];
 
-        if (person) {
+        if (takenPerson) {
           update(ref(db, "people/" + takenById), {
-            red: (person.red || 0) + penalty
+            red: (takenPerson.red || 0) + penalty
           });
 
           logAction(
             "Fekete pont visszarakás miatt",
-            (person.name || "ismeretlen") +
+            (takenPerson.name || "ismeretlen") +
             " | +" + penalty +
             " | Tank: " + tank + "%" +
             " | Állapot: " + allapot + "%"
@@ -1044,6 +1180,12 @@
       if (prompt("Írd be: TORLES") !== "TORLES") return;
 
       const person = peopleData[personId];
+      if (currentPersonId === personId) {
+        currentUser = null;
+        currentPersonId = null;
+        localStorage.removeItem("currentPersonId");
+      }
+
       logAction("Ember törölve", person ? person.name : personId);
 
       remove(ref(db, "people/" + personId));
@@ -1170,6 +1312,7 @@
 
     onValue(peopleRef, (snap) => {
       peopleData = snap.val() || {};
+      refreshCurrentUserFromStorage();
       render();
     });
 
@@ -1179,10 +1322,12 @@
     });
 
     function render() {
+      refreshCurrentUserFromStorage();
       checkPenalty(carsData, peopleData);
 
       const adminPanel = document.getElementById("adminPanel");
       const editorStatus = document.getElementById("editorStatus");
+      const currentUserBox = document.getElementById("currentUserBox");
 
       if (adminPanel) {
         adminPanel.style.display = szerkesztoMod ? "block" : "none";
@@ -1191,6 +1336,16 @@
       if (editorStatus) {
         editorStatus.textContent = szerkesztoMod ? "Bekapcsolva" : "Kikapcsolva";
         editorStatus.className = "editor-status " + (szerkesztoMod ? "green" : "muted");
+      }
+
+      if (currentUserBox) {
+        if (currentUser) {
+          currentUserBox.innerHTML = `Bejelentkezve: <strong>${currentUser.name}</strong> (${currentUser.username || "-"})`;
+          currentUserBox.className = "top-space green";
+        } else {
+          currentUserBox.innerHTML = "Nincs bejelentkezve";
+          currentUserBox.className = "top-space muted";
+        }
       }
 
       const penaltySelect = document.getElementById("penaltyPerson");
@@ -1300,7 +1455,7 @@
                     ` : ""}
 
                     <div class="row top-space">
-                      <button class="btn" onclick="takeCar('${id}', '${car.reservedBy}')">
+                      <button class="btn" onclick="takeCar('${id}')">
                         Kivétel foglalásból
                       </button>
                       <button class="btn-danger" onclick="cancelReserve('${id}')">
@@ -1330,14 +1485,11 @@
                         </div>
                       ` : ""}
                       <div class="row top-space">
-                        <select id="p${id}">
-                          <option value="">-- válassz embert --</option>
-                          ${Object.entries(peopleData).map(([pid, p]) =>
-                            `<option value="${pid}">${p.name}</option>`
-                          ).join("")}
-                        </select>
-                        <button class="btn" onclick="takeCar('${id}', document.getElementById('p${id}').value)">
+                        <button class="btn" onclick="takeCar('${id}')">
                           Kivette
+                        </button>
+                        <button class="btn-reserve" onclick="reserveCar('${id}')">
+                          Lefoglalom
                         </button>
                         ${szerkesztoMod ? `
                           <button class="btn-warning" onclick="markCarOut('${id}')">
@@ -1393,7 +1545,11 @@
           peopleDiv.innerHTML += `
             <div class="item">
               <div class="row">
-                <div><strong>${p.name}</strong> - <span class="black">${p.red || 0} fekete pont</span></div>
+                <div>
+                  <strong>${p.name}</strong>
+                  <span class="muted">(${p.username || "-"})</span>
+                  - <span class="black">${p.red || 0} fekete pont</span>
+                </div>
                 ${szerkesztoMod ? `<button class="btn-danger" onclick="deletePerson('${pid}')">Ember törlése</button>` : ""}
               </div>
             </div>
@@ -1409,6 +1565,8 @@
     }, 1000);
 
     window.addEventListener("load", () => {
+      refreshCurrentUserFromStorage();
+
       const loader = document.getElementById("loader");
 
       startLoaderSlideshow();
