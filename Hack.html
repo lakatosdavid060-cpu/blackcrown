@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<title>RP Hack</title>
+<style>
+  body {
+    background: rgba(0,0,0,0.8);
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+    font-family: Arial;
+    color:white;
+  }
+
+  .box {
+    width:400px;
+    background:#111;
+    border:1px solid #2b2b2b;
+    border-radius:8px;
+    overflow:hidden;
+  }
+
+  .header {
+    padding:10px;
+    color:#facc15;
+    font-size:13px;
+    border-bottom:1px solid #222;
+  }
+
+  .content {
+    text-align:center;
+    padding:20px;
+  }
+
+  .word {
+    font-size:32px;
+    margin:15px 0;
+  }
+
+  .timer {
+    color:#facc15;
+    margin-bottom:10px;
+  }
+
+  .buttons {
+    display:flex;
+  }
+
+  button {
+    flex:1;
+    padding:12px;
+    border:none;
+    background:#e8db58;
+    font-weight:bold;
+    cursor:pointer;
+  }
+
+  button:first-child {
+    border-right:1px solid #000;
+  }
+
+  .status {
+    text-align:center;
+    padding:10px;
+    font-weight:bold;
+  }
+
+  .good { color:lightgreen; }
+  .bad { color:red; }
+
+  .keys {
+    text-align:center;
+    font-size:14px;
+    color:#ccc;
+    padding-bottom:10px;
+  }
+</style>
+</head>
+<body>
+
+<div class="box">
+  <div class="header">Szavak minijáték</div>
+
+  <div class="content">
+    <div id="progress">1/20</div>
+    <div class="timer" id="timer">15</div>
+    <div class="word" id="word">...</div>
+  </div>
+
+  <div class="buttons">
+    <button onclick="answer(true)">Láttad</button>
+    <button onclick="answer(false)">Új</button>
+  </div>
+
+  <!-- 🔥 EZ AZ ÚJ RÉSZ -->
+  <div class="keys">
+    A = Láttad &nbsp;&nbsp; | &nbsp;&nbsp; D = Új
+  </div>
+
+  <div class="status" id="status"></div>
+</div>
+
+<script>
+const WORDS = [
+  "Csendes","Tiszta","Zavarodott","Terhes",
+  "Pompás","Zord","Éles","Ferde",
+  "Háromszög","Szivacsos","Nedves",
+  "Fokoz","Viharos"
+];
+
+let shown = [];
+let current = "";
+let round = 1;
+let max = 20;
+let time = 15;
+let timer;
+let gameOver = false;
+
+function beep(type){
+  const ctx = new (window.AudioContext || window.webkitAudioContext)();
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+
+  osc.frequency.value = type==="good" ? 900 : 200;
+  gain.gain.value = 0.05;
+
+  osc.start();
+  osc.stop(ctx.currentTime + 0.1);
+}
+
+function getWord(){
+  if(shown.length > 2 && Math.random() < 0.4){
+    return shown[Math.floor(Math.random()*shown.length)];
+  }
+  return WORDS[Math.floor(Math.random()*WORDS.length)];
+}
+
+function next(){
+  current = getWord();
+  document.getElementById("word").textContent = current;
+  document.getElementById("progress").textContent = round + "/" + max;
+}
+
+function answer(seen){
+  if(gameOver) return;
+
+  let wasSeen = shown.includes(current);
+
+  if(seen === wasSeen){
+    beep("good");
+    document.getElementById("status").textContent = "✔️ Jó";
+    document.getElementById("status").className="status good";
+
+    shown.push(current);
+    round++;
+
+    if(round > max){
+      end(true);
+      return;
+    }
+
+    setTimeout(()=>{
+      document.getElementById("status").textContent="";
+      next();
+    },300);
+
+  } else {
+    end(false);
+  }
+}
+
+function end(win){
+  gameOver = true;
+  clearInterval(timer);
+
+  if(win){
+    document.getElementById("status").textContent="SIKERES HACK!";
+  } else {
+    document.getElementById("status").textContent="ELBUKTAD!";
+    beep("bad");
+  }
+}
+
+function start(){
+  shown=[];
+  round=1;
+  time=15;
+  gameOver=false;
+
+  document.getElementById("status").textContent="";
+  next();
+
+  timer = setInterval(()=>{
+    time--;
+    document.getElementById("timer").textContent=time;
+
+    if(time<=0){
+      end(false);
+    }
+  },1000);
+}
+
+start();
+
+document.addEventListener("keydown",(e)=>{
+  if(e.key.toLowerCase()==="a") answer(true);
+  if(e.key.toLowerCase()==="d") answer(false);
+});
+</script>
+
+</body>
+</html>
