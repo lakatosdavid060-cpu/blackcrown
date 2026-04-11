@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<title>Internet sebesség teszt</title>
+
+<style>
+body {
+    font-family: Arial;
+    text-align: center;
+    margin-top: 100px;
+}
+
+#speed {
+    font-size: 40px;
+    color: green;
+}
+</style>
+
+</head>
+
+<body>
+
+<h1>Internet sebesség teszt 🚀</h1>
+
+<button onclick="measureSpeed()">Teszt indítása</button>
+
+<p id="speed">Sebesség: -- Mbps</p>
+
+<script>
+
+async function measureSpeed() {
+
+    const imageAddr = "https://upload.wikimedia.org/wikipedia/commons/3/3f/Fronalpstock_big.jpg";
+    const downloadSize = 9280000;
+
+    const startTime = new Date().getTime();
+
+    const response = await fetch(imageAddr + "?nnn=" + startTime);
+
+    const blob = await response.blob();
+
+    const endTime = new Date().getTime();
+
+    const duration = (endTime - startTime) / 1000;
+
+    const bitsLoaded = downloadSize * 8;
+
+    const speedMbps = (bitsLoaded / duration / 1024 / 1024).toFixed(2);
+
+    document.getElementById("speed").innerHTML =
+        "Sebesség: " + speedMbps + " Mbps ⚡";
+
+}
+
+</script>
+
+</body>
+</html>
