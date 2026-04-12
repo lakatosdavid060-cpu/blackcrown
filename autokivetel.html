@@ -1304,26 +1304,6 @@
   });
 }
 
-    logAction(
-      "Fekete pont kiosztva",
-      (person.name || "ismeretlen") +
-      " | Lefoglalt autó 24 óra túllépés"
-    );
-  }
-}
-
-              logAction(
-                "Fekete pont kiosztva",
-                (person.name || "ismeretlen") +
-                " | Autó: " + car.brand + " " + car.model +
-                " | Ok: 24 órán túl lefoglalva"
-              );
-            }
-          }
-        }
-      });
-    }
-
     onValue(carsRef, (snap) => {
       carsData = snap.val() || {};
       render();
