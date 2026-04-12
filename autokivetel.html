@@ -1559,12 +1559,18 @@
       updateCountdowns();
     }
 
-    setInterval(() => {
-      updateCountdowns();
-    }, 1000);
-    
-    setInterval(() => {
+    let penaltyRunning = false;
+
+setInterval(() => {
+  if (penaltyRunning) return;
+
+  penaltyRunning = true;
+
   checkPenalty(carsData, peopleData);
+
+  setTimeout(() => {
+    penaltyRunning = false;
+  }, 2000);
 }, 10000);
 
     window.addEventListener("load", () => {
