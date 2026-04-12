@@ -1322,8 +1322,7 @@
     });
 
     function render() {
-      refreshCurrentUserFromStorage();
-      checkPenalty(carsData, peopleData);
+      refreshCurrentUserFromStorage()
 
       const adminPanel = document.getElementById("adminPanel");
       const editorStatus = document.getElementById("editorStatus");
@@ -1563,6 +1562,10 @@
     setInterval(() => {
       updateCountdowns();
     }, 1000);
+    
+    setInterval(() => {
+  checkPenalty(carsData, peopleData);
+}, 10000);
 
     window.addEventListener("load", () => {
       refreshCurrentUserFromStorage();
