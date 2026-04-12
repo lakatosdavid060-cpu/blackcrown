@@ -1250,56 +1250,58 @@
     };
 
     function checkPenalty(cars, people) {
-      const now = Date.now();
+  const now = Date.now();
 
-      Object.entries(cars || {}).forEach(([carId, car]) => {
-        if (!car.returned && car.takenAt) {
-          const passed = now - car.takenAt;
+  Object.entries(cars || {}).forEach(([carId, car]) => {
 
-          if (passed > 24 * 60 * 60 * 1000 && !car.penaltyGiven) {
-            const person = people[car.takenBy];
+    // 🚗 1. kivett autó 24h
+    if (!car.returned && car.takenAt) {
+      const passed = now - car.takenAt;
 
-            if (person) {
-              update(ref(db, "people/" + car.takenBy), {
-                red: (person.red || 0) + 1
-              });
+      if (passed > 24 * 60 * 60 * 1000 && !car.penaltyGiven) {
+        const person = people[car.takenBy];
 
-              update(ref(db, "cars/" + carId), {
-                penaltyGiven: true
-              });
+        if (person) {
+          update(ref(db, "people/" + car.takenBy), {
+            red: (person.red || 0) + 1
+          });
 
-              logAction(
-                "Fekete pont kiosztva",
-                (person.name || "ismeretlen") +
-                " | Autó: " + car.brand + " " + car.model +
-                " | Ok: 24 órán túl kivéve"
-              );
-            }
-          }
+          update(ref(db, "cars/" + carId), {
+            penaltyGiven: true
+          });
+
+          logAction(
+            "Fekete pont kiosztva",
+            `${person.name} | Autó: ${car.brand} ${car.model} | 24 órás szabály`
+          );
         }
-
-        if (car.reservedBy && car.reservedAt) {
-  const passed = now - car.reservedAt;
-
-  if (passed > 24 * 60 * 60 * 1000 && !car.reservePenaltyGiven) {
-    const person = people[car.reservedBy];
-
-    if (person) {
-      update(ref(db, "people/" + car.reservedBy), {
-        red: (person.red || 0) + 1
-      });
-
-      update(ref(db, "cars/" + carId), {
-        reservePenaltyGiven: true
-      });
-
-      logAction(
-        "Fekete pont kiosztva",
-        (person.name || "ismeretlen") +
-        " | Lefoglalt autó 24 óra túllépés"
-      );
+      }
     }
-  }
+
+    // 📌 2. foglalás 24h
+    if (car.reservedBy && car.reservedAt) {
+      const passed = now - car.reservedAt;
+
+      if (passed > 24 * 60 * 60 * 1000 && !car.reservePenaltyGiven) {
+        const person = people[car.reservedBy];
+
+        if (person) {
+          update(ref(db, "people/" + car.reservedBy), {
+            red: (person.red || 0) + 1
+          });
+
+          update(ref(db, "cars/" + carId), {
+            reservePenaltyGiven: true
+          });
+
+          logAction(
+            "Fekete pont kiosztva",
+            `${person.name} | Lefoglalás 24 órán túl`
+          );
+        }
+      }
+    }
+  });
 }
 
     logAction(
