@@ -1279,20 +1279,28 @@
         }
 
         if (car.reservedBy && car.reservedAt) {
-          const passed = now - car.reservedAt;
+  const passed = now - car.reservedAt;
 
-          if (passed > 24 * 60 * 60 * 1000 && car.penaltyGiven === false) {
+  if (passed > 24 * 60 * 60 * 1000 && !car.reservePenaltyGiven) {
+    const person = people[car.reservedBy];
 
-  const person = people[car.reservedBy];
+    if (person) {
+      update(ref(db, "people/" + car.reservedBy), {
+        red: (person.red || 0) + 1
+      });
 
-  if (person) {
-    update(ref(db, "cars/" + carId), {
-      penaltyGiven: true
-    });
+      update(ref(db, "cars/" + carId), {
+        reservePenaltyGiven: true
+      });
 
-    update(ref(db, "people/" + car.reservedBy), {
-      red: (person.red || 0) + 1
-    });
+      logAction(
+        "Fekete pont kiosztva",
+        (person.name || "ismeretlen") +
+        " | Lefoglalt autó 24 óra túllépés"
+      );
+    }
+  }
+}
 
     logAction(
       "Fekete pont kiosztva",
