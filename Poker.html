@@ -2,44 +2,83 @@
 <html lang="hu">
 <head>
 <meta charset="UTF-8">
-<title>Texas Hold'em</title>
+<title>Texas Hold'em ULTRA</title>
+
 <style>
 body {
-  background: green;
+  background: radial-gradient(circle, #0b5d1e, #063d13);
   color: white;
   font-family: Arial;
   text-align: center;
 }
+
+h1 { margin-bottom: 5px; }
+
+.table {
+  border: 3px solid #222;
+  border-radius: 100px;
+  padding: 30px;
+  margin: 20px auto;
+  width: 700px;
+  background: #0a4a18;
+}
+
 .card {
   display: inline-block;
-  border: 1px solid white;
+  width: 50px;
+  height: 70px;
+  margin: 5px;
+  border-radius: 8px;
+  background: white;
+  color: black;
+  font-weight: bold;
+  line-height: 70px;
+}
+
+.red { color: red; }
+
+button, input {
   padding: 10px;
   margin: 5px;
-  background: black;
-  width: 40px;
-}
-button {
-  padding: 10px;
-  margin: 10px;
   font-size: 16px;
+  border-radius: 5px;
+  border: none;
+}
+
+button { cursor: pointer; }
+
+.controls {
+  margin-top: 10px;
 }
 </style>
 </head>
+
 <body>
 
-<h1>Texas Hold'em</h1>
+<h1>♠ Texas Hold'em ULTRA ♥</h1>
 
-<h2>Te lapjaid</h2>
-<div id="player"></div>
+<div>💰 Te: <span id="pChips">1000</span> | AI: <span id="aChips">1000</span></div>
+<div>🎯 Pot: <span id="pot">0</span></div>
 
-<h2>AI lapjai</h2>
+<div class="table">
+  <h3>Asztal</h3>
+  <div id="table"></div>
+</div>
+
+<h3>AI</h3>
 <div id="ai"></div>
 
-<h2>Közös lapok</h2>
-<div id="table"></div>
+<h3>Te</h3>
+<div id="player"></div>
 
-<button onclick="startGame()">Új játék</button>
-<button onclick="nextRound()">Következő kör</button>
+<div class="controls">
+<input type="number" id="betAmount" value="50" min="10">
+<br>
+<button onclick="bet()">Bet</button>
+<button onclick="call()">Call</button>
+<button onclick="fold()">Fold</button>
+<button onclick="start()">Új játék</button>
+</div>
 
 <h2 id="result"></h2>
 
@@ -47,118 +86,185 @@ button {
 const suits = ['♠','♥','♦','♣'];
 const values = ['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
 
-let deck = [];
-let player = [];
-let ai = [];
-let table = [];
-let round = 0;
+let deck, player, ai, table;
+let pChips=1000, aChips=1000, pot=0, round=0;
 
-function createDeck() {
-  deck = [];
-  for (let s of suits) {
-    for (let v of values) {
-      deck.push({v, s});
-    }
-  }
+function createDeck(){
+  deck=[];
+  for(let s of suits)
+    for(let v of values)
+      deck.push({v,s});
 }
 
-function shuffle() {
-  for (let i = deck.length - 1; i > 0; i--) {
-    let j = Math.floor(Math.random() * (i + 1));
-    [deck[i], deck[j]] = [deck[j], deck[i]];
-  }
+function shuffle(){
+  deck.sort(()=>Math.random()-0.5);
 }
 
-function drawCard() {
-  return deck.pop();
-}
+function draw(){ return deck.pop(); }
 
-function renderCards(element, cards, hide=false) {
-  element.innerHTML = "";
-  cards.forEach(c => {
-    let div = document.createElement("div");
-    div.className = "card";
-    div.innerText = hide ? "??" : c.v + c.s;
-    element.appendChild(div);
+function render(el,cards,hide=false){
+  el.innerHTML="";
+  cards.forEach(c=>{
+    let d=document.createElement("div");
+    d.className="card";
+    if(c.s==='♥'||c.s==='♦') d.classList.add("red");
+    d.innerText = hide?"?":c.v+c.s;
+    el.appendChild(d);
   });
 }
 
-function startGame() {
-  createDeck();
-  shuffle();
-  round = 0;
+function update(hideAI=true){
+  render(playerDiv,player);
+  render(aiDiv,ai,hideAI && round<3);
+  render(tableDiv,table);
 
-  player = [drawCard(), drawCard()];
-  ai = [drawCard(), drawCard()];
-  table = [];
-
-  document.getElementById("result").innerText = "";
-
-  updateUI(true);
+  pChipsEl.innerText=pChips;
+  aChipsEl.innerText=aChips;
+  potEl.innerText=pot;
 }
 
-function nextRound() {
-  if (round === 0) {
-    table.push(drawCard(), drawCard(), drawCard());
-  } else if (round === 1) {
-    table.push(drawCard());
-  } else if (round === 2) {
-    table.push(drawCard());
-  } else {
-    showWinner();
+function start(){
+  createDeck(); shuffle();
+
+  player=[draw(),draw()];
+  ai=[draw(),draw()];
+  table=[];
+  pot=0; round=0;
+
+  result.innerText="";
+  update(true);
+}
+
+function bet(){
+  let amt=parseInt(betAmount.value);
+  if(pChips<amt) return;
+
+  pChips-=amt; pot+=amt;
+  aiMove(amt);
+  next();
+}
+
+function call(){
+  let amt=parseInt(betAmount.value);
+  if(pChips<amt) return;
+
+  pChips-=amt; pot+=amt;
+  aiMove(amt);
+  next();
+}
+
+function fold(){
+  aChips+=pot;
+  result.innerText="Dobtál → AI nyert";
+  pot=0;
+  update(false);
+}
+
+function aiMove(amt){
+  let strength=evaluate(ai.concat(table));
+  let bluff=Math.random();
+
+  if(strength<2 && bluff<0.3){
+    pChips+=pot;
+    result.innerText="AI blöffölt és dobott 😄";
+    pot=0;
     return;
   }
+
+  if(aChips>=amt){
+    aChips-=amt;
+    pot+=amt;
+  }
+}
+
+function next(){
+  if(pot===0) return;
+
+  if(round===0) table.push(draw(),draw(),draw());
+  else if(round===1) table.push(draw());
+  else if(round===2) table.push(draw());
+  else { showdown(); return; }
+
   round++;
-  updateUI(true);
+  update(true);
 }
 
-function updateUI(hideAI=true) {
-  renderCards(document.getElementById("player"), player);
-  renderCards(document.getElementById("ai"), ai, hideAI && round < 3);
-  renderCards(document.getElementById("table"), table);
+function getCounts(cards){
+  let c={};
+  cards.forEach(x=>c[x.v]=(c[x.v]||0)+1);
+  return c;
 }
 
-function getValueRank(v) {
-  return values.indexOf(v);
+function isFlush(cards){
+  let s={};
+  cards.forEach(c=>s[c.s]=(s[c.s]||0)+1);
+  return Object.values(s).some(v=>v>=5);
 }
 
-function evaluate(cards) {
-  let counts = {};
-  cards.forEach(c => {
-    counts[c.v] = (counts[c.v] || 0) + 1;
-  });
+function isStraight(vals){
+  let u=[...new Set(vals)].sort((a,b)=>a-b);
+  for(let i=0;i<u.length-4;i++){
+    if(u[i+4]-u[i]===4) return true;
+  }
+  return false;
+}
 
-  let pairs = 0, three = 0, four = 0;
+function evaluate(cards){
+  let counts=getCounts(cards);
+  let vals=cards.map(c=>values.indexOf(c.v));
 
-  for (let v in counts) {
-    if (counts[v] === 2) pairs++;
-    if (counts[v] === 3) three++;
-    if (counts[v] === 4) four++;
+  let pairs=0,three=0,four=0;
+  for(let v in counts){
+    if(counts[v]==2)pairs++;
+    if(counts[v]==3)three++;
+    if(counts[v]==4)four++;
   }
 
-  if (four) return 7;
-  if (three && pairs) return 6;
-  if (three) return 3;
-  if (pairs >= 2) return 2;
-  if (pairs === 1) return 1;
+  let flush=isFlush(cards);
+  let straight=isStraight(vals);
+
+  if(straight && flush) return 8;
+  if(four) return 7;
+  if(three && pairs) return 6;
+  if(flush) return 5;
+  if(straight) return 4;
+  if(three) return 3;
+  if(pairs>=2) return 2;
+  if(pairs==1) return 1;
 
   return 0;
 }
 
-function showWinner() {
-  updateUI(false);
+function showdown(){
+  update(false);
 
-  let playerScore = evaluate(player.concat(table));
-  let aiScore = evaluate(ai.concat(table));
+  let p=evaluate(player.concat(table));
+  let a=evaluate(ai.concat(table));
 
-  let result = "";
+  if(p>a){
+    result.innerText="🔥 Nyertél!";
+    pChips+=pot;
+  } else if(a>p){
+    result.innerText="🤖 AI nyert!";
+    aChips+=pot;
+  } else {
+    result.innerText="🤝 Döntetlen";
+    pChips+=pot/2;
+    aChips+=pot/2;
+  }
 
-  if (playerScore > aiScore) result = "Nyertél!";
-  else if (playerScore < aiScore) result = "AI nyert!";
-  else result = "Döntetlen!";
-
-  document.getElementById("result").innerText = result;
+  pot=0;
+  update(false);
 }
+
+const playerDiv=document.getElementById("player");
+const aiDiv=document.getElementById("ai");
+const tableDiv=document.getElementById("table");
+
+const pChipsEl=document.getElementById("pChips");
+const aChipsEl=document.getElementById("aChips");
+const potEl=document.getElementById("pot");
+const result=document.getElementById("result");
 </script>
 
 </body>
