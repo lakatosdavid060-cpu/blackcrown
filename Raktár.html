@@ -3,12 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <title>Raktár rendszer</title>
+
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
     <style>
         body {
             font-family: Arial;
             background: #1e1e1e;
             color: white;
+            text-align: center;
         }
+
         .box {
             background: #2e2e2e;
             padding: 20px;
@@ -17,14 +24,19 @@
             margin: auto;
             margin-top: 50px;
         }
+
         input {
-            margin: 5px 0;
+            margin: 5px;
+            padding: 5px;
         }
+
         button {
+            margin: 3px;
             cursor: pointer;
         }
+
         li {
-            margin: 8px 0;
+            margin: 10px 0;
         }
     </style>
 </head>
@@ -33,7 +45,7 @@
 <div class="box">
     <h2>📦 Raktár</h2>
 
-    <input type="text" id="itemName" placeholder="Tárgy neve (pl. weapon_pistol)">
+    <input type="text" id="itemName" placeholder="Tárgy (pl. ak47)">
     <input type="number" id="itemAmount" placeholder="Mennyiség">
     <button onclick="addItem()">Hozzáadás</button>
 
@@ -41,7 +53,36 @@
 </div>
 
 <script>
+    // 🔥 FIREBASE CONFIG (a tied)
+    const firebaseConfig = {
+        apiKey: "AIzaSyBgbixws2rf6VdqjQATVwZsKg0lgiqy0xI",
+        authDomain: "ordog-fizetes.firebaseapp.com",
+        databaseURL: "https://ordog-fizetes-default-rtdb.europe-west1.firebasedatabase.app",
+        projectId: "ordog-fizetes",
+        storageBucket: "ordog-fizetes.firebasestorage.app",
+        messagingSenderId: "672089263660",
+        appId: "1:672089263660:web:70086de26402ceb3464b89"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    // 🔔 DISCORD WEBHOOK
+    const webhookURL = "https://discord.com/api/webhooks/1488436818239160350/jWmCU94AoTmJ1GLrxpVZQTTqM03Ibh4oGtXxqMxOkt2COj5nCXZwiIzoWB0Tmu1Pwm_l";
+
     let inventory = [];
+
+    function sendToDiscord(message) {
+        fetch(webhookURL, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                content: message
+            })
+        });
+    }
 
     function addItem() {
         let name = document.getElementById("itemName").value;
@@ -49,7 +90,7 @@
 
         if (!name || amount <= 0) return;
 
-        let existing = inventory.find(i => i.name === name);
+        let existing = inventory.find(i => i.name.toLowerCase() === name.toLowerCase());
 
         if (existing) {
             existing.amount += amount;
@@ -57,14 +98,12 @@
             inventory.push({ name: name, amount: amount });
         }
 
+        sendToDiscord(`➕ Hozzáadva: ${amount} db ${name}`);
+
         document.getElementById("itemName").value = "";
         document.getElementById("itemAmount").value = "";
 
-        render();
-    }
-
-    function removeItem(index) {
-        inventory.splice(index, 1);
+        save();
         render();
     }
 
@@ -80,11 +119,25 @@
 
         inventory[index].amount -= takeAmount;
 
+        sendToDiscord(`📦 Kivét: ${takeAmount} db ${inventory[index].name}`);
+
         if (inventory[index].amount === 0) {
             inventory.splice(index, 1);
         }
 
+        save();
         render();
+    }
+
+    function removeItem(index) {
+        sendToDiscord(`❌ Törölve: ${inventory[index].name}`);
+        inventory.splice(index, 1);
+        save();
+        render();
+    }
+
+    function save() {
+        db.ref("raktar").set(inventory);
     }
 
     function render() {
@@ -101,6 +154,14 @@
             list.appendChild(li);
         });
     }
+
+    // 🔄 AUTO LOAD FIREBASE-BŐL
+    db.ref("raktar").on("value", snapshot => {
+        if (snapshot.exists()) {
+            inventory = snapshot.val();
+            render();
+        }
+    });
 </script>
 
 </body>
