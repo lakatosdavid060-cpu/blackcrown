@@ -1249,6 +1249,35 @@
       logAction("Autó kintnek jelölve", car.brand + " " + car.model);
     };
 
+    function checkPenalty(cars, people) {
+      const now = Date.now();
+
+      Object.entries(cars || {}).forEach(([carId, car]) => {
+        if (!car.returned && car.takenAt) {
+          const passed = now - car.takenAt;
+
+          if (passed > 24 * 60 * 60 * 1000 && !car.penaltyGiven) {
+            const person = people[car.takenBy];
+
+            if (person) {
+              update(ref(db, "people/" + car.takenBy), {
+                red: (person.red || 0) + 1
+              });
+
+              update(ref(db, "cars/" + carId), {
+                penaltyGiven: true
+              });
+
+              logAction(
+                "Fekete pont kiosztva",
+                (person.name || "ismeretlen") +
+                " | Autó: " + car.brand + " " + car.model +
+                " | Ok: 24 órán túl kivéve"
+              );
+            }
+          }
+        }
+
         if (car.reservedBy && car.reservedAt) {
           const passed = now - car.reservedAt;
 
@@ -1530,6 +1559,20 @@
       updateCountdowns();
     }
 
+    let penaltyRunning = false;
+
+setInterval(() => {
+  if (penaltyRunning) return;
+
+  penaltyRunning = true;
+
+  checkPenalty(carsData, peopleData);
+
+  setTimeout(() => {
+    penaltyRunning = false;
+  }, 2000);
+}, 10000);
+
     window.addEventListener("load", () => {
       refreshCurrentUserFromStorage();
 
@@ -1552,4 +1595,4 @@
     });
   </script>
 </body>
-</html> 
+</html>
