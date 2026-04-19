@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <title>Raktár rendszer</title>
+    <style>
+        body {
+            font-family: Arial;
+            background: #1e1e1e;
+            color: white;
+        }
+        .box {
+            background: #2e2e2e;
+            padding: 20px;
+            border-radius: 10px;
+            width: 400px;
+            margin: auto;
+            margin-top: 50px;
+        }
+        input {
+            margin: 5px 0;
+        }
+        button {
+            cursor: pointer;
+        }
+        li {
+            margin: 8px 0;
+        }
+    </style>
+</head>
+<body>
+
+<div class="box">
+    <h2>📦 Raktár</h2>
+
+    <input type="text" id="itemName" placeholder="Tárgy neve (pl. weapon_pistol)">
+    <input type="number" id="itemAmount" placeholder="Mennyiség">
+    <button onclick="addItem()">Hozzáadás</button>
+
+    <ul id="inventory"></ul>
+</div>
+
+<script>
+    let inventory = [];
+
+    function addItem() {
+        let name = document.getElementById("itemName").value;
+        let amount = parseInt(document.getElementById("itemAmount").value);
+
+        if (!name || amount <= 0) return;
+
+        let existing = inventory.find(i => i.name === name);
+
+        if (existing) {
+            existing.amount += amount;
+        } else {
+            inventory.push({ name: name, amount: amount });
+        }
+
+        document.getElementById("itemName").value = "";
+        document.getElementById("itemAmount").value = "";
+
+        render();
+    }
+
+    function removeItem(index) {
+        inventory.splice(index, 1);
+        render();
+    }
+
+    function takeItem(index) {
+        let takeAmount = parseInt(prompt("Mennyit szeretnél kivenni?"));
+
+        if (!takeAmount || takeAmount <= 0) return;
+
+        if (inventory[index].amount < takeAmount) {
+            alert("Nincs ennyi a raktárban!");
+            return;
+        }
+
+        inventory[index].amount -= takeAmount;
+
+        if (inventory[index].amount === 0) {
+            inventory.splice(index, 1);
+        }
+
+        render();
+    }
+
+    function render() {
+        let list = document.getElementById("inventory");
+        list.innerHTML = "";
+
+        inventory.forEach((item, i) => {
+            let li = document.createElement("li");
+            li.innerHTML = `
+                <b>${item.name}</b> - ${item.amount} db
+                <button onclick="takeItem(${i})">Kivét</button>
+                <button onclick="removeItem(${i})">Törlés</button>
+            `;
+            list.appendChild(li);
+        });
+    }
+</script>
+
+</body>
+</html>
