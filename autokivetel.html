@@ -1250,60 +1250,103 @@
     };
 
     function checkPenalty(cars, people) {
-      const now = Date.now();
+  const now = Date.now();
 
-      Object.entries(cars || {}).forEach(([carId, car]) => {
-        if (!car.returned && car.takenAt) {
-          const passed = now - car.takenAt;
+  Object.entries(cars || {}).forEach(([carId, car]) => {
 
-          if (passed > 24 * 60 * 60 * 1000 && !car.penaltyGiven) {
-            const person = people[car.takenBy];
+    // ========================
+    // AUTÓ KIVÉTEL BÜNTETÉS
+    // ========================
+    if (!car.returned && car.takenAt) {
+      const passed = now - car.takenAt;
 
-            if (person) {
-              update(ref(db, "people/" + car.takenBy), {
-                red: (person.red || 0) + 1
-              });
+      if (passed > 24 * 60 * 60 * 1000) {
 
-              update(ref(db, "cars/" + carId), {
-                penaltyGiven: true
-              });
+        const carRef = ref(db, "cars/" + carId);
 
-              logAction(
-                "Fekete pont kiosztva",
-                (person.name || "ismeretlen") +
-                " | Autó: " + car.brand + " " + car.model +
-                " | Ok: 24 órán túl kivéve"
-              );
-            }
+        runTransaction(carRef, (currentCar) => {
+          if (!currentCar) return;
+
+          // ha már büntetve van → STOP
+          if (currentCar.penaltyGiven) return;
+
+          // JELÖLJÜK AZONNAL
+          currentCar.penaltyGiven = true;
+
+          return currentCar;
+
+        }).then((result) => {
+
+          if (!result.committed) return;
+
+          const updatedCar = result.snapshot.val();
+          const personId = updatedCar.takenBy;
+          const person = people[personId];
+
+          if (person) {
+
+            // 🔥 ATOMIKUS PONT NÖVELÉS
+            runTransaction(ref(db, "people/" + personId + "/red"), (current) => {
+              return (current || 0) + 1;
+            });
+
+            logAction(
+              "Fekete pont kiosztva",
+              (person.name || "ismeretlen") +
+              " | Autó: " + updatedCar.brand + " " + updatedCar.model +
+              " | Ok: 24 órán túl kivéve"
+            );
           }
-        }
-
-        if (car.reservedBy && car.reservedAt) {
-          const passed = now - car.reservedAt;
-
-          if (passed > 24 * 60 * 60 * 1000 && !car.reservePenaltyGiven) {
-            const person = people[car.reservedBy];
-
-            if (person) {
-              update(ref(db, "people/" + car.reservedBy), {
-                red: (person.red || 0) + 1
-              });
-
-              update(ref(db, "cars/" + carId), {
-                reservePenaltyGiven: true
-              });
-
-              logAction(
-                "Fekete pont kiosztva",
-                (person.name || "ismeretlen") +
-                " | Autó: " + car.brand + " " + car.model +
-                " | Ok: 24 órán túl lefoglalva"
-              );
-            }
-          }
-        }
-      });
+        });
+      }
     }
+
+    // ========================
+    // FOGLALÁS BÜNTETÉS
+    // ========================
+    if (car.reservedBy && car.reservedAt) {
+      const passed = now - car.reservedAt;
+
+      if (passed > 24 * 60 * 60 * 1000) {
+
+        const carRef = ref(db, "cars/" + carId);
+
+        runTransaction(carRef, (currentCar) => {
+          if (!currentCar) return;
+
+          if (currentCar.reservePenaltyGiven) return;
+
+          currentCar.reservePenaltyGiven = true;
+
+          return currentCar;
+
+        }).then((result) => {
+
+          if (!result.committed) return;
+
+          const updatedCar = result.snapshot.val();
+          const personId = updatedCar.reservedBy;
+          const person = people[personId];
+
+          if (person) {
+
+            runTransaction(ref(db, "people/" + personId + "/red"), (current) => {
+              return (current || 0) + 1;
+            });
+
+            logAction(
+              "Fekete pont kiosztva",
+              (person.name || "ismeretlen") +
+              " | Autó: " + updatedCar.brand + " " + updatedCar.model +
+              " | Ok: 24 órán túl lefoglalva"
+            );
+          }
+        });
+      }
+    }
+
+  });
+}
 
     onValue(carsRef, (snap) => {
       carsData = snap.val() || {};
