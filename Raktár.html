@@ -45,15 +45,23 @@
 <div class="box">
     <h2>📦 Raktár</h2>
 
+    <!-- 👤 NÉV -->
+    <input type="text" id="playerName" placeholder="Neved">
+
+    <br>
+
+    <!-- 📦 ITEM -->
     <input type="text" id="itemName" placeholder="Tárgy (pl. ak47)">
     <input type="number" id="itemAmount" placeholder="Mennyiség">
+
+    <br>
     <button onclick="addItem()">Hozzáadás</button>
 
     <ul id="inventory"></ul>
 </div>
 
 <script>
-    // 🔥 FIREBASE CONFIG (a tied)
+    // 🔥 FIREBASE CONFIG
     const firebaseConfig = {
         apiKey: "AIzaSyBgbixws2rf6VdqjQATVwZsKg0lgiqy0xI",
         authDomain: "ordog-fizetes.firebaseapp.com",
@@ -68,7 +76,7 @@
     const db = firebase.database();
 
     // 🔔 DISCORD WEBHOOK
-    const webhookURL = "https://discord.com/api/webhooks/1488436818239160350/jWmCU94AoTmJ1GLrxpVZQTTqM03Ibh4oGtXxqMxOkt2COj5nCXZwiIzoWB0Tmu1Pwm_l";
+    const webhookURL = "IDE_IRD_AZ_UJ_WEBHOOKOD";
 
     let inventory = [];
 
@@ -84,10 +92,19 @@
         });
     }
 
+    function saveLog(message) {
+        db.ref("logs").push({
+            text: message,
+            time: new Date().toLocaleString()
+        });
+    }
+
     function addItem() {
+        let player = document.getElementById("playerName").value;
         let name = document.getElementById("itemName").value;
         let amount = parseInt(document.getElementById("itemAmount").value);
 
+        if (!player) return alert("Add meg a neved!");
         if (!name || amount <= 0) return;
 
         let existing = inventory.find(i => i.name.toLowerCase() === name.toLowerCase());
@@ -98,7 +115,9 @@
             inventory.push({ name: name, amount: amount });
         }
 
-        sendToDiscord(`➕ Hozzáadva: ${amount} db ${name}`);
+        let msg = `➕ ${player} berakott ${amount} db ${name}`;
+        sendToDiscord(msg);
+        saveLog(msg);
 
         document.getElementById("itemName").value = "";
         document.getElementById("itemAmount").value = "";
@@ -108,8 +127,10 @@
     }
 
     function takeItem(index) {
-        let takeAmount = parseInt(prompt("Mennyit szeretnél kivenni?"));
+        let player = document.getElementById("playerName").value;
+        if (!player) return alert("Add meg a neved!");
 
+        let takeAmount = parseInt(prompt("Mennyit veszel ki?"));
         if (!takeAmount || takeAmount <= 0) return;
 
         if (inventory[index].amount < takeAmount) {
@@ -119,7 +140,9 @@
 
         inventory[index].amount -= takeAmount;
 
-        sendToDiscord(`📦 Kivét: ${takeAmount} db ${inventory[index].name}`);
+        let msg = `📦 ${player} kivett ${takeAmount} db ${inventory[index].name}`;
+        sendToDiscord(msg);
+        saveLog(msg);
 
         if (inventory[index].amount === 0) {
             inventory.splice(index, 1);
@@ -130,7 +153,13 @@
     }
 
     function removeItem(index) {
-        sendToDiscord(`❌ Törölve: ${inventory[index].name}`);
+        let player = document.getElementById("playerName").value;
+        if (!player) return alert("Add meg a neved!");
+
+        let msg = `❌ ${player} törölte: ${inventory[index].name}`;
+        sendToDiscord(msg);
+        saveLog(msg);
+
         inventory.splice(index, 1);
         save();
         render();
@@ -155,7 +184,7 @@
         });
     }
 
-    // 🔄 AUTO LOAD FIREBASE-BŐL
+    // 🔄 AUTOMATIKUS BETÖLTÉS
     db.ref("raktar").on("value", snapshot => {
         if (snapshot.exists()) {
             inventory = snapshot.val();
