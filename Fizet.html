@@ -2,12 +2,12 @@
 <html lang="hu">
 <head>
 <meta charset="UTF-8">
-<title>Fizetés Rendszer</title>
+<title>RP Fizetés Rendszer</title>
 
 <style>
   body {
+    margin: 0;
     background: #0f172a;
-    color: white;
     font-family: Arial;
     display: flex;
     justify-content: center;
@@ -19,8 +19,9 @@
     background: #1e293b;
     padding: 25px;
     border-radius: 15px;
-    width: 350px;
-    box-shadow: 0 0 20px rgba(0,0,0,0.5);
+    width: 380px;
+    box-shadow: 0 0 25px rgba(0,0,0,0.6);
+    color: white;
   }
 
   h2 {
@@ -34,6 +35,12 @@
     margin-top: 10px;
     border-radius: 8px;
     border: none;
+    outline: none;
+  }
+
+  input, select {
+    background: #334155;
+    color: white;
   }
 
   button {
@@ -41,6 +48,7 @@
     color: white;
     font-weight: bold;
     cursor: pointer;
+    transition: 0.2s;
   }
 
   button:hover {
@@ -50,6 +58,7 @@
   .output {
     margin-top: 10px;
     font-size: 14px;
+    text-align: center;
   }
 </style>
 </head>
@@ -57,52 +66,86 @@
 <body>
 
 <div class="card">
-  <h2>💰 Fizetés Rendszer</h2>
+  <h2>💼 RP Fizetés Rendszer</h2>
 
   <input type="text" id="name" placeholder="Játékos neve">
 
   <select id="job">
-    <option value="2500">Autórablás ($2500)</option>
-    <option value="4000">Házrablás ($4000)</option>
-    <option value="6000">Konténerrablás ($6000)</option>
-    <option value="5000">Bobcat ($5000)</option>
-    <option value="7000">Állami Bank ($7000)</option>
-    <option value="6500">Paleto Bank ($6500)</option>
-    <option value="8000">Hirességház ($8000)</option>
-    <option value="9000">Maffiaház ($9000)</option>
+    <option value="2500">Autórablás</option>
+    <option value="4000">Házrablás</option>
+    <option value="6000">Konténerrablás</option>
+    <option value="5000">Bobcat Heist</option>
+    <option value="7000">Állami Bank</option>
+    <option value="6500">Paleto Bank</option>
+    <option value="8000">Hirességház</option>
+    <option value="9000">Maffiaház</option>
   </select>
 
-  <input type="number" id="bonus" placeholder="Bonusz ($) - opcionális">
+  <input type="number" id="bonus" placeholder="Bonusz ($)">
 
-  <button onclick="calcSalary()">Küldés Discordra</button>
+  <button onclick="sendSalary()">💰 Küldés Discordra</button>
 
   <div class="output" id="output"></div>
 </div>
 
 <script>
-const webhookURL = "IDE_ÍRD_A_WEBHOOKOT";
+const webhookURL = "IDE_ÍRD_A_WEBHOOKOD";
 
-function calcSalary() {
+function sendSalary() {
   const name = document.getElementById("name").value;
-  const base = parseInt(document.getElementById("job").value);
+  const jobSelect = document.getElementById("job");
+  const base = parseInt(jobSelect.value);
+  const jobText = jobSelect.options[jobSelect.selectedIndex].text;
   const bonus = parseInt(document.getElementById("bonus").value) || 0;
 
   const total = base + bonus;
 
-  document.getElementById("output").innerHTML =
-    `✔ ${name} fizetése: $${total}`;
+  document.getElementById("output").innerText =
+    `${name} fizetése: $${total}`;
 
   fetch(webhookURL, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json"
+    },
     body: JSON.stringify({
-      content:
-`💼 **FIZETÉS KIFIZETÉS**
-👤 Név: ${name}
-💰 Alap: $${base}
-🎁 Bonusz: $${bonus}
-💵 Összesen: **$${total}**
-`
+      embeds: [
+        {
+          title: "💼 Fizetés Kifizetés",
+          color: 0x22c55e,
+          fields: [
+            {
+              name: "👤 Játékos",
+              value: name || "Nincs megadva",
+              inline: true
+            },
+            {
+              name: "📌 Munkatípus",
+              value: jobText,
+              inline: true
+            },
+            {
+              name: "💰 Alap fizetés",
+              value: `$${base}`,
+              inline: true
+            },
+            {
+              name: "🎁 Bonusz",
+              value: `$${bonus}`,
+              inline: true
+            },
+            {
+              name: "💵 Összesen",
+              value: `**$${total}**`,
+              inline: false
+            }
+          ],
+          footer: {
+            text: "RP Fizetési Rendszer"
+          },
+          timestamp: new Date().toISOString()
+        }
+      ]
     })
   });
 }
