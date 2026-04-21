@@ -48,7 +48,6 @@
     color: white;
     font-weight: bold;
     cursor: pointer;
-    transition: 0.2s;
   }
 
   button:hover {
@@ -71,15 +70,18 @@
   <input type="text" id="name" placeholder="Játékos neve">
 
   <select id="job">
-    <option value="2500">Autórablás</option>
-    <option value="4000">Házrablás</option>
-    <option value="6000">Konténerrablás</option>
-    <option value="5000">Bobcat Heist</option>
-    <option value="7000">Állami Bank</option>
-    <option value="6500">Paleto Bank</option>
-    <option value="8000">Hirességház</option>
-    <option value="9000">Maffiaház</option>
+    <option>Autórablás</option>
+    <option>Házrablás</option>
+    <option>Konténerrablás</option>
+    <option>Bobcat Heist</option>
+    <option>Állami Bank</option>
+    <option>Paleto Bank</option>
+    <option>Hirességház</option>
+    <option>Maffiaház</option>
+    <option>Csomagautomata rablás (Craft)</option>
   </select>
+
+  <input type="number" id="amount" placeholder="Összeg ($)">
 
   <input type="number" id="bonus" placeholder="Bonusz ($)">
 
@@ -93,12 +95,11 @@ const webhookURL = "IDE_ÍRD_A_WEBHOOKOD";
 
 function sendSalary() {
   const name = document.getElementById("name").value;
-  const jobSelect = document.getElementById("job");
-  const base = parseInt(jobSelect.value);
-  const jobText = jobSelect.options[jobSelect.selectedIndex].text;
+  const job = document.getElementById("job").value;
+  const amount = parseInt(document.getElementById("amount").value) || 0;
   const bonus = parseInt(document.getElementById("bonus").value) || 0;
 
-  const total = base + bonus;
+  const total = amount + bonus;
 
   document.getElementById("output").innerText =
     `${name} fizetése: $${total}`;
@@ -120,13 +121,13 @@ function sendSalary() {
               inline: true
             },
             {
-              name: "📌 Munkatípus",
-              value: jobText,
+              name: "📌 Tevékenység",
+              value: job,
               inline: true
             },
             {
-              name: "💰 Alap fizetés",
-              value: `$${base}`,
+              name: "💰 Alap összeg",
+              value: `$${amount}`,
               inline: true
             },
             {
@@ -135,7 +136,7 @@ function sendSalary() {
               inline: true
             },
             {
-              name: "💵 Összesen",
+              name: "💵 Végösszeg",
               value: `**$${total}**`,
               inline: false
             }
