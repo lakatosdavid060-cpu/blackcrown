@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<title>Fizetés Rendszer</title>
+
+<style>
+  body {
+    background: #0f172a;
+    color: white;
+    font-family: Arial;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+  }
+
+  .card {
+    background: #1e293b;
+    padding: 25px;
+    border-radius: 15px;
+    width: 350px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.5);
+  }
+
+  h2 {
+    text-align: center;
+    margin-bottom: 15px;
+  }
+
+  input, select, button {
+    width: 100%;
+    padding: 10px;
+    margin-top: 10px;
+    border-radius: 8px;
+    border: none;
+  }
+
+  button {
+    background: #22c55e;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+  }
+
+  button:hover {
+    background: #16a34a;
+  }
+
+  .output {
+    margin-top: 10px;
+    font-size: 14px;
+  }
+</style>
+</head>
+
+<body>
+
+<div class="card">
+  <h2>💰 Fizetés Rendszer</h2>
+
+  <input type="text" id="name" placeholder="Játékos neve">
+
+  <select id="job">
+    <option value="2500">Autórablás ($2500)</option>
+    <option value="4000">Házrablás ($4000)</option>
+    <option value="6000">Konténerrablás ($6000)</option>
+    <option value="5000">Bobcat ($5000)</option>
+    <option value="7000">Állami Bank ($7000)</option>
+    <option value="6500">Paleto Bank ($6500)</option>
+    <option value="8000">Hirességház ($8000)</option>
+    <option value="9000">Maffiaház ($9000)</option>
+  </select>
+
+  <input type="number" id="bonus" placeholder="Bonusz ($) - opcionális">
+
+  <button onclick="calcSalary()">Küldés Discordra</button>
+
+  <div class="output" id="output"></div>
+</div>
+
+<script>
+const webhookURL = "IDE_ÍRD_A_WEBHOOKOT";
+
+function calcSalary() {
+  const name = document.getElementById("name").value;
+  const base = parseInt(document.getElementById("job").value);
+  const bonus = parseInt(document.getElementById("bonus").value) || 0;
+
+  const total = base + bonus;
+
+  document.getElementById("output").innerHTML =
+    `✔ ${name} fizetése: $${total}`;
+
+  fetch(webhookURL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      content:
+`💼 **FIZETÉS KIFIZETÉS**
+👤 Név: ${name}
+💰 Alap: $${base}
+🎁 Bonusz: $${bonus}
+💵 Összesen: **$${total}**
+`
+    })
+  });
+}
+</script>
+
+</body>
+</html>
