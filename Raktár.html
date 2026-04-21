@@ -2,7 +2,7 @@
 <html lang="hu">
 <head>
 <meta charset="UTF-8">
-<title>Raktár Pro</title>
+<title>Raktár PRO</title>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
@@ -20,7 +20,8 @@ body {
     backdrop-filter: blur(10px);
     padding: 25px;
     border-radius: 20px;
-    width: 450px;
+    width: 95%;
+    max-width: 450px;
     margin: auto;
     margin-top: 30px;
     box-shadow: 0 0 25px rgba(0,0,0,0.6);
@@ -28,14 +29,15 @@ body {
 
 input {
     margin: 6px;
-    padding: 8px;
+    padding: 10px;
     border-radius: 10px;
     border: none;
+    width: 90%;
 }
 
 button {
-    margin: 4px;
-    padding: 6px 12px;
+    margin: 5px;
+    padding: 7px 12px;
     border-radius: 10px;
     border: none;
     cursor: pointer;
@@ -60,7 +62,6 @@ li {
 .dashboard {
     margin-top: 20px;
     font-size: 14px;
-    opacity: 0.9;
 }
 </style>
 </head>
@@ -71,15 +72,11 @@ li {
 <h2>📦 Raktár PRO</h2>
 
 <input type="text" id="playerName" placeholder="Neved">
-<br>
-
 <input type="text" id="search" placeholder="🔍 Keresés">
-<br>
 
 <input type="text" id="itemName" placeholder="Tárgy">
 <input type="number" id="itemAmount" placeholder="Mennyiség">
 
-<br>
 <button class="add-btn" onclick="addItem()">Hozzáadás</button>
 
 <ul id="inventory"></ul>
@@ -88,10 +85,12 @@ li {
 </div>
 
 <script>
+// 🔒 ADMIN NÉV
 const ADMIN_NAME = "admin";
 
+// 🔥 FIREBASE
 const firebaseConfig = {
-    apiKey: "AIza...",
+    apiKey: "AIzaSyBgbixws2rf6VdqjQATVwZsKg0lgiqy0xI",
     authDomain: "ordog-fizetes.firebaseapp.com",
     databaseURL: "https://ordog-fizetes-default-rtdb.europe-west1.firebasedatabase.app",
 };
@@ -103,6 +102,7 @@ let inventory = {};
 let logs = [];
 let searchText = "";
 
+// 💾 NÉV MENTÉS
 const nameInput = document.getElementById("playerName");
 nameInput.value = localStorage.getItem("playerName") || "";
 
@@ -110,7 +110,7 @@ nameInput.oninput = () => {
     localStorage.setItem("playerName", nameInput.value);
 };
 
-// ADD
+// ➕ ADD
 function addItem() {
     let player = nameInput.value.trim();
     let name = itemName.value.trim().toLowerCase();
@@ -121,23 +121,29 @@ function addItem() {
     db.ref("raktar/" + name).transaction(c => (c || 0) + amount);
 
     saveLog(player, "add", name, amount);
+
+    itemName.value = "";
+    itemAmount.value = "";
 }
 
-// TAKE
+// 📦 TAKE
 function takeItem(name) {
     let player = nameInput.value.trim();
     let amt = parseInt(prompt("Mennyit?"));
-    if (!amt) return;
+    if (!amt || amt <= 0) return;
 
     db.ref("raktar/" + name).transaction(c => {
-        if (!c || c < amt) return c;
+        if (!c || c < amt) {
+            alert("Nincs ennyi!");
+            return c;
+        }
         return c - amt;
     });
 
     saveLog(player, "take", name, amt);
 }
 
-// REMOVE (ADMIN ONLY)
+// ❌ REMOVE (ADMIN)
 function removeItem(name) {
     let player = nameInput.value.trim();
     if (player !== ADMIN_NAME) return alert("Nem vagy admin!");
@@ -146,71 +152,98 @@ function removeItem(name) {
     saveLog(player, "remove", name, 0);
 }
 
-// LOG
+// 🧾 LOG
 function saveLog(player, action, item, amount) {
     db.ref("logs").push({
         player, action, item, amount, time: Date.now()
     });
 }
 
-// RENDER
+// 🎨 RENDER
 function render() {
-    let list = inventoryEl;
-    list.innerHTML = "";
+    inventoryEl.innerHTML = "";
 
     Object.keys(inventory)
         .filter(n => n.includes(searchText))
         .forEach(name => {
             let li = document.createElement("li");
             li.innerHTML = `
-                <b>${name}</b> - ${inventory[name]}
+                <b>${name}</b> - ${inventory[name]} db
                 <button class="take-btn" onclick="takeItem('${name}')">Kivét</button>
                 <button class="remove-btn" onclick="removeItem('${name}')">Törlés</button>
             `;
-            list.appendChild(li);
+            inventoryEl.appendChild(li);
         });
 
     renderDashboard();
 }
 
-// DASHBOARD
+// 📊 DASHBOARD
 function renderDashboard() {
-    let total = Object.values(inventory).reduce((a,b)=>a+b,0);
+    let total = Object.values(inventory)
+        .reduce((a,b)=>a+(Number(b)||0),0);
+
     let unique = Object.keys(inventory).length;
 
     let players = {};
+
     logs.forEach(l => {
+        if (!l.player) return;
+
         if (!players[l.player]) players[l.player]=0;
-        if (l.action === "add") players[l.player]+=l.amount;
+        if (l.action === "add") {
+            players[l.player]+=Number(l.amount)||0;
+        }
     });
 
-    let top = Object.entries(players).sort((a,b)=>b[1]-a[1])[0];
+    let top = Object.entries(players)
+        .sort((a,b)=>b[1]-a[1])[0];
+
+    let topText = top ? `${top[0]} (${top[1]})` : "nincs adat";
 
     dashboard.innerHTML = `
         📊 Összes item: ${total} <br>
         📦 Különböző item: ${unique} <br>
-        🏆 Top játékos: ${top ? top[0]+" ("+top[1]+")" : "-"}
+        🏆 Top játékos: ${topText}
     `;
 }
 
-// SEARCH
+// 🔍 SEARCH
 search.oninput = e => {
     searchText = e.target.value.toLowerCase();
     render();
 };
 
-// REALTIME
-db.ref("raktar").on("value", snap => {
-    inventory = snap.val() || {};
+// 🔄 REALTIME + AUTO FIX
+db.ref("raktar").on("value", snapshot => {
+    let data = snapshot.val() || {};
+    let migrated = {};
+
+    Object.keys(data).forEach(key => {
+        let val = data[key];
+
+        if (typeof val === "number") {
+            migrated[key] = val;
+        } else if (val && typeof val === "object") {
+            migrated[key] = val.amount || 0;
+        }
+    });
+
+    inventory = migrated;
+
+    // automatikus adatjavítás
+    db.ref("raktar").set(migrated);
+
     render();
 });
 
+// 📜 LOG LOAD
 db.ref("logs").on("value", snap => {
     logs = Object.values(snap.val() || {});
     renderDashboard();
 });
 
-// ENTER
+// ⌨️ ENTER
 itemAmount.addEventListener("keypress", e => {
     if (e.key === "Enter") addItem();
 });
