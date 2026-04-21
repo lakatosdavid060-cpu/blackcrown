@@ -1,253 +1,198 @@
 <!DOCTYPE html>
 <html lang="hu">
 <head>
-<meta charset="UTF-8">
-<title>Raktár PRO</title>
+    <meta charset="UTF-8">
+    <title>Raktár rendszer</title>
 
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
-<style>
-body {
-    font-family: Arial;
-    background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
-    color: white;
-    text-align: center;
-}
+    <style>
+        body {
+            font-family: Arial;
+            background: #1e1e1e;
+            color: white;
+            text-align: center;
+        }
 
-.box {
-    background: rgba(0,0,0,0.6);
-    backdrop-filter: blur(10px);
-    padding: 25px;
-    border-radius: 20px;
-    width: 95%;
-    max-width: 450px;
-    margin: auto;
-    margin-top: 30px;
-    box-shadow: 0 0 25px rgba(0,0,0,0.6);
-}
+        .box {
+            background: #2e2e2e;
+            padding: 20px;
+            border-radius: 10px;
+            width: 400px;
+            margin: auto;
+            margin-top: 50px;
+        }
 
-input {
-    margin: 6px;
-    padding: 10px;
-    border-radius: 10px;
-    border: none;
-    width: 90%;
-}
+        input {
+            margin: 5px;
+            padding: 5px;
+        }
 
-button {
-    margin: 5px;
-    padding: 7px 12px;
-    border-radius: 10px;
-    border: none;
-    cursor: pointer;
-    transition: 0.2s;
-}
+        button {
+            margin: 3px;
+            cursor: pointer;
+        }
 
-button:hover {
-    transform: scale(1.05);
-}
-
-.add-btn { background: #00c853; }
-.remove-btn { background: #d50000; }
-.take-btn { background: #2962ff; }
-
-li {
-    margin: 10px 0;
-    padding: 10px;
-    border-radius: 12px;
-    background: rgba(255,255,255,0.1);
-}
-
-.dashboard {
-    margin-top: 20px;
-    font-size: 14px;
-}
-</style>
+        li {
+            margin: 10px 0;
+        }
+    </style>
 </head>
-
 <body>
 
 <div class="box">
-<h2>📦 Raktár PRO</h2>
+    <h2>📦 Raktár</h2>
 
-<input type="text" id="playerName" placeholder="Neved">
-<input type="text" id="search" placeholder="🔍 Keresés">
+    <!-- 👤 NÉV -->
+    <input type="text" id="playerName" placeholder="Neved">
 
-<input type="text" id="itemName" placeholder="Tárgy">
-<input type="number" id="itemAmount" placeholder="Mennyiség">
+    <br>
 
-<button class="add-btn" onclick="addItem()">Hozzáadás</button>
+    <!-- 📦 ITEM -->
+    <input type="text" id="itemName" placeholder="Tárgy (pl. ak47)">
+    <input type="number" id="itemAmount" placeholder="Mennyiség">
 
-<ul id="inventory"></ul>
+    <br>
+    <button onclick="addItem()">Hozzáadás</button>
 
-<div class="dashboard" id="dashboard"></div>
+    <ul id="inventory"></ul>
 </div>
 
 <script>
-// 🔒 ADMIN NÉV
-const ADMIN_NAME = "admin";
+    // 🔥 FIREBASE CONFIG
+    const firebaseConfig = {
+        apiKey: "AIzaSyBgbixws2rf6VdqjQATVwZsKg0lgiqy0xI",
+        authDomain: "ordog-fizetes.firebaseapp.com",
+        databaseURL: "https://ordog-fizetes-default-rtdb.europe-west1.firebasedatabase.app",
+        projectId: "ordog-fizetes",
+        storageBucket: "ordog-fizetes.firebasestorage.app",
+        messagingSenderId: "672089263660",
+        appId: "1:672089263660:web:70086de26402ceb3464b89"
+    };
 
-// 🔥 FIREBASE
-const firebaseConfig = {
-    apiKey: "AIzaSyBgbixws2rf6VdqjQATVwZsKg0lgiqy0xI",
-    authDomain: "ordog-fizetes.firebaseapp.com",
-    databaseURL: "https://ordog-fizetes-default-rtdb.europe-west1.firebasedatabase.app",
-};
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
 
-firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
+    // 🔔 DISCORD WEBHOOK
+    const webhookURL = "https://discord.com/api/webhooks/1488436818239160350/jWmCU94AoTmJ1GLrxpVZQTTqM03Ibh4oGtXxqMxOkt2COj5nCXZwiIzoWB0Tmu1Pwm_l";
 
-let inventory = {};
-let logs = [];
-let searchText = "";
+    let inventory = [];
 
-// 💾 NÉV MENTÉS
-const nameInput = document.getElementById("playerName");
-nameInput.value = localStorage.getItem("playerName") || "";
+    function sendToDiscord(message) {
+        fetch(webhookURL, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                content: message
+            })
+        });
+    }
 
-nameInput.oninput = () => {
-    localStorage.setItem("playerName", nameInput.value);
-};
+    function saveLog(message) {
+        db.ref("logs").push({
+            text: message,
+            time: new Date().toLocaleString()
+        });
+    }
 
-// ➕ ADD
-function addItem() {
-    let player = nameInput.value.trim();
-    let name = itemName.value.trim().toLowerCase();
-    let amount = parseInt(itemAmount.value);
+    function addItem() {
+        let player = document.getElementById("playerName").value;
+        let name = document.getElementById("itemName").value;
+        let amount = parseInt(document.getElementById("itemAmount").value);
 
-    if (!player || !name || amount <= 0) return;
+        if (!player) return alert("Add meg a neved!");
+        if (!name || amount <= 0) return;
 
-    db.ref("raktar/" + name).transaction(c => (c || 0) + amount);
+        let existing = inventory.find(i => i.name.toLowerCase() === name.toLowerCase());
 
-    saveLog(player, "add", name, amount);
-
-    itemName.value = "";
-    itemAmount.value = "";
-}
-
-// 📦 TAKE
-function takeItem(name) {
-    let player = nameInput.value.trim();
-    let amt = parseInt(prompt("Mennyit?"));
-    if (!amt || amt <= 0) return;
-
-    db.ref("raktar/" + name).transaction(c => {
-        if (!c || c < amt) {
-            alert("Nincs ennyi!");
-            return c;
+        if (existing) {
+            existing.amount += amount;
+        } else {
+            inventory.push({ name: name, amount: amount });
         }
-        return c - amt;
-    });
 
-    saveLog(player, "take", name, amt);
-}
+        let msg = `➕ ${player} berakott ${amount} db ${name}`;
+        sendToDiscord(msg);
+        saveLog(msg);
 
-// ❌ REMOVE (ADMIN)
-function removeItem(name) {
-    let player = nameInput.value.trim();
-    if (player !== ADMIN_NAME) return alert("Nem vagy admin!");
+        document.getElementById("itemName").value = "";
+        document.getElementById("itemAmount").value = "";
 
-    db.ref("raktar/" + name).remove();
-    saveLog(player, "remove", name, 0);
-}
+        save();
+        render();
+    }
 
-// 🧾 LOG
-function saveLog(player, action, item, amount) {
-    db.ref("logs").push({
-        player, action, item, amount, time: Date.now()
-    });
-}
+    function takeItem(index) {
+        let player = document.getElementById("playerName").value;
+        if (!player) return alert("Add meg a neved!");
 
-// 🎨 RENDER
-function render() {
-    inventoryEl.innerHTML = "";
+        let takeAmount = parseInt(prompt("Mennyit veszel ki?"));
+        if (!takeAmount || takeAmount <= 0) return;
 
-    Object.keys(inventory)
-        .filter(n => n.includes(searchText))
-        .forEach(name => {
+        if (inventory[index].amount < takeAmount) {
+            alert("Nincs ennyi a raktárban!");
+            return;
+        }
+
+        inventory[index].amount -= takeAmount;
+
+        let msg = `📦 ${player} kivett ${takeAmount} db ${inventory[index].name}`;
+        sendToDiscord(msg);
+        saveLog(msg);
+
+        if (inventory[index].amount === 0) {
+            inventory.splice(index, 1);
+        }
+
+        save();
+        render();
+    }
+
+    function removeItem(index) {
+        let player = document.getElementById("playerName").value;
+        if (!player) return alert("Add meg a neved!");
+
+        let msg = `❌ ${player} törölte: ${inventory[index].name}`;
+        sendToDiscord(msg);
+        saveLog(msg);
+
+        inventory.splice(index, 1);
+        save();
+        render();
+    }
+
+    function save() {
+        db.ref("raktar").set(inventory);
+    }
+
+    function render() {
+        let list = document.getElementById("inventory");
+        list.innerHTML = "";
+
+        inventory.forEach((item, i) => {
             let li = document.createElement("li");
             li.innerHTML = `
-                <b>${name}</b> - ${inventory[name]} db
-                <button class="take-btn" onclick="takeItem('${name}')">Kivét</button>
-                <button class="remove-btn" onclick="removeItem('${name}')">Törlés</button>
+                <b>${item.name}</b> - ${item.amount} db
+                <button onclick="takeItem(${i})">Kivét</button>
+                <button onclick="removeItem(${i})">Törlés</button>
             `;
-            inventoryEl.appendChild(li);
+            list.appendChild(li);
         });
+    }
 
-    renderDashboard();
-}
-
-// 📊 DASHBOARD
-function renderDashboard() {
-    let total = Object.values(inventory)
-        .reduce((a,b)=>a+(Number(b)||0),0);
-
-    let unique = Object.keys(inventory).length;
-
-    let players = {};
-
-    logs.forEach(l => {
-        if (!l.player) return;
-
-        if (!players[l.player]) players[l.player]=0;
-        if (l.action === "add") {
-            players[l.player]+=Number(l.amount)||0;
+    // 🔄 AUTOMATIKUS BETÖLTÉS
+    db.ref("raktar").on("value", snapshot => {
+        if (snapshot.exists()) {
+            inventory = snapshot.val();
+            render();
         }
     });
-
-    let top = Object.entries(players)
-        .sort((a,b)=>b[1]-a[1])[0];
-
-    let topText = top ? `${top[0]} (${top[1]})` : "nincs adat";
-
-    dashboard.innerHTML = `
-        📊 Összes item: ${total} <br>
-        📦 Különböző item: ${unique} <br>
-        🏆 Top játékos: ${topText}
-    `;
-}
-
-// 🔍 SEARCH
-search.oninput = e => {
-    searchText = e.target.value.toLowerCase();
-    render();
-};
-
-// 🔄 REALTIME + AUTO FIX
-db.ref("raktar").on("value", snapshot => {
-    let data = snapshot.val() || {};
-    let migrated = {};
-
-    Object.keys(data).forEach(key => {
-        let val = data[key];
-
-        if (typeof val === "number") {
-            migrated[key] = val;
-        } else if (val && typeof val === "object") {
-            migrated[key] = val.amount || 0;
-        }
-    });
-
-    inventory = migrated;
-
-    // automatikus adatjavítás
-    db.ref("raktar").set(migrated);
-
-    render();
-});
-
-// 📜 LOG LOAD
-db.ref("logs").on("value", snap => {
-    logs = Object.values(snap.val() || {});
-    renderDashboard();
-});
-
-// ⌨️ ENTER
-itemAmount.addEventListener("keypress", e => {
-    if (e.key === "Enter") addItem();
-});
 </script>
 
 </body>
-</html>
+</html> 
+Ezen tudunk turbozni?
