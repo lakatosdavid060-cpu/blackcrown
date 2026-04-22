@@ -1,196 +1,249 @@
 <!DOCTYPE html>
 <html lang="hu">
 <head>
-    <meta charset="UTF-8">
-    <title>Raktár rendszer</title>
+<meta charset="UTF-8">
+<title>Raktár rendszer</title>
 
-    <!-- Firebase -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
-    <style>
-        body {
-            font-family: Arial;
-            background: #1e1e1e;
-            color: white;
-            text-align: center;
-        }
+<style>
+body {
+    font-family: Arial;
+    background: #1e1e1e;
+    color: white;
+    text-align: center;
+}
 
-        .box {
-            background: #2e2e2e;
-            padding: 20px;
-            border-radius: 10px;
-            width: 400px;
-            margin: auto;
-            margin-top: 50px;
-        }
+.box {
+    background: #2e2e2e;
+    padding: 20px;
+    border-radius: 10px;
+    width: 400px;
+    margin: auto;
+    margin-top: 50px;
+}
 
-        input {
-            margin: 5px;
-            padding: 5px;
-        }
+input {
+    margin: 5px;
+    padding: 5px;
+}
 
-        button {
-            margin: 3px;
-            cursor: pointer;
-        }
+button {
+    margin: 3px;
+    cursor: pointer;
+}
 
-        li {
-            margin: 10px 0;
-        }
-    </style>
+li {
+    margin: 10px 0;
+}
+</style>
 </head>
+
 <body>
 
 <div class="box">
-    <h2>📦 Raktár</h2>
+<h2>📦 Raktár</h2>
 
-    <!-- 👤 NÉV -->
-    <input type="text" id="playerName" placeholder="Neved">
+<input type="text" id="playerName" placeholder="Neved">
 
-    <br>
+<br>
 
-    <!-- 📦 ITEM -->
-    <input type="text" id="itemName" placeholder="Tárgy (pl. ak47)">
-    <input type="number" id="itemAmount" placeholder="Mennyiség">
+<input type="text" id="itemName" placeholder="Tárgy">
+<input type="number" id="itemAmount" placeholder="Mennyiség">
 
-    <br>
-    <button onclick="addItem()">Hozzáadás</button>
+<br>
+<button onclick="addItem()">Hozzáadás</button>
 
-    <ul id="inventory"></ul>
+<ul id="inventory"></ul>
 </div>
 
 <script>
-    // 🔥 FIREBASE CONFIG
-    const firebaseConfig = {
-        apiKey: "AIzaSyBgbixws2rf6VdqjQATVwZsKg0lgiqy0xI",
-        authDomain: "ordog-fizetes.firebaseapp.com",
-        databaseURL: "https://ordog-fizetes-default-rtdb.europe-west1.firebasedatabase.app",
-        projectId: "ordog-fizetes",
-        storageBucket: "ordog-fizetes.firebasestorage.app",
-        messagingSenderId: "672089263660",
-        appId: "1:672089263660:web:70086de26402ceb3464b89"
+// 🔥 FIREBASE
+const firebaseConfig = {
+    apiKey: "IDE_A_TIÉD",
+    authDomain: "IDE",
+    databaseURL: "IDE",
+    projectId: "IDE",
+    storageBucket: "IDE",
+    messagingSenderId: "IDE",
+    appId: "IDE"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+// 🔔 WEBHOOK (CSERÉLD KI!)
+const webhookURL = "IDE_IRD_BE";
+
+// 👤 NÉV MENTÉS
+const nameInput = document.getElementById("playerName");
+
+if (localStorage.getItem("playerName")) {
+    nameInput.value = localStorage.getItem("playerName");
+}
+
+nameInput.addEventListener("input", () => {
+    localStorage.setItem("playerName", nameInput.value);
+});
+
+let inventory = [];
+
+// 📊 STAT
+function updateStats(player, type, amount) {
+    let ref = db.ref("stats/" + player);
+
+    ref.once("value", snap => {
+        let data = snap.val() || { added: 0, taken: 0 };
+
+        if (type === "add") data.added += amount;
+        if (type === "take") data.taken += amount;
+
+        ref.set(data);
+    });
+}
+
+// 🎨 DISCORD EMBED
+function sendEmbed(type, player, item, amount, totalAfter = null) {
+
+    let config = {
+        add: { title: "➕ Tárgy berakás", color: 5763719 },
+        take: { title: "📦 Tárgy kivét", color: 15844367 },
+        delete: { title: "❌ Tárgy törlés", color: 15548997 }
     };
 
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
+    let c = config[type];
 
-    // 🔔 DISCORD WEBHOOK
-    const webhookURL = "https://discord.com/api/webhooks/1488436818239160350/jWmCU94AoTmJ1GLrxpVZQTTqM03Ibh4oGtXxqMxOkt2COj5nCXZwiIzoWB0Tmu1Pwm_l";
+    let fields = [
+        { name: "👤 Játékos", value: player },
+        { name: "📦 Tárgy", value: item, inline: true }
+    ];
 
-    let inventory = [];
-
-    function sendToDiscord(message) {
-        fetch(webhookURL, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                content: message
-            })
+    if (amount) {
+        fields.push({
+            name: "🔢 Mennyiség",
+            value: amount.toString(),
+            inline: true
         });
     }
 
-    function saveLog(message) {
-        db.ref("logs").push({
-            text: message,
-            time: new Date().toLocaleString()
+    if (totalAfter !== null) {
+        fields.push({
+            name: "📊 Maradt",
+            value: totalAfter.toString()
         });
     }
 
-    function addItem() {
-        let player = document.getElementById("playerName").value;
-        let name = document.getElementById("itemName").value;
-        let amount = parseInt(document.getElementById("itemAmount").value);
-
-        if (!player) return alert("Add meg a neved!");
-        if (!name || amount <= 0) return;
-
-        let existing = inventory.find(i => i.name.toLowerCase() === name.toLowerCase());
-
-        if (existing) {
-            existing.amount += amount;
-        } else {
-            inventory.push({ name: name, amount: amount });
-        }
-
-        let msg = `➕ ${player} berakott ${amount} db ${name}`;
-        sendToDiscord(msg);
-        saveLog(msg);
-
-        document.getElementById("itemName").value = "";
-        document.getElementById("itemAmount").value = "";
-
-        save();
-        render();
-    }
-
-    function takeItem(index) {
-        let player = document.getElementById("playerName").value;
-        if (!player) return alert("Add meg a neved!");
-
-        let takeAmount = parseInt(prompt("Mennyit veszel ki?"));
-        if (!takeAmount || takeAmount <= 0) return;
-
-        if (inventory[index].amount < takeAmount) {
-            alert("Nincs ennyi a raktárban!");
-            return;
-        }
-
-        inventory[index].amount -= takeAmount;
-
-        let msg = `📦 ${player} kivett ${takeAmount} db ${inventory[index].name}`;
-        sendToDiscord(msg);
-        saveLog(msg);
-
-        if (inventory[index].amount === 0) {
-            inventory.splice(index, 1);
-        }
-
-        save();
-        render();
-    }
-
-    function removeItem(index) {
-        let player = document.getElementById("playerName").value;
-        if (!player) return alert("Add meg a neved!");
-
-        let msg = `❌ ${player} törölte: ${inventory[index].name}`;
-        sendToDiscord(msg);
-        saveLog(msg);
-
-        inventory.splice(index, 1);
-        save();
-        render();
-    }
-
-    function save() {
-        db.ref("raktar").set(inventory);
-    }
-
-    function render() {
-        let list = document.getElementById("inventory");
-        list.innerHTML = "";
-
-        inventory.forEach((item, i) => {
-            let li = document.createElement("li");
-            li.innerHTML = `
-                <b>${item.name}</b> - ${item.amount} db
-                <button onclick="takeItem(${i})">Kivét</button>
-                <button onclick="removeItem(${i})">Törlés</button>
-            `;
-            list.appendChild(li);
-        });
-    }
-
-    // 🔄 AUTOMATIKUS BETÖLTÉS
-    db.ref("raktar").on("value", snapshot => {
-        if (snapshot.exists()) {
-            inventory = snapshot.val();
-            render();
-        }
+    fetch(webhookURL, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+            username: "📦 Raktár Bot",
+            avatar_url: "https://cdn-icons-png.flaticon.com/512/263/263142.png",
+            embeds: [{
+                title: c.title,
+                color: c.color,
+                fields: fields,
+                footer: { text: "Raktár rendszer" },
+                timestamp: new Date()
+            }]
+        })
     });
+}
+
+// ➕ HOZZÁADÁS
+function addItem() {
+    let player = nameInput.value;
+    let name = document.getElementById("itemName").value;
+    let amount = parseInt(document.getElementById("itemAmount").value);
+
+    if (!player) return alert("Add meg a neved!");
+    if (!name || amount <= 0) return;
+
+    let existing = inventory.find(i => i.name.toLowerCase() === name.toLowerCase());
+
+    if (existing) {
+        existing.amount += amount;
+    } else {
+        inventory.push({ name, amount });
+    }
+
+    sendEmbed("add", player, name, amount);
+    updateStats(player, "add", amount);
+
+    document.getElementById("itemName").value = "";
+    document.getElementById("itemAmount").value = "";
+
+    save();
+    render();
+}
+
+// 📦 KIVÉT
+function takeItem(index) {
+    let player = nameInput.value;
+    if (!player) return alert("Add meg a neved!");
+
+    let takeAmount = parseInt(prompt("Mennyit veszel ki?"));
+    if (!takeAmount || takeAmount <= 0) return;
+
+    if (inventory[index].amount < takeAmount) {
+        alert("Nincs ennyi!");
+        return;
+    }
+
+    inventory[index].amount -= takeAmount;
+
+    sendEmbed("take", player, inventory[index].name, takeAmount, inventory[index].amount);
+    updateStats(player, "take", takeAmount);
+
+    if (inventory[index].amount === 0) {
+        inventory.splice(index, 1);
+    }
+
+    save();
+    render();
+}
+
+// ❌ TÖRLÉS
+function removeItem(index) {
+    let player = nameInput.value;
+    if (!player) return alert("Add meg a neved!");
+
+    sendEmbed("delete", player, inventory[index].name);
+
+    inventory.splice(index, 1);
+    save();
+    render();
+}
+
+// 💾 SAVE
+function save() {
+    db.ref("raktar").set(inventory);
+}
+
+// 🎨 RENDER
+function render() {
+    let list = document.getElementById("inventory");
+    list.innerHTML = "";
+
+    inventory.forEach((item, i) => {
+        let li = document.createElement("li");
+        li.innerHTML = `
+            <b>${item.name}</b> - ${item.amount} db
+            <button onclick="takeItem(${i})">Kivét</button>
+            <button onclick="removeItem(${i})">Törlés</button>
+        `;
+        list.appendChild(li);
+    });
+}
+
+// 🔄 AUTO LOAD
+db.ref("raktar").on("value", snapshot => {
+    if (snapshot.exists()) {
+        inventory = snapshot.val();
+        render();
+    }
+});
 </script>
 
 </body>
