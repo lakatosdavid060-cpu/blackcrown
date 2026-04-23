@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Discord Feladat Küldő PRO</title>
+
+<style>
+body {
+    font-family: Arial, sans-serif;
+    background: #2c2f33;
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+.container {
+    background: #23272a;
+    padding: 25px;
+    border-radius: 12px;
+    width: 400px;
+    box-shadow: 0 0 12px rgba(0,0,0,0.5);
+}
+
+input, textarea {
+    width: 100%;
+    border-radius: 6px;
+    border: none;
+    padding: 10px;
+    margin-top: 6px;
+}
+
+textarea {
+    height: 120px;
+    resize: none;
+}
+
+button {
+    margin-top: 12px;
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 6px;
+    background: #5865F2;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #4752c4;
+}
+
+.status {
+    margin-top: 10px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h2>📌 Discord Feladat Küldő PRO</h2>
+
+<label>👤 Név:</label>
+<input id="username" placeholder="pl: Péter">
+
+<label>📝 Feladat címe:</label>
+<input id="title" placeholder="pl: Matek házi">
+
+<label>📄 Leírás:</label>
+<textarea id="description" placeholder="Feladat részletei..."></textarea>
+
+<label>📅 Határidő:</label>
+<input type="datetime-local" id="deadline">
+
+<label>🚨 Prioritás:</label>
+<select id="priority">
+<option value="🟢 Ráér">🟢 Ráér</option>
+<option value="🟡 Közepes">🟡 Közepes</option>
+<option value="🔴 Sürgős">🔴 Sürgős</option>
+</select>
+
+<label>📣 Role ping ID (opcionális):</label>
+<input id="rolePing" placeholder="pl: 123456789012345678">
+
+<label>📢 Extra ping:</label>
+<select id="globalPing">
+<option value="">Nincs</option>
+<option value="@everyone">@everyone</option>
+<option value="@here">@here</option>
+</select>
+
+<label>⏰ Időzített küldés (opcionális):</label> (opcionális):</label>
+<input type="datetime-local" id="schedule">
+
+<button onclick="handleSend()">🚀 Küldés Discordra</button>
+
+<div class="status" id="status"></div>
+
+</div>
+
+<script>
+
+// IDE MÁSOLD BE A WEBHOOK URL-T
+const webhookURL = "IDE_ILLESZD_BE_A_WEBHOOK_LINKET";
+
+function buildEmbed() {
+
+const username = document.getElementById("username").value || "Ismeretlen";
+const title = document.getElementById("title").value || "Nincs megadva";
+const description = document.getElementById("description").value || "Nincs leírás";
+const deadline = document.getElementById("deadline").value || "Nincs határidő";
+const priority = document.getElementById("priority").value;
+const rolePing = document.getElementById("rolePing").value;
+const globalPing = document.getElementById("globalPing").value;
+
+let color = 3066993;
+
+if(priority.includes("🟡")) color = 16776960;
+if(priority.includes("🔴")) color = 15158332;
+
+let pingText = "";
+
+if(rolePing)
+pingText += `<@&${rolePing}> `;
+
+if(globalPing)
+pingText += globalPing;
+
+return {
+content: pingText,
+username: "📌 Feladat Bot",
+embeds: [
+{
+color: color,
+title: `📝 ${title}`,
+description: `📄 ${description}`,
+fields: [
+{
+name: "👤 Beküldte",
+value: username,
+inline: true
+},
+{
+name: "📅 Határidő",
+value: deadline,
+inline: true
+},
+{
+name: "🚨 Prioritás",
+value: priority,
+inline: false
+}
+],
+footer: {
+text: `⏱ Küldve: ${new Date().toLocaleString()}`
+},
+timestamp: new Date().toISOString()
+}
+]
+};
+
+}
+
+function sendToDiscord() {
+
+fetch(webhookURL, {
+method: "POST",
+headers: {
+"Content-Type": "application/json"
+},
+body: JSON.stringify(buildEmbed())
+})
+.then(() => {
+
+document.getElementById("status").innerText = "✅ Sikeresen elküldve Discordra!";
+
+})
+.catch(() => {
+
+document.getElementById("status").innerText = "❌ Hiba történt küldés közben.";
+
+});
+}
+
+function handleSend() {
+
+const schedule = document.getElementById("schedule").value;
+
+if(!webhookURL.includes("https://")){
+
+document.getElementById("status").innerText = "⚠️ Add meg a webhook URL-t!";
+return;
+}
+
+if(schedule) {
+
+const scheduleTime = new Date(schedule).getTime();
+const now = new Date().getTime();
+
+if(scheduleTime > now) {
+
+const delay = scheduleTime - now;
+
+setTimeout(sendToDiscord, delay);
+
+
+document.getElementById("status").innerText = "⏳ Időzítve! A feladat később kerül elküldésre.";
+
+return;
+
+}
+
+}
+
+sendToDiscord();
+
+}
+
+</script>
+
+</body>
+</html>
