@@ -74,8 +74,11 @@ button:hover {
 <label>📄 Leírás:
 <textarea id="description" placeholder="Leírás (nem kötelező, vagy hagyd üresen)"></textarea>
 
-📋 Feladat lista (soronként egy task):
-<textarea id="tasks" placeholder="pl:\nTEC-9 gyártás\nAlapanyag beszerzés\nDiller keresés"></textarea>
+📋 Feladat lista (checkbox mód):
+<textarea id="tasks" placeholder="Használat:
+[ ] TEC-9 gyártás
+[ ] Alapanyag beszerzés
+[x] Diller keresés"></textarea>
 
 <label>📅 Határidő:</label>
 <input type="datetime-local" id="deadline">
@@ -115,7 +118,6 @@ function buildEmbed() {
 
 const username = document.getElementById("username").value || "Ismeretlen";
 const title = document.getElementById("title").value || "Feladatok";
-const description = document.getElementById("description").value || "";
 const tasksRaw = document.getElementById("tasks").value || "";
 const deadline = document.getElementById("deadline").value || "Nincs határidő";
 const priority = document.getElementById("priority").value;
@@ -130,22 +132,35 @@ let pingText = "";
 if(rolePing) pingText += `<@&${rolePing}> `;
 if(globalPing) pingText += globalPing;
 
-let tasks = tasksRaw.split("\n").filter(t => t.trim() !== "");
+let lines = tasksRaw.split("\n").filter(l => l.trim() !== "");
 
 let fields = [];
 
-if(tasks.length > 0) {
-for(let i = 0; i < tasks.length; i++) {
+if(lines.length > 0) {
+lines.forEach((line, i) => {
+let status = "📌";
+let text = line;
+
+if(line.includes("[x]") || line.includes("[X]")) {
+status = "✔";
+text = line.replace("[x]"," ").replace("[X]"," ").replace("[ ]"," ").trim();
+} else if(line.includes("[ ]")) {
+status = "❌";
+text = line.replace("[ ]"," ").trim();
+} else {
+status = "📌";
+}
+
 fields.push({
-name: `📌 Task ${i+1}`,
-value: tasks[i],
+name: `${status} Task ${i+1}`,
+value: text,
 inline: false
 });
-}
+});
 } else {
 fields.push({
 name: "📌 Task",
-value: description || "Nincs megadott feladat",
+value: "Nincs feladat megadva",
 inline: false
 });
 }
@@ -169,6 +184,7 @@ timestamp: new Date().toISOString()
 }
 ]
 };
+}
 }
 
 }
