@@ -71,14 +71,8 @@ button:hover {
 <label>📝 Feladat címe:</label>
 <input id="title" placeholder="pl: Matek házi">
 
-<label>📄 Leírás:
-<textarea id="description" placeholder="Leírás (nem kötelező, vagy hagyd üresen)"></textarea>
-
-📋 Feladat lista (checkbox mód):
-<textarea id="tasks" placeholder="Használat:
-[ ] TEC-9 gyártás
-[ ] Alapanyag beszerzés
-[x] Diller keresés"></textarea>
+<label>📄 Leírás:</label>
+<textarea id="description" placeholder="Feladat részletei..."></textarea>
 
 <label>📅 Határidő:</label>
 <input type="datetime-local" id="deadline">
@@ -117,57 +111,25 @@ const webhookURL = "https://discord.com/api/webhooks/1496747229484945458/fXX6l8d
 function buildEmbed() {
 
 const username = document.getElementById("username").value || "Ismeretlen";
-const title = document.getElementById("title").value || "Feladatok";
-const tasksRaw = document.getElementById("tasks").value || "";
+const title = document.getElementById("title").value || "Nincs megadva";
+const description = document.getElementById("description").value || "Nincs leírás";
 const deadline = document.getElementById("deadline").value || "Nincs határidő";
 const priority = document.getElementById("priority").value;
 const rolePing = document.getElementById("rolePing").value;
 const globalPing = document.getElementById("globalPing").value;
 
 let color = 3066993;
+
 if(priority.includes("🟡")) color = 16776960;
 if(priority.includes("🔴")) color = 15158332;
 
 let pingText = "";
-if(rolePing) pingText += `<@&${rolePing}> `;
-if(globalPing) pingText += globalPing;
 
-let lines = tasksRaw.split("\n").filter(l => l.trim() !== "");
+if(rolePing)
+pingText += `<@&${rolePing}> `;
 
-let fields = [];
-
-if(lines.length > 0) {
-lines.forEach((line, i) => {
-let status = "📌";
-let text = line;
-
-if(line.includes("[x]") || line.includes("[X]")) {
-status = "✔";
-text = line.replace("[x]"," ").replace("[X]"," ").replace("[ ]"," ").trim();
-} else if(line.includes("[ ]")) {
-status = "❌";
-text = line.replace("[ ]"," ").trim();
-} else {
-status = "📌";
-}
-
-fields.push({
-name: `${status} Task ${i+1}`,
-value: text,
-inline: false
-});
-});
-} else {
-fields.push({
-name: "📌 Task",
-value: "Nincs feladat megadva",
-inline: false
-});
-}
-
-fields.push({name:"👤 Beküldte", value: username, inline:true});
-fields.push({name:"📅 Határidő", value: deadline, inline:true});
-fields.push({name:"🚨 Prioritás", value: priority, inline:false});
+if(globalPing)
+pingText += globalPing;
 
 return {
 content: pingText,
@@ -176,7 +138,24 @@ embeds: [
 {
 color: color,
 title: `📝 ${title}`,
-fields: fields,
+description: `📄 ${description}`,
+fields: [
+{
+name: "👤 Beküldte",
+value: username,
+inline: true
+},
+{
+name: "📅 Határidő",
+value: deadline,
+inline: true
+},
+{
+name: "🚨 Prioritás",
+value: priority,
+inline: false
+}
+],
 footer: {
 text: `⏱ Küldve: ${new Date().toLocaleString()}`
 },
@@ -184,8 +163,6 @@ timestamp: new Date().toISOString()
 }
 ]
 };
-}
-}
 
 }
 
