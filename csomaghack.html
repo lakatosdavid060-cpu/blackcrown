@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<title>Brute Force Gyakorló</title>
+<style>
+    body {
+        background: #0b0f14;
+        color: #00ff9c;
+        font-family: monospace;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+    }
+
+```
+.box {
+    border: 2px solid #00ff9c;
+    padding: 20px;
+    width: 400px;
+    box-shadow: 0 0 20px #00ff9c33;
+}
+
+h2 { text-align: center; }
+
+.timer-bar {
+    height: 10px;
+    background: #003d2a;
+    margin-bottom: 10px;
+}
+
+.timer-fill {
+    height: 100%;
+    background: #00ff9c;
+    width: 100%;
+    transition: width 1s linear;
+}
+
+.row {
+    display: flex;
+    justify-content: center;
+    margin: 5px 0;
+}
+
+.cell {
+    width: 40px;
+    height: 40px;
+    margin: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #00ff9c;
+    font-size: 18px;
+}
+
+.correct { background: #00ff9c; color: black; }
+.wrong { background: #ff004c; color: white; }
+.partial { background: #ffaa00; color: black; }
+
+input {
+    width: 100%;
+    padding: 10px;
+    margin-top: 10px;
+    background: black;
+    border: 1px solid #00ff9c;
+    color: #00ff9c;
+    text-align: center;
+    font-size: 18px;
+}
+
+button {
+    width: 100%;
+    padding: 10px;
+    margin-top: 10px;
+    background: #00ff9c;
+    border: none;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.info {
+    margin-top: 10px;
+    text-align: center;
+}
+```
+
+</style>
+</head>
+<body>
+
+<div class="box">
+    <h2>⚡ BRUTE FORCE ⚡</h2>
+
+```
+<div class="timer-bar">
+    <div class="timer-fill" id="timerFill"></div>
+</div>
+
+<div class="info" id="timerText"></div>
+<div class="info" id="triesText"></div>
+
+<div id="attempts"></div>
+
+<input id="guess" maxlength="4" inputmode="numeric" placeholder="PIN">
+<button onclick="checkGuess()">Próbálkozás</button>
+
+<div class="info" id="info"></div>
+```
+
+</div>
+
+<script>
+let pin = generatePin();
+let tries = 0;
+let maxTries = 8;
+
+let totalTime = 90;
+let timeLeft = totalTime;
+let timer;
+
+function generatePin() {
+    return String(Math.floor(1000 + Math.random() * 9000));
+}
+
+function startTimer() {
+    updateTimerUI();
+
+    timer = setInterval(() => {
+        timeLeft--;
+        updateTimerUI();
+
+        if (timeLeft <= 0) {
+            clearInterval(timer);
+            loseGame("⏱️ Lejárt az idő! PIN: " + pin);
+        }
+    }, 1000);
+}
+
+function updateTimerUI() {
+    const percent = (timeLeft / totalTime) * 100;
+    document.getElementById("timerFill").style.width = percent + "%";
+    document.getElementById("timerText").innerText = "Idő: " + timeLeft + "s";
+    document.getElementById("triesText").innerText =
+        "Próbálkozás: " + tries + " / " + maxTries;
+}
+
+function checkGuess() {
+    if (timeLeft <= 0) return;
+
+    const input = document.getElementById("guess");
+    let val = input.value.replace(/[^0-9]/g, '');
+
+    if (val.length !== 4) return;
+
+    tries++;
+    updateTimerUI();
+
+    const row = document.createElement("div");
+    row.className = "row";
+
+    for (let i = 0; i < 4; i++) {
+        const cell = document.createElement("div");
+        cell.className = "cell";
+        cell.innerText = val[i];
+
+        if (val[i] === pin[i]) {
+            cell.classList.add("correct");
+        } else if (pin.includes(val[i])) {
+            cell.classList.add("partial");
+        } else {
+            cell.classList.add("wrong");
+        }
+
+        row.appendChild(cell);
+    }
+
+    document.getElementById("attempts").appendChild(row);
+
+    if (val === pin) {
+        winGame();
+        return;
+    }
+
+    if (tries >= maxTries) {
+        loseGame("❌ Elfogytak a próbálkozások! PIN: " + pin);
+    }
+
+    input.value = "";
+}
+
+function winGame() {
+    clearInterval(timer);
+    document.getElementById("info").innerText = "✅ Siker!";
+    resetGame();
+}
+
+function loseGame(msg) {
+    clearInterval(timer);
+    document.getElementById("info").innerText = msg;
+    resetGame();
+}
+
+function resetGame() {
+    setTimeout(() => {
+        pin = generatePin();
+        tries = 0;
+        timeLeft = totalTime;
+        document.getElementById("attempts").innerHTML = "";
+        document.getElementById("info").innerText = "";
+        startTimer();
+    }, 2000);
+}
+
+startTimer();
+</script>
+
+</body>
+</html>
