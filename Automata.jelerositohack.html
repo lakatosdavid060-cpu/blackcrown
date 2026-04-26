@@ -21,7 +21,7 @@
 
     .letters {
         display: grid;
-        grid-template-columns: repeat(5, 50px);
+        grid-template-columns: repeat(6, 50px);
         gap: 10px;
         margin-top: 20px;
     }
@@ -51,11 +51,11 @@
 
 <div id="gameBox">
     <h2>Hack minijáték</h2>
-    <p>Nyomd le a betűket sorrendben!</p>
+    <p>Nyomd le a betűket sorrendban!</p>
 
     <div id="letters" class="letters"></div>
 
-    <div id="timer">Idő: 60</div>
+    <div id="timer">Idő: 30</div>
     <div id="status"></div>
 </div>
 
@@ -66,11 +66,11 @@ const timerText = document.getElementById("timer");
 
 let sequence = [];
 let currentIndex = 0;
-let timeLeft = 60;
+let timeLeft = 30;
 let timer;
 
-// random betűk generálása
-function generateSequence(length = 15) {
+// random betűk generálása (18 db = 6x3)
+function generateSequence(length = 18) {
     const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     sequence = [];
     for (let i = 0; i < length; i++) {
@@ -94,7 +94,7 @@ function renderLetters() {
 function startGame() {
     generateSequence();
     currentIndex = 0;
-    timeLeft = 60;
+    timeLeft = 30;
     statusText.textContent = "";
     renderLetters();
 
@@ -104,7 +104,7 @@ function startGame() {
         timerText.textContent = "Idő: " + timeLeft;
 
         if (timeLeft <= 0) {
-            failGame("Idő lejárt!");
+            failGame("⏰ Idő lejárt!");
         }
     }, 1000);
 }
