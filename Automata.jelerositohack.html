@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<title>Hack Minijáték</title>
+<style>
+    body {
+        background: #0d1117;
+        color: #fff;
+        font-family: Arial;
+        text-align: center;
+        margin-top: 50px;
+    }
+
+    #gameBox {
+        background: #111827;
+        padding: 20px;
+        border-radius: 10px;
+        display: inline-block;
+    }
+
+    .letters {
+        display: grid;
+        grid-template-columns: repeat(5, 50px);
+        gap: 10px;
+        margin-top: 20px;
+    }
+
+    .letter {
+        background: #1f2937;
+        padding: 15px;
+        border-radius: 6px;
+        font-size: 18px;
+    }
+
+    .active {
+        background: #22c55e;
+    }
+
+    #status {
+        margin-top: 15px;
+        font-weight: bold;
+    }
+
+    #timer {
+        margin-top: 10px;
+    }
+</style>
+</head>
+<body>
+
+<div id="gameBox">
+    <h2>Hack minijáték</h2>
+    <p>Nyomd le a betűket sorrendben!</p>
+
+    <div id="letters" class="letters"></div>
+
+    <div id="timer">Idő: 60</div>
+    <div id="status"></div>
+</div>
+
+<script>
+const lettersContainer = document.getElementById("letters");
+const statusText = document.getElementById("status");
+const timerText = document.getElementById("timer");
+
+let sequence = [];
+let currentIndex = 0;
+let timeLeft = 60;
+let timer;
+
+// random betűk generálása
+function generateSequence(length = 15) {
+    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    sequence = [];
+    for (let i = 0; i < length; i++) {
+        sequence.push(chars[Math.floor(Math.random() * chars.length)]);
+    }
+}
+
+// kirajzolás
+function renderLetters() {
+    lettersContainer.innerHTML = "";
+    sequence.forEach((letter, index) => {
+        const div = document.createElement("div");
+        div.classList.add("letter");
+        if (index === currentIndex) div.classList.add("active");
+        div.textContent = letter;
+        lettersContainer.appendChild(div);
+    });
+}
+
+// játék indítás
+function startGame() {
+    generateSequence();
+    currentIndex = 0;
+    timeLeft = 60;
+    statusText.textContent = "";
+    renderLetters();
+
+    clearInterval(timer);
+    timer = setInterval(() => {
+        timeLeft--;
+        timerText.textContent = "Idő: " + timeLeft;
+
+        if (timeLeft <= 0) {
+            failGame("Idő lejárt!");
+        }
+    }, 1000);
+}
+
+// siker
+function winGame() {
+    clearInterval(timer);
+    statusText.textContent = "✅ Hack sikeres!";
+}
+
+// hiba
+function failGame(msg = "❌ Hack sikertelen!") {
+    clearInterval(timer);
+    statusText.textContent = msg;
+    setTimeout(startGame, 1500);
+}
+
+// billentyű figyelés
+document.addEventListener("keydown", (e) => {
+    if (!sequence.length) return;
+
+    if (e.key.toUpperCase() === sequence[currentIndex]) {
+        currentIndex++;
+        renderLetters();
+
+        if (currentIndex === sequence.length) {
+            winGame();
+        }
+    } else {
+        failGame();
+    }
+});
+
+// indulás
+startGame();
+</script>
+
+</body>
+</html>
