@@ -62,7 +62,6 @@ button {
     background: #6c5ce7;
     padding: 3px 8px;
     border-radius: 10px;
-    font-size: 12px;
 }
 
 .item-buttons {
@@ -126,7 +125,7 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// 👤 név mentés
+// 👤 név
 const nameInput = document.getElementById("playerName");
 
 if (localStorage.getItem("playerName")) {
@@ -139,8 +138,9 @@ nameInput.addEventListener("input", () => {
 
 // 📦 data
 let inventory = {};
+let currentRef = null;
 
-// 🎨 DISCORD WEBHOOK
+// 🎨 DISCORD
 const DISCORD_WEBHOOK = "https://discord.com/api/webhooks/1498132522926866563/Otd28hTR8OA8TJu-eLPVxkR51ER2Zj9ofB8t0EW-T2dx61qwOPzcZ1EgttiyZNyh_Tv0";
 
 const COLOR_ADD = 0x00b894;
@@ -163,9 +163,22 @@ function sendDiscordEmbed(title, description, color) {
     });
 }
 
-// 📦 aktuális raktár
+// 📦 raktár ID
 function getWarehouse() {
     return document.getElementById("warehouse").value;
+}
+
+// 🔄 RAKTÁR BETÖLTÉS (FIX)
+function loadWarehouse() {
+    if (currentRef) currentRef.off();
+
+    currentRef = db.ref("raktar/" + getWarehouse());
+
+    currentRef.on("value", snap => {
+        inventory = snap.val() || {};
+        render();
+        updateStats();
+    });
 }
 
 // ➕ HOZZÁADÁS
@@ -194,7 +207,7 @@ function addItem() {
 // ➕ BERAKÁS
 function addToExisting(name) {
     let player = nameInput.value;
-    let amount = parseInt(prompt("Hány darabot?"));
+    let amount = parseInt(prompt("Hány darab?"));
     if (!amount) return;
 
     let ref = db.ref("raktar/" + getWarehouse() + "/" + name);
@@ -298,15 +311,14 @@ function updateStats() {
     document.getElementById("totalItems").innerText = total;
     document.getElementById("uniqueItems").innerText = unique;
     document.getElementById("topItem").innerText =
-        topName + (topAmount > 0 ? ` (${topAmount})` : "");
+        topName + (topAmount ? ` (${topAmount})` : "");
 }
 
-// 🔄 LIVE UPDATE
-db.ref("raktar/" + getWarehouse()).on("value", snap => {
-    inventory = snap.val() || {};
-    render();
-    updateStats();
-});
+// 🔄 raktár váltás FIX
+document.getElementById("warehouse").addEventListener("change", loadWarehouse);
+
+// 🚀 indulás
+loadWarehouse();
 
 </script>
 
