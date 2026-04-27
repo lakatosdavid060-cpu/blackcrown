@@ -9,59 +9,96 @@
 
 <style>
 body {
-    font-family: Arial;
-    background: linear-gradient(135deg, #1e1e1e, #2c2c2c);
+    font-family: 'Segoe UI', sans-serif;
+    background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
     color: white;
     text-align: center;
+    margin: 0;
 }
 
 .box {
-    background: #2e2e2e;
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(18px);
     padding: 25px;
-    border-radius: 15px;
-    width: 420px;
+    border-radius: 20px;
+    width: 95%;
+    max-width: 420px;
     margin: auto;
-    margin-top: 50px;
+    margin-top: 40px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+    border: 1px solid rgba(255,255,255,0.1);
 }
 
 input, select {
-    margin: 5px;
-    padding: 10px;
-    border-radius: 8px;
+    margin: 6px;
+    padding: 12px;
+    border-radius: 10px;
     border: none;
     width: 90%;
+    background: rgba(255,255,255,0.08);
+    color: white;
+    outline: none;
+    transition: 0.2s;
+}
+
+input:focus, select:focus {
+    background: rgba(255,255,255,0.15);
+    transform: scale(1.02);
 }
 
 button {
     padding: 8px 12px;
+    border-radius: 10px;
     border: none;
-    border-radius: 8px;
     cursor: pointer;
     font-weight: bold;
+    transition: 0.2s;
+}
+
+button:hover {
+    transform: scale(1.07);
+}
+
+button:active {
+    transform: scale(0.95);
 }
 
 .main-btn {
-    background: #6c5ce7;
+    background: linear-gradient(45deg, #6c5ce7, #a29bfe);
     color: white;
     width: 95%;
 }
 
 .item {
-    background: #3a3a3a;
+    background: rgba(255,255,255,0.06);
     padding: 12px;
-    border-radius: 12px;
+    border-radius: 15px;
     margin: 10px 0;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    border: 1px solid rgba(255,255,255,0.08);
+    animation: fadeSlideIn 0.3s ease;
+}
+
+.item:hover {
+    transform: translateY(-4px);
+    background: rgba(255,255,255,0.1);
 }
 
 .item-info { text-align: left; }
 
 .amount {
-    background: #6c5ce7;
-    padding: 3px 8px;
-    border-radius: 10px;
+    background: linear-gradient(45deg, #00cec9, #81ecec);
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    margin-left: 6px;
+    transition: transform 0.2s;
+}
+
+.amount.bump {
+    transform: scale(1.3);
 }
 
 .item-buttons {
@@ -69,15 +106,43 @@ button {
     gap: 5px;
 }
 
-.add-btn { background: #00b894; color: white; }
-.take-btn { background: #fdcb6e; color: black; }
-.delete-btn { background: #d63031; color: white; }
+.add-btn { background: linear-gradient(45deg, #00b894, #55efc4); color: white; }
+.take-btn { background: linear-gradient(45deg, #fdcb6e, #ffeaa7); color: black; }
+.delete-btn { background: linear-gradient(45deg, #d63031, #ff7675); color: white; }
 
 #stats {
     margin-top: 15px;
-    background: #1f1f1f;
+    background: rgba(0,0,0,0.3);
     padding: 10px;
+    border-radius: 15px;
+    border: 1px solid rgba(255,255,255,0.08);
+}
+
+#inventory {
+    margin-top: 15px;
+    max-height: 320px;
+    overflow-y: auto;
+}
+
+#inventory::-webkit-scrollbar {
+    width: 6px;
+}
+
+#inventory::-webkit-scrollbar-thumb {
+    background: #6c5ce7;
     border-radius: 10px;
+}
+
+/* animáció */
+@keyframes fadeSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(15px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 </style>
 </head>
@@ -125,7 +190,6 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// 👤 név
 const nameInput = document.getElementById("playerName");
 
 if (localStorage.getItem("playerName")) {
@@ -136,11 +200,9 @@ nameInput.addEventListener("input", () => {
     localStorage.setItem("playerName", nameInput.value);
 });
 
-// 📦 data
 let inventory = {};
 let currentRef = null;
 
-// 🎨 DISCORD
 const DISCORD_WEBHOOK = "https://discord.com/api/webhooks/1498132522926866563/Otd28hTR8OA8TJu-eLPVxkR51ER2Zj9ofB8t0EW-T2dx61qwOPzcZ1EgttiyZNyh_Tv0";
 
 const COLOR_ADD = 0x00b894;
@@ -163,12 +225,10 @@ function sendDiscordEmbed(title, description, color) {
     });
 }
 
-// 📦 raktár ID
 function getWarehouse() {
     return document.getElementById("warehouse").value;
 }
 
-// 🔄 RAKTÁR BETÖLTÉS (FIX)
 function loadWarehouse() {
     if (currentRef) currentRef.off();
 
@@ -181,7 +241,6 @@ function loadWarehouse() {
     });
 }
 
-// ➕ HOZZÁADÁS
 function addItem() {
     let player = nameInput.value;
     let name = document.getElementById("itemName").value;
@@ -204,7 +263,6 @@ function addItem() {
     );
 }
 
-// ➕ BERAKÁS
 function addToExisting(name) {
     let player = nameInput.value;
     let amount = parseInt(prompt("Hány darab?"));
@@ -217,14 +275,9 @@ function addToExisting(name) {
         ref.set(current + amount);
     });
 
-    sendDiscordEmbed(
-        "➕ Berakás",
-        `👤 ${player}\n🏠 Raktár: ${getWarehouse()}\n📌 ${name}\n🔢 ${amount}`,
-        COLOR_ADD
-    );
+    sendDiscordEmbed("➕ Berakás", `${player} ${name} ${amount}`, COLOR_ADD);
 }
 
-// 📦 KIVÉT
 function takeItem(name) {
     let player = nameInput.value;
     let amount = parseInt(prompt("Mennyit veszel ki?"));
@@ -243,27 +296,29 @@ function takeItem(name) {
         else ref.set(newVal);
     });
 
-    sendDiscordEmbed(
-        "📤 Kivét",
-        `👤 ${player}\n🏠 Raktár: ${getWarehouse()}\n📌 ${name}\n🔢 ${amount}`,
-        COLOR_TAKE
-    );
+    sendDiscordEmbed("📤 Kivét", `${player} ${name} ${amount}`, COLOR_TAKE);
 }
 
-// ❌ TÖRLÉS
 function removeItem(name) {
     let player = nameInput.value;
 
     db.ref("raktar/" + getWarehouse() + "/" + name).remove();
 
-    sendDiscordEmbed(
-        "🗑️ Törlés",
-        `👤 ${player}\n🏠 Raktár: ${getWarehouse()}\n📌 ${name}`,
-        COLOR_DELETE
-    );
+    sendDiscordEmbed("🗑️ Törlés", `${player} ${name}`, COLOR_DELETE);
 }
 
-// 🎨 RENDER
+/* anim szám */
+function animateValue(el, start, end, duration = 500) {
+    let startTime = null;
+    function step(ts) {
+        if (!startTime) startTime = ts;
+        let progress = Math.min((ts - startTime) / duration, 1);
+        el.innerText = Math.floor(progress * (end - start) + start);
+        if (progress < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+}
+
 function render() {
     let list = document.getElementById("inventory");
     list.innerHTML = "";
@@ -288,9 +343,15 @@ function render() {
 
         list.appendChild(div);
     });
+
+    setTimeout(() => {
+        document.querySelectorAll(".amount").forEach(el => {
+            el.classList.add("bump");
+            setTimeout(() => el.classList.remove("bump"), 200);
+        });
+    }, 50);
 }
 
-// 📊 STATISZTIKA
 function updateStats() {
     let total = 0;
     let unique = Object.keys(inventory).length;
@@ -308,16 +369,15 @@ function updateStats() {
         }
     });
 
-    document.getElementById("totalItems").innerText = total;
-    document.getElementById("uniqueItems").innerText = unique;
+    animateValue(document.getElementById("totalItems"), 0, total);
+    animateValue(document.getElementById("uniqueItems"), 0, unique);
+
     document.getElementById("topItem").innerText =
         topName + (topAmount ? ` (${topAmount})` : "");
 }
 
-// 🔄 raktár váltás FIX
 document.getElementById("warehouse").addEventListener("change", loadWarehouse);
 
-// 🚀 indulás
 loadWarehouse();
 
 </script>
