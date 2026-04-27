@@ -46,7 +46,6 @@ button {
     width: 95%;
 }
 
-/* ITEM */
 .item {
     background: #3a3a3a;
     padding: 12px;
@@ -96,7 +95,8 @@ button {
 </div>
 
 <script>
-// 🔥 FIREBASE (ÍRD BE A SAJÁTOD!)
+
+// 🔥 FIREBASE CONFIG (a tiéd)
 const firebaseConfig = {
     apiKey: "AIzaSyBgbixws2rf6VdqjQATVwZsKg0lgiqy0xI",
     authDomain: "ordog-fizetes.firebaseapp.com",
@@ -110,7 +110,7 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// 👤 név
+// 👤 név mentés
 const nameInput = document.getElementById("playerName");
 
 if (localStorage.getItem("playerName")) {
@@ -121,8 +121,32 @@ nameInput.addEventListener("input", () => {
     localStorage.setItem("playerName", nameInput.value);
 });
 
-// 📦 inventory objektum (nem tömb!)
+// 📦 inventory
 let inventory = {};
+
+// 🎨 DISCORD WEBHOOK
+const DISCORD_WEBHOOK = "https://discord.com/api/webhooks/1488436818239160350/jWmCU94AoTmJ1GLrxpVZQTTqM03Ibh4oGtXxqMxOkt2COj5nCXZwiIzoWB0Tmu1Pwm_l";
+
+const COLOR_ADD = 0x00b894;
+const COLOR_TAKE = 0xfdcb6e;
+const COLOR_DELETE = 0xd63031;
+
+// 📡 Discord embed
+function sendDiscordEmbed(title, description, color) {
+    fetch(DISCORD_WEBHOOK, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            embeds: [{
+                title: title,
+                description: description,
+                color: color,
+                timestamp: new Date().toISOString(),
+                footer: { text: "Raktár rendszer log" }
+            }]
+        })
+    });
+}
 
 // ➕ HOZZÁADÁS
 function addItem() {
@@ -140,6 +164,12 @@ function addItem() {
         ref.set(current + amount);
     });
 
+    sendDiscordEmbed(
+        "📦 Hozzáadás",
+        `👤 ${player}\n📌 ${name}\n🔢 ${amount}`,
+        COLOR_ADD
+    );
+
     document.getElementById("itemName").value = "";
     document.getElementById("itemAmount").value = "";
 }
@@ -147,13 +177,10 @@ function addItem() {
 // ➕ BERAKÁS
 function addToExisting(name) {
     let player = nameInput.value;
-    if (!player) return alert("Add meg a neved!");
+    if (!player) return;
 
-    let input = prompt("Hány darabot raksz be?");
-    if (input === null) return;
-
-    let amount = parseInt(input);
-    if (isNaN(amount) || amount <= 0) return;
+    let amount = parseInt(prompt("Hány darabot raksz be?"));
+    if (!amount) return;
 
     let ref = db.ref("raktar/" + name);
 
@@ -161,44 +188,54 @@ function addToExisting(name) {
         let current = snap.val() || 0;
         ref.set(current + amount);
     });
+
+    sendDiscordEmbed(
+        "➕ Berakás",
+        `👤 ${player}\n📌 ${name}\n🔢 ${amount}`,
+        COLOR_ADD
+    );
 }
 
 // 📦 KIVÉT
 function takeItem(name) {
     let player = nameInput.value;
-    if (!player) return alert("Add meg a neved!");
+    if (!player) return;
 
-    let input = prompt("Mennyit veszel ki?");
-    if (!input) return;
-
-    let amount = parseInt(input);
+    let amount = parseInt(prompt("Mennyit veszel ki?"));
+    if (!amount) return;
 
     let ref = db.ref("raktar/" + name);
 
     ref.once("value", snap => {
         let current = snap.val() || 0;
 
-        if (current < amount) {
-            alert("Nincs ennyi!");
-            return;
-        }
+        if (current < amount) return alert("Nincs ennyi!");
 
         let newVal = current - amount;
 
-        if (newVal <= 0) {
-            ref.remove();
-        } else {
-            ref.set(newVal);
-        }
+        if (newVal <= 0) ref.remove();
+        else ref.set(newVal);
     });
+
+    sendDiscordEmbed(
+        "📤 Kivét",
+        `👤 ${player}\n📌 ${name}\n🔢 ${amount}`,
+        COLOR_TAKE
+    );
 }
 
 // ❌ TÖRLÉS
 function removeItem(name) {
     let player = nameInput.value;
-    if (!player) return alert("Add meg a neved!");
+    if (!player) return;
 
     db.ref("raktar/" + name).remove();
+
+    sendDiscordEmbed(
+        "🗑️ Törlés",
+        `👤 ${player}\n📌 ${name}`,
+        COLOR_DELETE
+    );
 }
 
 // 🎨 RENDER
@@ -229,11 +266,12 @@ function render() {
     });
 }
 
-// 🔄 AUTO LOAD (NEM TŰNIK EL!)
-db.ref("raktar").on("value", snapshot => {
-    inventory = snapshot.val() || {};
+// 🔄 LIVE
+db.ref("raktar").on("value", snap => {
+    inventory = snap.val() || {};
     render();
 });
+
 </script>
 
 </body>
