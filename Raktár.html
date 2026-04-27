@@ -62,7 +62,7 @@ li {
 // 🔥 FIREBASE
 const firebaseConfig = {
     apiKey: "AIzaSyBgbixws2rf6VdqjQATVwZsKg0lgiqy0xI",
-    authDomain: "http://ordog-fizetes.firebaseapp.com",
+    authDomain: "ordog-fizetes.firebaseapp.com",
     databaseURL: "https://ordog-fizetes-default-rtdb.europe-west1.firebasedatabase.app",
     projectId: "ordog-fizetes",
     storageBucket: "ordog-fizetes.firebasestorage.app",
@@ -73,7 +73,7 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// 🔔 WEBHOOK (CSERÉLD KI!)
+// 🔔 WEBHOOK
 const webhookURL = "https://discord.com/api/webhooks/1488436818239160350/jWmCU94AoTmJ1GLrxpVZQTTqM03Ibh4oGtXxqMxOkt2COj5nCXZwiIzoWB0Tmu1Pwm_l";
 
 // 👤 NÉV MENTÉS
@@ -151,7 +151,7 @@ function sendEmbed(type, player, item, amount, totalAfter = null) {
     });
 }
 
-// ➕ HOZZÁADÁS
+// ➕ ÚJ ITEM HOZZÁADÁS
 function addItem() {
     let player = nameInput.value;
     let name = document.getElementById("itemName").value;
@@ -173,6 +173,30 @@ function addItem() {
 
     document.getElementById("itemName").value = "";
     document.getElementById("itemAmount").value = "";
+
+    save();
+    render();
+}
+
+// ➕ BERAKÁS MEGLÉVŐ ITEMHEZ
+function addToExisting(index) {
+    let player = nameInput.value;
+    if (!player) return alert("Add meg a neved!");
+
+    let input = prompt("Hány darabot szeretnél berakni?");
+    if (input === null) return;
+
+    let addAmount = parseInt(input);
+
+    if (isNaN(addAmount) || addAmount <= 0) {
+        alert("Érvénytelen mennyiség!");
+        return;
+    }
+
+    inventory[index].amount += addAmount;
+
+    sendEmbed("add", player, inventory[index].name, addAmount, inventory[index].amount);
+    updateStats(player, "add", addAmount);
 
     save();
     render();
@@ -230,8 +254,9 @@ function render() {
         let li = document.createElement("li");
         li.innerHTML = `
             <b>${item.name}</b> - ${item.amount} db
-            <button onclick="takeItem(${i})">Kivét</button>
-            <button onclick="removeItem(${i})">Törlés</button>
+            <button onclick="addToExisting(${i})">➕ Berakás</button>
+            <button onclick="takeItem(${i})">📦 Kivét</button>
+            <button onclick="removeItem(${i})">❌ Törlés</button>
         `;
         list.appendChild(li);
     });
