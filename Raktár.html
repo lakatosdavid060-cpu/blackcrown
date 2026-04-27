@@ -100,10 +100,10 @@ button {
 <button class="main-btn" onclick="addItem()">➕ Hozzáadás</button>
 
 <div id="stats">
-    <h3>📊 Statisztika</h3>
-    <p>📦 Összes: <span id="totalItems">0</span></p>
-    <p>📁 Itemek: <span id="uniqueItems">0</span></p>
-    <p>🔝 Legtöbb: <span id="topItem">-</span></p>
+<h3>📊 Statisztika</h3>
+<p>📦 Összes: <span id="totalItems">0</span></p>
+<p>📁 Itemek: <span id="uniqueItems">0</span></p>
+<p>🔝 Legtöbb: <span id="topItem">-</span></p>
 </div>
 
 <div id="inventory"></div>
@@ -111,208 +111,167 @@ button {
 
 <script>
 
-// 🔥 FIREBASE
-const firebaseConfig = {
-    apiKey: "AIzaSyBgbixws2rf6VdqjQATVwZsKg0lgiqy0xI",
-    authDomain: "ordog-fizetes.firebaseapp.com",
-    databaseURL: "https://ordog-fizetes-default-rtdb.europe-west1.firebasedatabase.app",
-    projectId: "ordog-fizetes",
-    storageBucket: "ordog-fizetes.firebasestorage.app",
-    messagingSenderId: "672089263660",
-    appId: "1:672089263660:web:70086de26402ceb3464b89"
-};
-
-firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
-
-// 👤 név mentés
-const nameInput = document.getElementById("playerName");
-
-if (localStorage.getItem("playerName")) {
-    nameInput.value = localStorage.getItem("playerName");
-}
-
-nameInput.addEventListener("input", () => {
-    localStorage.setItem("playerName", nameInput.value);
+// FIREBASE
+firebase.initializeApp({
+databaseURL:"https://ordog-fizetes-default-rtdb.europe-west1.firebasedatabase.app"
 });
 
-// 📦 data
+const db = firebase.database();
+
+const nameInput = document.getElementById("playerName");
+
+if(localStorage.getItem("playerName")){
+nameInput.value = localStorage.getItem("playerName");
+}
+
+nameInput.addEventListener("input",()=>{
+localStorage.setItem("playerName",nameInput.value);
+});
+
 let inventory = {};
 let currentRef = null;
 
-// 🎨 DISCORD WEBHOOK
-const DISCORD_WEBHOOK = "https://discord.com/api/webhooks/1498132522926866563/Otd28hTR8OA8TJu-eLPVxkR51ER2Zj9ofB8t0EW-T2dx61qwOPzcZ1EgttiyZNyh_Tv0";
-
-function sendDiscordEmbed(title, description, color) {
-
-    const payload = {
-        embeds: [{
-            title,
-            description,
-            color,
-            timestamp: new Date().toISOString(),
-            footer: { text: "Raktár rendszer log" }
-        }]
-    };
-
-    const url =
-        DISCORD_WEBHOOK +
-        "?wait=false&payload_json=" +
-        encodeURIComponent(JSON.stringify(payload));
-
-    const img = new Image();
-    img.src = url;
+// 🔥 LOG FIX (nem undefined)
+function addLog(type, player, item, amount, warehouse){
+db.ref("logs").push({
+type: type || "UNKNOWN",
+player: player || "?",
+item: item || "-",
+amount: (amount && !isNaN(amount)) ? amount : 0,
+warehouse: warehouse || "?",
+time: Date.now()
+});
 }
 
-// 📦 raktár
-function getWarehouse() {
-    return document.getElementById("warehouse").value;
+function getWarehouse(){
+return document.getElementById("warehouse").value;
 }
 
-// 🔄 betöltés
-function loadWarehouse() {
-    if (currentRef) currentRef.off();
+function loadWarehouse(){
+if(currentRef) currentRef.off();
 
-    currentRef = db.ref("raktar/" + getWarehouse());
+currentRef = db.ref("raktar/" + getWarehouse());
 
-    currentRef.on("value", snap => {
-        inventory = snap.val() || {};
-        render();
-        updateStats();
-    });
+currentRef.on("value", snap=>{
+inventory = snap.val() || {};
+render();
+updateStats();
+});
 }
 
-// ➕ hozzáadás
-function addItem() {
-    let player = nameInput.value;
-    let name = document.getElementById("itemName").value;
-    let amount = parseInt(document.getElementById("itemAmount").value);
+// ➕ ADD
+function addItem(){
+let player = nameInput.value || "?";
+let name = document.getElementById("itemName").value;
+let amount = parseInt(document.getElementById("itemAmount").value);
 
-    if (!player) return alert("Add meg a neved!");
-    if (!name || amount <= 0) return;
+if(!name || isNaN(amount) || amount <= 0) return;
 
-    let ref = db.ref("raktar/" + getWarehouse() + "/" + name.toLowerCase());
+let ref = db.ref("raktar/" + getWarehouse() + "/" + name.toLowerCase());
 
-    ref.once("value", snap => {
-        let current = snap.val() || 0;
-        ref.set(current + amount);
-    });
+ref.once("value", snap=>{
+let current = snap.val() || 0;
+ref.set(current + amount);
+});
 
-    sendDiscordEmbed(
-        "📦 Hozzáadás",
-        `${player} hozzáadott ${amount}x ${name} (Raktár ${getWarehouse()})`,
-        0x6c5ce7
-    );
+addLog("ADD", player, name, amount, getWarehouse());
 }
 
-// ➕ existing
-function addToExisting(name) {
-    let player = nameInput.value;
-    let amount = parseInt(prompt("Hány?"));
-    if (!amount) return;
+// ➕ EXISTING
+function addToExisting(name){
+let player = nameInput.value || "?";
+let amount = parseInt(prompt("Hány?"));
+if(isNaN(amount) || amount <= 0) return;
 
-    let ref = db.ref("raktar/" + getWarehouse() + "/" + name);
+let ref = db.ref("raktar/" + getWarehouse() + "/" + name);
 
-    ref.once("value", snap => {
-        let current = snap.val() || 0;
-        ref.set(current + amount);
-    });
+ref.once("value", snap=>{
+let current = snap.val() || 0;
+ref.set(current + amount);
+});
 
-    sendDiscordEmbed(
-        "➕ Berakás",
-        `${player} +${amount} ${name}`,
-        0x00b894
-    );
+addLog("ADD_EXISTING", player, name, amount, getWarehouse());
 }
 
-// 📦 kivét
-function takeItem(name) {
-    let player = nameInput.value;
-    let amount = parseInt(prompt("Mennyit?"));
-    if (!amount) return;
+// 📦 TAKE
+function takeItem(name){
+let player = nameInput.value || "?";
+let amount = parseInt(prompt("Mennyit?"));
+if(isNaN(amount) || amount <= 0) return;
 
-    let ref = db.ref("raktar/" + getWarehouse() + "/" + name);
+let ref = db.ref("raktar/" + getWarehouse() + "/" + name);
 
-    ref.once("value", snap => {
-        let current = snap.val() || 0;
+ref.once("value", snap=>{
+let current = snap.val() || 0;
 
-        if (current < amount) return alert("Nincs ennyi!");
+if(current < amount) return;
 
-        let newVal = current - amount;
+let newVal = current - amount;
 
-        if (newVal <= 0) ref.remove();
-        else ref.set(newVal);
-    });
+if(newVal <= 0) ref.remove();
+else ref.set(newVal);
+});
 
-    sendDiscordEmbed(
-        "📦 Kivét",
-        `${player} kivett ${amount}x ${name}`,
-        0xfdcb6e
-    );
+addLog("TAKE", player, name, amount, getWarehouse());
 }
 
-// ❌ törlés
-function removeItem(name) {
-    let player = nameInput.value;
+// ❌ DELETE
+function removeItem(name){
+let player = nameInput.value || "?";
 
-    db.ref("raktar/" + getWarehouse() + "/" + name).remove();
+db.ref("raktar/" + getWarehouse() + "/" + name).remove();
 
-    sendDiscordEmbed(
-        "❌ Törlés",
-        `${player} törölte: ${name}`,
-        0xd63031
-    );
+addLog("DELETE", player, name, 0, getWarehouse());
 }
 
-// 📊 render
-function render() {
-    let list = document.getElementById("inventory");
-    list.innerHTML = "";
+// 🎨 RENDER
+function render(){
+let list = document.getElementById("inventory");
+list.innerHTML = "";
 
-    Object.keys(inventory).forEach(name => {
-        let amount = inventory[name];
+Object.keys(inventory).forEach(name=>{
+let amount = inventory[name];
 
-        let div = document.createElement("div");
-        div.className = "item";
+let div = document.createElement("div");
+div.className = "item";
 
-        div.innerHTML = `
-            <div class="item-info">
-                <b>${name}</b>
-                <span class="amount">${amount} db</span>
-            </div>
-            <div class="item-buttons">
-                <button class="add-btn" onclick="addToExisting('${name}')">➕</button>
-                <button class="take-btn" onclick="takeItem('${name}')">📦</button>
-                <button class="delete-btn" onclick="removeItem('${name}')">❌</button>
-            </div>
-        `;
+div.innerHTML = `
+<div class="item-info">
+<b>${name}</b>
+<span class="amount">${amount}</span>
+</div>
+<div class="item-buttons">
+<button class="add-btn" onclick="addToExisting('${name}')">➕</button>
+<button class="take-btn" onclick="takeItem('${name}')">📦</button>
+<button class="delete-btn" onclick="removeItem('${name}')">❌</button>
+</div>
+`;
 
-        list.appendChild(div);
-    });
+list.appendChild(div);
+});
 }
 
-// 📊 stat
-function updateStats() {
-    let total = 0;
-    let unique = Object.keys(inventory).length;
+// 📊 STATS FIX
+function updateStats(){
+let total = 0;
+let unique = Object.keys(inventory).length;
 
-    let topName = "-";
-    let topAmount = 0;
+let top = "-";
+let max = 0;
 
-    Object.keys(inventory).forEach(name => {
-        let amount = inventory[name];
-        total += amount;
+Object.keys(inventory).forEach(k=>{
+let v = inventory[k];
+total += v;
 
-        if (amount > topAmount) {
-            topAmount = amount;
-            topName = name;
-        }
-    });
+if(v > max){
+max = v;
+top = k;
+}
+});
 
-    document.getElementById("totalItems").innerText = total;
-    document.getElementById("uniqueItems").innerText = unique;
-    document.getElementById("topItem").innerText =
-        topName + (topAmount ? ` (${topAmount})` : "");
+document.getElementById("totalItems").innerText = total;
+document.getElementById("uniqueItems").innerText = unique;
+document.getElementById("topItem").innerText = top + (max ? ` (${max})` : "");
 }
 
 document.getElementById("warehouse").addEventListener("change", loadWarehouse);
@@ -320,6 +279,5 @@ document.getElementById("warehouse").addEventListener("change", loadWarehouse);
 loadWarehouse();
 
 </script>
-
 </body>
 </html>
