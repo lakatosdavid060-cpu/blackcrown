@@ -24,7 +24,7 @@ body {
     margin-top: 50px;
 }
 
-input {
+input, select {
     margin: 5px;
     padding: 10px;
     border-radius: 8px;
@@ -56,16 +56,13 @@ button {
     align-items: center;
 }
 
-.item-info {
-    text-align: left;
-}
+.item-info { text-align: left; }
 
 .amount {
     background: #6c5ce7;
     padding: 3px 8px;
     border-radius: 10px;
     font-size: 12px;
-    margin-left: 5px;
 }
 
 .item-buttons {
@@ -76,27 +73,46 @@ button {
 .add-btn { background: #00b894; color: white; }
 .take-btn { background: #fdcb6e; color: black; }
 .delete-btn { background: #d63031; color: white; }
+
+#stats {
+    margin-top: 15px;
+    background: #1f1f1f;
+    padding: 10px;
+    border-radius: 10px;
+}
 </style>
 </head>
 
 <body>
 
 <div class="box">
-<h2>📦 Raktár</h2>
+<h2>📦 Raktár rendszer</h2>
+
+<select id="warehouse">
+    <option value="1">Raktár 1</option>
+    <option value="2">Raktár 2</option>
+    <option value="3">Raktár 3</option>
+</select>
 
 <input type="text" id="playerName" placeholder="Neved">
-
 <input type="text" id="itemName" placeholder="Tárgy">
 <input type="number" id="itemAmount" placeholder="Mennyiség">
 
 <button class="main-btn" onclick="addItem()">➕ Hozzáadás</button>
+
+<div id="stats">
+    <h3>📊 Statisztika</h3>
+    <p>📦 Összes: <span id="totalItems">0</span></p>
+    <p>📁 Itemek: <span id="uniqueItems">0</span></p>
+    <p>🔝 Legtöbb: <span id="topItem">-</span></p>
+</div>
 
 <div id="inventory"></div>
 </div>
 
 <script>
 
-// 🔥 FIREBASE CONFIG (a tiéd)
+// 🔥 FIREBASE
 const firebaseConfig = {
     apiKey: "AIzaSyBgbixws2rf6VdqjQATVwZsKg0lgiqy0xI",
     authDomain: "ordog-fizetes.firebaseapp.com",
@@ -121,31 +137,35 @@ nameInput.addEventListener("input", () => {
     localStorage.setItem("playerName", nameInput.value);
 });
 
-// 📦 inventory
+// 📦 data
 let inventory = {};
 
 // 🎨 DISCORD WEBHOOK
-const DISCORD_WEBHOOK = "https://discord.com/api/webhooks/1488436818239160350/jWmCU94AoTmJ1GLrxpVZQTTqM03Ibh4oGtXxqMxOkt2COj5nCXZwiIzoWB0Tmu1Pwm_l";
+const DISCORD_WEBHOOK = "IDE_JÖN_A_WEBHOOK_URL";
 
 const COLOR_ADD = 0x00b894;
 const COLOR_TAKE = 0xfdcb6e;
 const COLOR_DELETE = 0xd63031;
 
-// 📡 Discord embed
 function sendDiscordEmbed(title, description, color) {
     fetch(DISCORD_WEBHOOK, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
             embeds: [{
-                title: title,
-                description: description,
-                color: color,
+                title,
+                description,
+                color,
                 timestamp: new Date().toISOString(),
                 footer: { text: "Raktár rendszer log" }
             }]
         })
     });
+}
+
+// 📦 aktuális raktár
+function getWarehouse() {
+    return document.getElementById("warehouse").value;
 }
 
 // ➕ HOZZÁADÁS
@@ -157,7 +177,7 @@ function addItem() {
     if (!player) return alert("Add meg a neved!");
     if (!name || amount <= 0) return;
 
-    let ref = db.ref("raktar/" + name.toLowerCase());
+    let ref = db.ref("raktar/" + getWarehouse() + "/" + name.toLowerCase());
 
     ref.once("value", snap => {
         let current = snap.val() || 0;
@@ -166,23 +186,18 @@ function addItem() {
 
     sendDiscordEmbed(
         "📦 Hozzáadás",
-        `👤 ${player}\n📌 ${name}\n🔢 ${amount}`,
+        `👤 ${player}\n🏠 Raktár: ${getWarehouse()}\n📌 ${name}\n🔢 ${amount}`,
         COLOR_ADD
     );
-
-    document.getElementById("itemName").value = "";
-    document.getElementById("itemAmount").value = "";
 }
 
 // ➕ BERAKÁS
 function addToExisting(name) {
     let player = nameInput.value;
-    if (!player) return;
-
-    let amount = parseInt(prompt("Hány darabot raksz be?"));
+    let amount = parseInt(prompt("Hány darabot?"));
     if (!amount) return;
 
-    let ref = db.ref("raktar/" + name);
+    let ref = db.ref("raktar/" + getWarehouse() + "/" + name);
 
     ref.once("value", snap => {
         let current = snap.val() || 0;
@@ -191,7 +206,7 @@ function addToExisting(name) {
 
     sendDiscordEmbed(
         "➕ Berakás",
-        `👤 ${player}\n📌 ${name}\n🔢 ${amount}`,
+        `👤 ${player}\n🏠 Raktár: ${getWarehouse()}\n📌 ${name}\n🔢 ${amount}`,
         COLOR_ADD
     );
 }
@@ -199,12 +214,10 @@ function addToExisting(name) {
 // 📦 KIVÉT
 function takeItem(name) {
     let player = nameInput.value;
-    if (!player) return;
-
     let amount = parseInt(prompt("Mennyit veszel ki?"));
     if (!amount) return;
 
-    let ref = db.ref("raktar/" + name);
+    let ref = db.ref("raktar/" + getWarehouse() + "/" + name);
 
     ref.once("value", snap => {
         let current = snap.val() || 0;
@@ -219,7 +232,7 @@ function takeItem(name) {
 
     sendDiscordEmbed(
         "📤 Kivét",
-        `👤 ${player}\n📌 ${name}\n🔢 ${amount}`,
+        `👤 ${player}\n🏠 Raktár: ${getWarehouse()}\n📌 ${name}\n🔢 ${amount}`,
         COLOR_TAKE
     );
 }
@@ -227,13 +240,12 @@ function takeItem(name) {
 // ❌ TÖRLÉS
 function removeItem(name) {
     let player = nameInput.value;
-    if (!player) return;
 
-    db.ref("raktar/" + name).remove();
+    db.ref("raktar/" + getWarehouse() + "/" + name).remove();
 
     sendDiscordEmbed(
         "🗑️ Törlés",
-        `👤 ${player}\n📌 ${name}`,
+        `👤 ${player}\n🏠 Raktár: ${getWarehouse()}\n📌 ${name}`,
         COLOR_DELETE
     );
 }
@@ -254,7 +266,6 @@ function render() {
                 <b>${name}</b>
                 <span class="amount">${amount} db</span>
             </div>
-
             <div class="item-buttons">
                 <button class="add-btn" onclick="addToExisting('${name}')">➕</button>
                 <button class="take-btn" onclick="takeItem('${name}')">📦</button>
@@ -266,10 +277,35 @@ function render() {
     });
 }
 
-// 🔄 LIVE
-db.ref("raktar").on("value", snap => {
+// 📊 STATISZTIKA
+function updateStats() {
+    let total = 0;
+    let unique = Object.keys(inventory).length;
+
+    let topName = "-";
+    let topAmount = 0;
+
+    Object.keys(inventory).forEach(name => {
+        let amount = inventory[name];
+        total += amount;
+
+        if (amount > topAmount) {
+            topAmount = amount;
+            topName = name;
+        }
+    });
+
+    document.getElementById("totalItems").innerText = total;
+    document.getElementById("uniqueItems").innerText = unique;
+    document.getElementById("topItem").innerText =
+        topName + (topAmount > 0 ? ` (${topAmount})` : "");
+}
+
+// 🔄 LIVE UPDATE
+db.ref("raktar/" + getWarehouse()).on("value", snap => {
     inventory = snap.val() || {};
     render();
+    updateStats();
 });
 
 </script>
