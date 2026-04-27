@@ -10,33 +10,88 @@
 <style>
 body {
     font-family: Arial;
-    background: #1e1e1e;
+    background: linear-gradient(135deg, #1e1e1e, #2c2c2c);
     color: white;
     text-align: center;
 }
 
+/* KONTÉNER */
 .box {
     background: #2e2e2e;
-    padding: 20px;
-    border-radius: 10px;
-    width: 400px;
+    padding: 25px;
+    border-radius: 15px;
+    width: 420px;
     margin: auto;
     margin-top: 50px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.5);
 }
 
+/* INPUTOK */
 input {
     margin: 5px;
-    padding: 5px;
+    padding: 10px;
+    border-radius: 8px;
+    border: none;
+    width: 90%;
 }
 
+/* GOMBOK */
 button {
-    margin: 3px;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 8px;
     cursor: pointer;
+    font-weight: bold;
+    transition: 0.2s;
 }
 
-li {
-    margin: 10px 0;
+button:hover {
+    transform: scale(1.05);
 }
+
+/* FŐ GOMB */
+.main-btn {
+    background: #6c5ce7;
+    color: white;
+    width: 95%;
+    margin-top: 10px;
+}
+
+/* ITEM KÁRTYA */
+.item {
+    background: #3a3a3a;
+    padding: 12px;
+    border-radius: 12px;
+    margin: 10px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* BAL OLDAL */
+.item-info {
+    text-align: left;
+}
+
+/* MENNYISÉG BADGE */
+.amount {
+    background: #6c5ce7;
+    padding: 3px 8px;
+    border-radius: 10px;
+    font-size: 12px;
+    margin-left: 5px;
+}
+
+/* JOBB OLDAL */
+.item-buttons {
+    display: flex;
+    gap: 5px;
+}
+
+/* GOMB SZÍNEK */
+.add-btn { background: #00b894; color: white; }
+.take-btn { background: #fdcb6e; color: black; }
+.delete-btn { background: #d63031; color: white; }
 </style>
 </head>
 
@@ -47,36 +102,30 @@ li {
 
 <input type="text" id="playerName" placeholder="Neved">
 
-<br>
-
 <input type="text" id="itemName" placeholder="Tárgy">
 <input type="number" id="itemAmount" placeholder="Mennyiség">
 
-<br>
-<button onclick="addItem()">Hozzáadás</button>
+<button class="main-btn" onclick="addItem()">➕ Hozzáadás</button>
 
-<ul id="inventory"></ul>
+<div id="inventory"></div>
 </div>
 
 <script>
 // 🔥 FIREBASE
 const firebaseConfig = {
-    apiKey: "AIzaSyBgbixws2rf6VdqjQATVwZsKg0lgiqy0xI",
-    authDomain: "ordog-fizetes.firebaseapp.com",
-    databaseURL: "https://ordog-fizetes-default-rtdb.europe-west1.firebasedatabase.app",
-    projectId: "ordog-fizetes",
-    storageBucket: "ordog-fizetes.firebasestorage.app",
-    messagingSenderId: "672089263660",
-    appId: "1:672089263660:web:70086de26402ceb3464b89"
+    apiKey: "API_KEY",
+    authDomain: "PROJECT.firebaseapp.com",
+    databaseURL: "https://PROJECT.firebaseio.com",
+    projectId: "PROJECT",
 };
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
 // 🔔 WEBHOOK
-const webhookURL = "https://discord.com/api/webhooks/1488436818239160350/jWmCU94AoTmJ1GLrxpVZQTTqM03Ibh4oGtXxqMxOkt2COj5nCXZwiIzoWB0Tmu1Pwm_l";
+const webhookURL = "WEBHOOK_URL";
 
-// 👤 NÉV MENTÉS
+// 👤 NÉV
 const nameInput = document.getElementById("playerName");
 
 if (localStorage.getItem("playerName")) {
@@ -103,55 +152,34 @@ function updateStats(player, type, amount) {
     });
 }
 
-// 🎨 DISCORD EMBED
+// 🎨 DISCORD
 function sendEmbed(type, player, item, amount, totalAfter = null) {
 
-    let config = {
-        add: { title: "➕ Tárgy berakás", color: 5763719 },
-        take: { title: "📦 Tárgy kivét", color: 15844367 },
-        delete: { title: "❌ Tárgy törlés", color: 15548997 }
+    let titles = {
+        add: "➕ Berakás",
+        take: "📦 Kivét",
+        delete: "❌ Törlés"
     };
-
-    let c = config[type];
-
-    let fields = [
-        { name: "👤 Játékos", value: player },
-        { name: "📦 Tárgy", value: item, inline: true }
-    ];
-
-    if (amount) {
-        fields.push({
-            name: "🔢 Mennyiség",
-            value: amount.toString(),
-            inline: true
-        });
-    }
-
-    if (totalAfter !== null) {
-        fields.push({
-            name: "📊 Maradt",
-            value: totalAfter.toString()
-        });
-    }
 
     fetch(webhookURL, {
         method: "POST",
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify({
-            username: "📦 Raktár Bot",
-            avatar_url: "https://cdn-icons-png.flaticon.com/512/263/263142.png",
+            username: "Raktár Bot",
             embeds: [{
-                title: c.title,
-                color: c.color,
-                fields: fields,
-                footer: { text: "Raktár rendszer" },
+                title: titles[type],
+                fields: [
+                    { name: "Játékos", value: player },
+                    { name: "Tárgy", value: item },
+                    { name: "Mennyiség", value: amount ? amount.toString() : "-" }
+                ],
                 timestamp: new Date()
             }]
         })
     });
 }
 
-// ➕ ÚJ ITEM HOZZÁADÁS
+// ➕ ÚJ ITEM
 function addItem() {
     let player = nameInput.value;
     let name = document.getElementById("itemName").value;
@@ -178,7 +206,7 @@ function addItem() {
     render();
 }
 
-// ➕ BERAKÁS MEGLÉVŐ ITEMHEZ
+// ➕ BERAKÁS
 function addToExisting(index) {
     let player = nameInput.value;
     if (!player) return alert("Add meg a neved!");
@@ -186,17 +214,13 @@ function addToExisting(index) {
     let input = prompt("Hány darabot szeretnél berakni?");
     if (input === null) return;
 
-    let addAmount = parseInt(input);
+    let amount = parseInt(input);
+    if (isNaN(amount) || amount <= 0) return alert("Hibás szám!");
 
-    if (isNaN(addAmount) || addAmount <= 0) {
-        alert("Érvénytelen mennyiség!");
-        return;
-    }
+    inventory[index].amount += amount;
 
-    inventory[index].amount += addAmount;
-
-    sendEmbed("add", player, inventory[index].name, addAmount, inventory[index].amount);
-    updateStats(player, "add", addAmount);
+    sendEmbed("add", player, inventory[index].name, amount, inventory[index].amount);
+    updateStats(player, "add", amount);
 
     save();
     render();
@@ -207,18 +231,17 @@ function takeItem(index) {
     let player = nameInput.value;
     if (!player) return alert("Add meg a neved!");
 
-    let takeAmount = parseInt(prompt("Mennyit veszel ki?"));
-    if (!takeAmount || takeAmount <= 0) return;
+    let amount = parseInt(prompt("Mennyit veszel ki?"));
+    if (!amount || amount <= 0) return;
 
-    if (inventory[index].amount < takeAmount) {
-        alert("Nincs ennyi!");
-        return;
+    if (inventory[index].amount < amount) {
+        return alert("Nincs ennyi!");
     }
 
-    inventory[index].amount -= takeAmount;
+    inventory[index].amount -= amount;
 
-    sendEmbed("take", player, inventory[index].name, takeAmount, inventory[index].amount);
-    updateStats(player, "take", takeAmount);
+    sendEmbed("take", player, inventory[index].name, amount, inventory[index].amount);
+    updateStats(player, "take", amount);
 
     if (inventory[index].amount === 0) {
         inventory.splice(index, 1);
@@ -251,14 +274,23 @@ function render() {
     list.innerHTML = "";
 
     inventory.forEach((item, i) => {
-        let li = document.createElement("li");
-        li.innerHTML = `
-            <b>${item.name}</b> - ${item.amount} db
-            <button onclick="addToExisting(${i})">➕ Berakás</button>
-            <button onclick="takeItem(${i})">📦 Kivét</button>
-            <button onclick="removeItem(${i})">❌ Törlés</button>
+        let div = document.createElement("div");
+        div.className = "item";
+
+        div.innerHTML = `
+            <div class="item-info">
+                <b>${item.name}</b>
+                <span class="amount">${item.amount} db</span>
+            </div>
+
+            <div class="item-buttons">
+                <button class="add-btn" onclick="addToExisting(${i})">➕</button>
+                <button class="take-btn" onclick="takeItem(${i})">📦</button>
+                <button class="delete-btn" onclick="removeItem(${i})">❌</button>
+            </div>
         `;
-        list.appendChild(li);
+
+        list.appendChild(div);
     });
 }
 
