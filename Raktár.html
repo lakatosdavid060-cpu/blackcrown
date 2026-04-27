@@ -15,7 +15,6 @@ body {
     text-align: center;
 }
 
-/* KONTÉNER */
 .box {
     background: #2e2e2e;
     padding: 25px;
@@ -23,10 +22,8 @@ body {
     width: 420px;
     margin: auto;
     margin-top: 50px;
-    box-shadow: 0 0 20px rgba(0,0,0,0.5);
 }
 
-/* INPUTOK */
 input {
     margin: 5px;
     padding: 10px;
@@ -35,29 +32,21 @@ input {
     width: 90%;
 }
 
-/* GOMBOK */
 button {
     padding: 8px 12px;
     border: none;
     border-radius: 8px;
     cursor: pointer;
     font-weight: bold;
-    transition: 0.2s;
 }
 
-button:hover {
-    transform: scale(1.05);
-}
-
-/* FŐ GOMB */
 .main-btn {
     background: #6c5ce7;
     color: white;
     width: 95%;
-    margin-top: 10px;
 }
 
-/* ITEM KÁRTYA */
+/* ITEM */
 .item {
     background: #3a3a3a;
     padding: 12px;
@@ -68,12 +57,10 @@ button:hover {
     align-items: center;
 }
 
-/* BAL OLDAL */
 .item-info {
     text-align: left;
 }
 
-/* MENNYISÉG BADGE */
 .amount {
     background: #6c5ce7;
     padding: 3px 8px;
@@ -82,13 +69,11 @@ button:hover {
     margin-left: 5px;
 }
 
-/* JOBB OLDAL */
 .item-buttons {
     display: flex;
     gap: 5px;
 }
 
-/* GOMB SZÍNEK */
 .add-btn { background: #00b894; color: white; }
 .take-btn { background: #fdcb6e; color: black; }
 .delete-btn { background: #d63031; color: white; }
@@ -111,21 +96,21 @@ button:hover {
 </div>
 
 <script>
-// 🔥 FIREBASE
+// 🔥 FIREBASE (ÍRD BE A SAJÁTOD!)
 const firebaseConfig = {
-    apiKey: "API_KEY",
-    authDomain: "PROJECT.firebaseapp.com",
-    databaseURL: "https://PROJECT.firebaseio.com",
-    projectId: "PROJECT",
+    apiKey: "AIzaSyBgbixws2rf6VdqjQATVwZsKg0lgiqy0xI",
+    authDomain: "ordog-fizetes.firebaseapp.com",
+    databaseURL: "https://ordog-fizetes-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "ordog-fizetes",
+    storageBucket: "ordog-fizetes.firebasestorage.app",
+    messagingSenderId: "672089263660",
+    appId: "1:672089263660:web:70086de26402ceb3464b89"
 };
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// 🔔 WEBHOOK
-const webhookURL = "WEBHOOK_URL";
-
-// 👤 NÉV
+// 👤 név
 const nameInput = document.getElementById("playerName");
 
 if (localStorage.getItem("playerName")) {
@@ -136,50 +121,10 @@ nameInput.addEventListener("input", () => {
     localStorage.setItem("playerName", nameInput.value);
 });
 
-let inventory = [];
+// 📦 inventory objektum (nem tömb!)
+let inventory = {};
 
-// 📊 STAT
-function updateStats(player, type, amount) {
-    let ref = db.ref("stats/" + player);
-
-    ref.once("value", snap => {
-        let data = snap.val() || { added: 0, taken: 0 };
-
-        if (type === "add") data.added += amount;
-        if (type === "take") data.taken += amount;
-
-        ref.set(data);
-    });
-}
-
-// 🎨 DISCORD
-function sendEmbed(type, player, item, amount, totalAfter = null) {
-
-    let titles = {
-        add: "➕ Berakás",
-        take: "📦 Kivét",
-        delete: "❌ Törlés"
-    };
-
-    fetch(webhookURL, {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({
-            username: "Raktár Bot",
-            embeds: [{
-                title: titles[type],
-                fields: [
-                    { name: "Játékos", value: player },
-                    { name: "Tárgy", value: item },
-                    { name: "Mennyiség", value: amount ? amount.toString() : "-" }
-                ],
-                timestamp: new Date()
-            }]
-        })
-    });
-}
-
-// ➕ ÚJ ITEM
+// ➕ HOZZÁADÁS
 function addItem() {
     let player = nameInput.value;
     let name = document.getElementById("itemName").value;
@@ -188,84 +133,72 @@ function addItem() {
     if (!player) return alert("Add meg a neved!");
     if (!name || amount <= 0) return;
 
-    let existing = inventory.find(i => i.name.toLowerCase() === name.toLowerCase());
+    let ref = db.ref("raktar/" + name.toLowerCase());
 
-    if (existing) {
-        existing.amount += amount;
-    } else {
-        inventory.push({ name, amount });
-    }
-
-    sendEmbed("add", player, name, amount);
-    updateStats(player, "add", amount);
+    ref.once("value", snap => {
+        let current = snap.val() || 0;
+        ref.set(current + amount);
+    });
 
     document.getElementById("itemName").value = "";
     document.getElementById("itemAmount").value = "";
-
-    save();
-    render();
 }
 
 // ➕ BERAKÁS
-function addToExisting(index) {
+function addToExisting(name) {
     let player = nameInput.value;
     if (!player) return alert("Add meg a neved!");
 
-    let input = prompt("Hány darabot szeretnél berakni?");
+    let input = prompt("Hány darabot raksz be?");
     if (input === null) return;
 
     let amount = parseInt(input);
-    if (isNaN(amount) || amount <= 0) return alert("Hibás szám!");
+    if (isNaN(amount) || amount <= 0) return;
 
-    inventory[index].amount += amount;
+    let ref = db.ref("raktar/" + name);
 
-    sendEmbed("add", player, inventory[index].name, amount, inventory[index].amount);
-    updateStats(player, "add", amount);
-
-    save();
-    render();
+    ref.once("value", snap => {
+        let current = snap.val() || 0;
+        ref.set(current + amount);
+    });
 }
 
 // 📦 KIVÉT
-function takeItem(index) {
+function takeItem(name) {
     let player = nameInput.value;
     if (!player) return alert("Add meg a neved!");
 
-    let amount = parseInt(prompt("Mennyit veszel ki?"));
-    if (!amount || amount <= 0) return;
+    let input = prompt("Mennyit veszel ki?");
+    if (!input) return;
 
-    if (inventory[index].amount < amount) {
-        return alert("Nincs ennyi!");
-    }
+    let amount = parseInt(input);
 
-    inventory[index].amount -= amount;
+    let ref = db.ref("raktar/" + name);
 
-    sendEmbed("take", player, inventory[index].name, amount, inventory[index].amount);
-    updateStats(player, "take", amount);
+    ref.once("value", snap => {
+        let current = snap.val() || 0;
 
-    if (inventory[index].amount === 0) {
-        inventory.splice(index, 1);
-    }
+        if (current < amount) {
+            alert("Nincs ennyi!");
+            return;
+        }
 
-    save();
-    render();
+        let newVal = current - amount;
+
+        if (newVal <= 0) {
+            ref.remove();
+        } else {
+            ref.set(newVal);
+        }
+    });
 }
 
 // ❌ TÖRLÉS
-function removeItem(index) {
+function removeItem(name) {
     let player = nameInput.value;
     if (!player) return alert("Add meg a neved!");
 
-    sendEmbed("delete", player, inventory[index].name);
-
-    inventory.splice(index, 1);
-    save();
-    render();
-}
-
-// 💾 SAVE
-function save() {
-    db.ref("raktar").set(inventory);
+    db.ref("raktar/" + name).remove();
 }
 
 // 🎨 RENDER
@@ -273,20 +206,22 @@ function render() {
     let list = document.getElementById("inventory");
     list.innerHTML = "";
 
-    inventory.forEach((item, i) => {
+    Object.keys(inventory).forEach(name => {
+        let amount = inventory[name];
+
         let div = document.createElement("div");
         div.className = "item";
 
         div.innerHTML = `
             <div class="item-info">
-                <b>${item.name}</b>
-                <span class="amount">${item.amount} db</span>
+                <b>${name}</b>
+                <span class="amount">${amount} db</span>
             </div>
 
             <div class="item-buttons">
-                <button class="add-btn" onclick="addToExisting(${i})">➕</button>
-                <button class="take-btn" onclick="takeItem(${i})">📦</button>
-                <button class="delete-btn" onclick="removeItem(${i})">❌</button>
+                <button class="add-btn" onclick="addToExisting('${name}')">➕</button>
+                <button class="take-btn" onclick="takeItem('${name}')">📦</button>
+                <button class="delete-btn" onclick="removeItem('${name}')">❌</button>
             </div>
         `;
 
@@ -294,12 +229,10 @@ function render() {
     });
 }
 
-// 🔄 AUTO LOAD
+// 🔄 AUTO LOAD (NEM TŰNIK EL!)
 db.ref("raktar").on("value", snapshot => {
-    if (snapshot.exists()) {
-        inventory = snapshot.val();
-        render();
-    }
+    inventory = snapshot.val() || {};
+    render();
 });
 </script>
 
