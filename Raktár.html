@@ -10,31 +10,38 @@
 <style>
 body {
     font-family: 'Segoe UI', sans-serif;
-    background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+    background: radial-gradient(circle at top, #1a2a3a, #0b0f14);
     color: white;
-    text-align: center;
     margin: 0;
+    text-align: center;
 }
 
+/* GLASS PANEL */
 .box {
-    background: rgba(255,255,255,0.05);
-    backdrop-filter: blur(18px);
-    padding: 25px;
-    border-radius: 20px;
+    background: rgba(255,255,255,0.06);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 22px;
     width: 95%;
-    max-width: 420px;
-    margin: auto;
-    margin-top: 40px;
-    box-shadow: 0 20px 50px rgba(0,0,0,0.6);
-    border: 1px solid rgba(255,255,255,0.1);
+    max-width: 460px;
+    margin: 35px auto;
+    padding: 25px;
+    box-shadow: 0 25px 60px rgba(0,0,0,0.6);
+    animation: fadeIn 0.5s ease;
 }
 
+h2 {
+    margin-bottom: 15px;
+    letter-spacing: 1px;
+}
+
+/* INPUTS */
 input, select {
     margin: 6px;
     padding: 12px;
-    border-radius: 10px;
+    border-radius: 12px;
     border: none;
-    width: 90%;
+    width: 92%;
     background: rgba(255,255,255,0.08);
     color: white;
     outline: none;
@@ -42,107 +49,150 @@ input, select {
 }
 
 input:focus, select:focus {
-    background: rgba(255,255,255,0.15);
     transform: scale(1.02);
+    background: rgba(255,255,255,0.14);
 }
 
+/* BUTTONS */
 button {
-    padding: 8px 12px;
-    border-radius: 10px;
+    padding: 10px 12px;
+    border-radius: 12px;
     border: none;
     cursor: pointer;
     font-weight: bold;
     transition: 0.2s;
+    position: relative;
+    overflow: hidden;
 }
 
 button:hover {
-    transform: scale(1.07);
+    transform: translateY(-2px) scale(1.05);
 }
 
 button:active {
     transform: scale(0.95);
 }
 
+/* ripple effect */
+button::after {
+    content: "";
+    position: absolute;
+    width: 100px;
+    height: 100px;
+    background: rgba(255,255,255,0.3);
+    border-radius: 50%;
+    transform: scale(0);
+    opacity: 0;
+    transition: 0.4s;
+}
+
+button:active::after {
+    transform: scale(2);
+    opacity: 0;
+}
+
+/* MAIN BUTTON */
 .main-btn {
     background: linear-gradient(45deg, #6c5ce7, #a29bfe);
     color: white;
     width: 95%;
 }
 
+/* ITEM */
 .item {
     background: rgba(255,255,255,0.06);
-    padding: 12px;
-    border-radius: 15px;
+    padding: 14px;
+    border-radius: 16px;
     margin: 10px 0;
     display: flex;
     justify-content: space-between;
     align-items: center;
     border: 1px solid rgba(255,255,255,0.08);
-    animation: fadeSlideIn 0.3s ease;
+    animation: slideIn 0.25s ease;
+    transition: 0.25s;
 }
 
 .item:hover {
-    transform: translateY(-4px);
-    background: rgba(255,255,255,0.1);
+    transform: translateY(-5px);
+    background: rgba(255,255,255,0.12);
 }
 
-.item-info { text-align: left; }
+/* DELETE ANIMATION */
+.item.remove {
+    opacity: 0;
+    transform: scale(0.8);
+    transition: 0.3s;
+}
+
+.item-info {
+    text-align: left;
+}
 
 .amount {
     background: linear-gradient(45deg, #00cec9, #81ecec);
-    padding: 3px 10px;
+    padding: 4px 10px;
     border-radius: 12px;
     font-size: 12px;
     margin-left: 6px;
-    transition: transform 0.2s;
+    transition: 0.2s;
 }
 
 .amount.bump {
     transform: scale(1.3);
 }
 
+/* BUTTONS */
 .item-buttons {
     display: flex;
-    gap: 5px;
+    gap: 6px;
 }
 
-.add-btn { background: linear-gradient(45deg, #00b894, #55efc4); color: white; }
-.take-btn { background: linear-gradient(45deg, #fdcb6e, #ffeaa7); color: black; }
-.delete-btn { background: linear-gradient(45deg, #d63031, #ff7675); color: white; }
+.add-btn {
+    background: linear-gradient(45deg, #00b894, #55efc4);
+}
 
+.take-btn {
+    background: linear-gradient(45deg, #fdcb6e, #ffeaa7);
+    color: black;
+}
+
+.delete-btn {
+    background: linear-gradient(45deg, #d63031, #ff7675);
+}
+
+/* STATS */
 #stats {
     margin-top: 15px;
-    background: rgba(0,0,0,0.3);
-    padding: 10px;
-    border-radius: 15px;
+    background: rgba(0,0,0,0.35);
+    padding: 12px;
+    border-radius: 16px;
     border: 1px solid rgba(255,255,255,0.08);
 }
 
 #inventory {
     margin-top: 15px;
-    max-height: 320px;
+    max-height: 330px;
     overflow-y: auto;
 }
 
+/* scrollbar */
 #inventory::-webkit-scrollbar {
     width: 6px;
 }
-
 #inventory::-webkit-scrollbar-thumb {
     background: #6c5ce7;
     border-radius: 10px;
 }
 
-/* animáció */
-@keyframes fadeSlideIn {
-    from {
-        opacity: 0;
-        transform: translateY(15px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+/* animations */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 </style>
 </head>
@@ -176,7 +226,7 @@ button:active {
 
 <script>
 
-// 🔥 FIREBASE
+// FIREBASE (NEM NYÚLTAM)
 const firebaseConfig = {
     apiKey: "AIzaSyBgbixws2rf6VdqjQATVwZsKg0lgiqy0xI",
     authDomain: "ordog-fizetes.firebaseapp.com",
@@ -205,21 +255,16 @@ let currentRef = null;
 
 const DISCORD_WEBHOOK = "https://discord.com/api/webhooks/1498132522926866563/Otd28hTR8OA8TJu-eLPVxkR51ER2Zj9ofB8t0EW-T2dx61qwOPzcZ1EgttiyZNyh_Tv0";
 
-const COLOR_ADD = 0x00b894;
-const COLOR_TAKE = 0xfdcb6e;
-const COLOR_DELETE = 0xd63031;
-
 function sendDiscordEmbed(title, description, color) {
     fetch(DISCORD_WEBHOOK, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {"Content-Type":"application/json"},
         body: JSON.stringify({
-            embeds: [{
+            embeds:[{
                 title,
                 description,
                 color,
-                timestamp: new Date().toISOString(),
-                footer: { text: "Raktár rendszer log" }
+                timestamp:new Date().toISOString()
             }]
         })
     });
@@ -256,16 +301,11 @@ function addItem() {
         ref.set(current + amount);
     });
 
-    sendDiscordEmbed(
-        "📦 Hozzáadás",
-        `👤 ${player}\n🏠 Raktár: ${getWarehouse()}\n📌 ${name}\n🔢 ${amount}`,
-        COLOR_ADD
-    );
+    sendDiscordEmbed("📦 Add", player, 0x00b894);
 }
 
 function addToExisting(name) {
-    let player = nameInput.value;
-    let amount = parseInt(prompt("Hány darab?"));
+    let amount = parseInt(prompt("Hány?"));
     if (!amount) return;
 
     let ref = db.ref("raktar/" + getWarehouse() + "/" + name);
@@ -274,13 +314,10 @@ function addToExisting(name) {
         let current = snap.val() || 0;
         ref.set(current + amount);
     });
-
-    sendDiscordEmbed("➕ Berakás", `${player} ${name} ${amount}`, COLOR_ADD);
 }
 
 function takeItem(name) {
-    let player = nameInput.value;
-    let amount = parseInt(prompt("Mennyit veszel ki?"));
+    let amount = parseInt(prompt("Mennyit?"));
     if (!amount) return;
 
     let ref = db.ref("raktar/" + getWarehouse() + "/" + name);
@@ -288,35 +325,32 @@ function takeItem(name) {
     ref.once("value", snap => {
         let current = snap.val() || 0;
 
-        if (current < amount) return alert("Nincs ennyi!");
+        if (current < amount) return;
 
         let newVal = current - amount;
 
         if (newVal <= 0) ref.remove();
         else ref.set(newVal);
     });
-
-    sendDiscordEmbed("📤 Kivét", `${player} ${name} ${amount}`, COLOR_TAKE);
 }
 
 function removeItem(name) {
-    let player = nameInput.value;
-
     db.ref("raktar/" + getWarehouse() + "/" + name).remove();
-
-    sendDiscordEmbed("🗑️ Törlés", `${player} ${name}`, COLOR_DELETE);
 }
 
-/* anim szám */
-function animateValue(el, start, end, duration = 500) {
-    let startTime = null;
-    function step(ts) {
-        if (!startTime) startTime = ts;
-        let progress = Math.min((ts - startTime) / duration, 1);
-        el.innerText = Math.floor(progress * (end - start) + start);
-        if (progress < 1) requestAnimationFrame(step);
-    }
-    requestAnimationFrame(step);
+/* ANIM VALUE */
+function animateValue(el, start, end) {
+    let cur = start;
+    let step = Math.ceil(end / 30);
+
+    let i = setInterval(() => {
+        cur += step;
+        if (cur >= end) {
+            cur = end;
+            clearInterval(i);
+        }
+        el.innerText = cur;
+    }, 20);
 }
 
 function render() {
