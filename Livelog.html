@@ -2,7 +2,7 @@
 <html lang="hu">
 <head>
 <meta charset="UTF-8">
-<title>Raktár Log</title>
+<title>Raktár Log - LIVE</title>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
@@ -18,15 +18,15 @@ body {
 .box {
     max-width:900px;
     margin:auto;
-    margin-top:20px;
 }
 
 .item {
-    background:#222;
+    background:#1e1e1e;
     margin:8px 0;
     padding:10px;
     border-radius:8px;
     border-left:4px solid #6c5ce7;
+    text-align:left;
 }
 
 .ADD { border-left-color:#00b894; }
@@ -34,16 +34,33 @@ body {
 .TAKE { border-left-color:#fdcb6e; }
 .DELETE { border-left-color:#d63031; }
 
-.small {
-    font-size:12px;
-    opacity:0.7;
+.error { border-left-color:red; }
+
+.small { font-size:12px; opacity:0.7; }
+
+input {
+    padding:8px;
+    width:80%;
+    margin:10px;
+    border-radius:6px;
+    border:none;
+}
+
+#status {
+    margin:10px;
+    font-size:13px;
+    opacity:0.8;
 }
 </style>
 </head>
 
 <body>
 
-<h2>📡 LIVE Raktár Log + Discord</h2>
+<h2>📡 Raktár Log (LIVE)</h2>
+
+<input id="search" placeholder="🔎 Keresés játékos / item / raktár...">
+
+<div id="status">Betöltés...</div>
 
 <div class="box">
 <div id="log"></div>
@@ -51,7 +68,7 @@ body {
 
 <script>
 
-// 🔥 WEBHOOK
+// ⚠️ WEBHOOK (FIGYELEM: frontendben nem biztonságos)
 const WEBHOOK_URL = "https://discord.com/api/webhooks/1498489222452215841/oFvtIytRbCkkcWUmshJsaBLS79K8WDoDjrJKDGVUGGzMqFjcDGWVlh9rfvdpQZHF9cdP";
 
 firebase.initializeApp({
@@ -60,111 +77,115 @@ databaseURL:"https://ordog-fizetes-default-rtdb.europe-west1.firebasedatabase.ap
 
 const db = firebase.database();
 const logDiv = document.getElementById("log");
+const status = document.getElementById("status");
+const search = document.getElementById("search");
+
+let cache = {};
+let initialized = false;
 
 // --------------------
 // DISCORD KÜLDÉS
 // --------------------
-
 let lastSent = 0;
 
-function sendToDiscord(d){
+async function sendToDiscord(d){
+  try {
+    if(Date.now() - lastSent < 1000) return;
+    lastSent = Date.now();
 
-  let now = Date.now();
-  if(now - lastSent < 1000) return; // rate limit (1/sec)
+    const colorMap = {
+      ADD: 5763719,
+      ADD_EXISTING: 3447003,
+      TAKE: 16776960,
+      DELETE: 15548997
+    };
 
-  lastSent = now;
+    let payload = {
+      embeds: [{
+        title: d.amount > 100 ? "🚨 GYANÚS AKTIVITÁS!" : (d.type || "LOG"),
+        color: d.amount > 100 ? 16711680 : (colorMap[d.type] || 9807270),
+        fields: [
+          { name: "👤 Játékos", value: d.player || "?", inline: true },
+          { name: "📦 Item", value: `${d.item || "-"} (${d.amount || 0})`, inline: true },
+          { name: "🏠 Raktár", value: d.warehouse || "?", inline: true }
+        ],
+        footer: { text: new Date(d.time).toLocaleString() }
+      }]
+    };
 
-  const colorMap = {
-    ADD: 5763719,
-    ADD_EXISTING: 3447003,
-    TAKE: 16776960,
-    DELETE: 15548997
-  };
+    await fetch(WEBHOOK_URL, {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify(payload)
+    });
 
-  let embed = {
-    username: "📡 Raktár Log",
-    embeds: [{
-      title: d.type || "?",
-      color: colorMap[d.type] || 9807270,
-      fields: [
-        { name: "👤 Játékos", value: d.player || "?", inline: true },
-        { name: "📦 Item", value: `${d.item || "-"} (${d.amount || 0})`, inline: true },
-        { name: "🏠 Raktár", value: d.warehouse || "?", inline: true }
-      ],
-      footer: {
-        text: new Date(d.time).toLocaleString()
-      }
-    }]
-  };
-
-  // 🚨 suspicious
-  if(d.amount > 100){
-    embed.embeds[0].title = "🚨 GYANÚS AKTIVITÁS!";
-    embed.embeds[0].color = 16711680;
+  } catch(e){
+    console.log("Discord hiba:", e);
   }
-
-  fetch(WEBHOOK_URL, {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify(embed)
-  }).catch(()=>{});
 }
 
 // --------------------
-// 🔥 FONTOS FIX
-// csak új logokra küld
+// RENDER
 // --------------------
-
-let initialized = false;
-
-db.ref("logs").limitToLast(100).on("child_added", snap => {
-
-  let d = snap.val();
-
-  // első betöltés = NE küldj Discordra
-  if(!initialized) return;
-
-  sendToDiscord(d);
-});
-
-// amikor az első betöltés kész
-db.ref("logs").limitToLast(100).once("value", () => {
-  initialized = true;
-});
-
-// --------------------
-// UI RENDER (külön!)
-// --------------------
-
-db.ref("logs").limitToLast(100).on("value", snap => {
-
-  let data = snap.val() || {};
+function render(){
+  let q = search.value.toLowerCase();
   logDiv.innerHTML = "";
 
-  Object.keys(data).reverse().forEach(id => {
+  Object.keys(cache).reverse().forEach(id => {
+    let d = cache[id];
 
-    let d = data[id];
+    if(q &&
+      !(d.player||"").toLowerCase().includes(q) &&
+      !(d.item||"").toLowerCase().includes(q) &&
+      !(d.warehouse||"").toLowerCase().includes(q)
+    ) return;
 
     let div = document.createElement("div");
     div.className = "item " + (d.type || "");
 
-    // suspicious UI
-    if(d.amount > 100){
-      div.style.borderLeftColor = "red";
-    }
+    if(d.amount > 100) div.classList.add("error");
 
     div.innerHTML = `
-    <b>${d.type || "?"}</b><br>
-    👤 ${d.player || "?"}<br>
-    📦 ${d.item || "-"} (${d.amount || 0})<br>
-    🏠 ${d.warehouse || "?"}<br>
-    <span class="small">${new Date(d.time).toLocaleString()}</span>
+      <b>${d.type || "?"}</b><br>
+      👤 ${d.player || "?"}<br>
+      📦 ${d.item || "-"} (${d.amount || 0})<br>
+      🏠 ${d.warehouse || "?"}<br>
+      <span class="small">${new Date(d.time).toLocaleString()}</span>
     `;
 
     logDiv.appendChild(div);
   });
+}
 
+// --------------------
+// FIREBASE
+// --------------------
+db.ref("logs").limitToLast(100).on("child_added", snap => {
+  let d = snap.val();
+  cache[snap.key] = d;
+
+  if(initialized){
+    sendToDiscord(d);
+  }
+
+  render();
 });
+
+// első betöltés
+db.ref("logs").limitToLast(100).once("value", () => {
+  initialized = true;
+  status.innerText = "🟢 LIVE";
+});
+
+// hibakezelés
+db.ref("logs").on("value", () => {
+  status.innerText = "🟢 LIVE";
+}, err => {
+  status.innerText = "🔴 Hiba a Firebase kapcsolattal";
+});
+
+// search
+search.addEventListener("input", render);
 
 </script>
 
