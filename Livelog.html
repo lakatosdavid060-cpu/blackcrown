@@ -34,9 +34,12 @@ body {
 .TAKE { border-left-color:#fdcb6e; }
 .DELETE { border-left-color:#d63031; }
 
-.error { border-left-color:red; }
+.error { border-left-color:red !important; }
 
-.small { font-size:12px; opacity:0.7; }
+.small {
+    font-size:12px;
+    opacity:0.7;
+}
 
 input {
     padding:8px;
@@ -68,9 +71,18 @@ input {
 
 <script>
 
-// ⚠️ WEBHOOK (FIGYELEM: frontendben nem biztonságos)
+// 🔥 DISCORD WEBHOOK (FIGYELEM: NEM BIZTONSÁGOS FRONTENDBEN)
 const WEBHOOK_URL = "https://discord.com/api/webhooks/1498489222452215841/oFvtIytRbCkkcWUmshJsaBLS79K8WDoDjrJKDGVUGGzMqFjcDGWVlh9rfvdpQZHF9cdP";
 
+// 🇭🇺 TÍPUS FORDÍTÁS
+const typeHU = {
+  ADD: "➕ Hozzáadás",
+  ADD_EXISTING: "♻️ Meglévőhöz hozzáadás",
+  TAKE: "📤 Kivétel",
+  DELETE: "🗑️ Törlés"
+};
+
+// 🔥 FIREBASE INIT
 firebase.initializeApp({
 databaseURL:"https://ordog-fizetes-default-rtdb.europe-west1.firebasedatabase.app"
 });
@@ -100,16 +112,18 @@ async function sendToDiscord(d){
       DELETE: 15548997
     };
 
+    const title = typeHU[d.type] || d.type || "LOG";
+
     let payload = {
       embeds: [{
-        title: d.amount > 100 ? "🚨 GYANÚS AKTIVITÁS!" : (d.type || "LOG"),
+        title: d.amount > 100 ? "🚨 GYANÚS AKTIVITÁS!" : title,
         color: d.amount > 100 ? 16711680 : (colorMap[d.type] || 9807270),
         fields: [
           { name: "👤 Játékos", value: d.player || "?", inline: true },
           { name: "📦 Item", value: `${d.item || "-"} (${d.amount || 0})`, inline: true },
           { name: "🏠 Raktár", value: d.warehouse || "?", inline: true }
         ],
-        footer: { text: new Date(d.time).toLocaleString() }
+        footer: { text: new Date(d.time).toLocaleString("hu-HU") }
       }]
     };
 
@@ -140,17 +154,17 @@ function render(){
       !(d.warehouse||"").toLowerCase().includes(q)
     ) return;
 
-    let div = document.createElement("div");
+    const div = document.createElement("div");
     div.className = "item " + (d.type || "");
 
     if(d.amount > 100) div.classList.add("error");
 
     div.innerHTML = `
-      <b>${d.type || "?"}</b><br>
+      <b>${typeHU[d.type] || d.type || "Ismeretlen"}</b><br>
       👤 ${d.player || "?"}<br>
       📦 ${d.item || "-"} (${d.amount || 0})<br>
       🏠 ${d.warehouse || "?"}<br>
-      <span class="small">${new Date(d.time).toLocaleString()}</span>
+      <span class="small">${new Date(d.time).toLocaleString("hu-HU")}</span>
     `;
 
     logDiv.appendChild(div);
@@ -158,7 +172,7 @@ function render(){
 }
 
 // --------------------
-// FIREBASE
+// FIREBASE LISTENER
 // --------------------
 db.ref("logs").limitToLast(100).on("child_added", snap => {
   let d = snap.val();
@@ -174,17 +188,17 @@ db.ref("logs").limitToLast(100).on("child_added", snap => {
 // első betöltés
 db.ref("logs").limitToLast(100).once("value", () => {
   initialized = true;
-  status.innerText = "🟢 LIVE";
+  status.innerText = "🟢 ONLINE (LIVE)";
 });
 
 // hibakezelés
 db.ref("logs").on("value", () => {
-  status.innerText = "🟢 LIVE";
+  status.innerText = "🟢 ONLINE (LIVE)";
 }, err => {
-  status.innerText = "🔴 Hiba a Firebase kapcsolattal";
+  status.innerText = "🔴 Firebase hiba";
 });
 
-// search
+// kereső
 search.addEventListener("input", render);
 
 </script>
