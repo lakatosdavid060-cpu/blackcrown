@@ -9,20 +9,16 @@
 
 <style>
 body {
-    background:#111;
+    background:#0f0f0f;
     color:white;
     font-family:Arial;
     text-align:center;
 }
 
 .box {
-    max-width:700px;
+    max-width:900px;
     margin:auto;
     margin-top:20px;
-}
-
-.log {
-    text-align:left;
 }
 
 .item {
@@ -47,39 +43,106 @@ body {
 
 <body>
 
-<h2>📡 LIVE Raktár Log</h2>
+<h2>📡 LIVE Raktár Log + Discord</h2>
 
 <div class="box">
-<div id="log" class="log"></div>
+<div id="log"></div>
 </div>
 
 <script>
+
+// 🔥 IDE ÍRD A WEBHOOKOT
+const WEBHOOK_URL = "https://discord.com/api/webhooks/1498489222452215841/oFvtIytRbCkkcWUmshJsaBLS79K8WDoDjrJKDGVUGGzMqFjcDGWVlh9rfvdpQZHF9cdP";
 
 firebase.initializeApp({
 databaseURL:"https://ordog-fizetes-default-rtdb.europe-west1.firebasedatabase.app"
 });
 
 const db = firebase.database();
-
 const logDiv = document.getElementById("log");
 
-db.ref("logs").limitToLast(50).on("value", snap => {
+// --- DISCORD KÜLDÉS ---
+
+let sentLogs = new Set();
+let lastSent = 0;
+
+function sendToDiscord(d){
+
+  let now = Date.now();
+  if(now - lastSent < 1000) return; // rate limit
+
+  lastSent = now;
+
+  const colorMap = {
+    ADD: 5763719,
+    ADD_EXISTING: 3447003,
+    TAKE: 16776960,
+    DELETE: 15548997
+  };
+
+  let embed = {
+    username: "📡 Raktár Log",
+    embeds: [{
+      title: d.type || "?",
+      color: colorMap[d.type] || 9807270,
+      fields: [
+        { name: "👤 Játékos", value: d.player || "?", inline: true },
+        { name: "📦 Item", value: `${d.item || "-"} (${d.amount || 0})`, inline: true },
+        { name: "🏠 Raktár", value: d.warehouse || "?", inline: true }
+      ],
+      footer: {
+        text: new Date(d.time).toLocaleString()
+      }
+    }]
+  };
+
+  // 🚨 suspicious
+  if(d.amount > 100){
+    embed.embeds[0].title = "🚨 GYANÚS AKTIVITÁS!";
+    embed.embeds[0].color = 16711680;
+  }
+
+  fetch(WEBHOOK_URL, {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify(embed)
+  }).catch(()=>{});
+}
+
+// --- RENDER ---
+
+db.ref("logs").limitToLast(100).on("value", snap => {
 
 let data = snap.val() || {};
 logDiv.innerHTML = "";
 
-// legfrissebb felül
+// új logok küldése Discordra
+Object.keys(data).forEach(id => {
+
+  if(!sentLogs.has(id)){
+    sendToDiscord(data[id]);
+    sentLogs.add(id);
+  }
+
+});
+
+// megjelenítés
 Object.keys(data).reverse().forEach(id => {
 let d = data[id];
 
 let div = document.createElement("div");
 div.className = "item " + (d.type || "");
 
+// suspicious highlight UI
+if(d.amount > 100){
+  div.style.borderLeftColor = "red";
+}
+
 div.innerHTML = `
 <b>${d.type || "?"}</b><br>
 👤 ${d.player || "?"}<br>
 📦 ${d.item || "-"} (${d.amount || 0})<br>
-🏠 Raktár: ${d.warehouse || "?"}<br>
+🏠 ${d.warehouse || "?"}<br>
 <span class="small">${new Date(d.time).toLocaleString()}</span>
 `;
 
