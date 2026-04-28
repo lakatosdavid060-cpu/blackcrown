@@ -51,7 +51,7 @@ body {
 
 <script>
 
-// 🔥 IDE ÍRD A WEBHOOKOT
+// 🔥 WEBHOOK
 const WEBHOOK_URL = "https://discord.com/api/webhooks/1498489222452215841/oFvtIytRbCkkcWUmshJsaBLS79K8WDoDjrJKDGVUGGzMqFjcDGWVlh9rfvdpQZHF9cdP";
 
 firebase.initializeApp({
@@ -61,15 +61,16 @@ databaseURL:"https://ordog-fizetes-default-rtdb.europe-west1.firebasedatabase.ap
 const db = firebase.database();
 const logDiv = document.getElementById("log");
 
-// --- DISCORD KÜLDÉS ---
+// --------------------
+// DISCORD KÜLDÉS
+// --------------------
 
-let sentLogs = new Set();
 let lastSent = 0;
 
 function sendToDiscord(d){
 
   let now = Date.now();
-  if(now - lastSent < 1000) return; // rate limit
+  if(now - lastSent < 1000) return; // rate limit (1/sec)
 
   lastSent = now;
 
@@ -109,45 +110,59 @@ function sendToDiscord(d){
   }).catch(()=>{});
 }
 
-// --- RENDER ---
+// --------------------
+// 🔥 FONTOS FIX
+// csak új logokra küld
+// --------------------
+
+let initialized = false;
+
+db.ref("logs").limitToLast(100).on("child_added", snap => {
+
+  let d = snap.val();
+
+  // első betöltés = NE küldj Discordra
+  if(!initialized) return;
+
+  sendToDiscord(d);
+});
+
+// amikor az első betöltés kész
+db.ref("logs").limitToLast(100).once("value", () => {
+  initialized = true;
+});
+
+// --------------------
+// UI RENDER (külön!)
+// --------------------
 
 db.ref("logs").limitToLast(100).on("value", snap => {
 
-let data = snap.val() || {};
-logDiv.innerHTML = "";
+  let data = snap.val() || {};
+  logDiv.innerHTML = "";
 
-// új logok küldése Discordra
-Object.keys(data).forEach(id => {
+  Object.keys(data).reverse().forEach(id => {
 
-  if(!sentLogs.has(id)){
-    sendToDiscord(data[id]);
-    sentLogs.add(id);
-  }
+    let d = data[id];
 
-});
+    let div = document.createElement("div");
+    div.className = "item " + (d.type || "");
 
-// megjelenítés
-Object.keys(data).reverse().forEach(id => {
-let d = data[id];
+    // suspicious UI
+    if(d.amount > 100){
+      div.style.borderLeftColor = "red";
+    }
 
-let div = document.createElement("div");
-div.className = "item " + (d.type || "");
+    div.innerHTML = `
+    <b>${d.type || "?"}</b><br>
+    👤 ${d.player || "?"}<br>
+    📦 ${d.item || "-"} (${d.amount || 0})<br>
+    🏠 ${d.warehouse || "?"}<br>
+    <span class="small">${new Date(d.time).toLocaleString()}</span>
+    `;
 
-// suspicious highlight UI
-if(d.amount > 100){
-  div.style.borderLeftColor = "red";
-}
-
-div.innerHTML = `
-<b>${d.type || "?"}</b><br>
-👤 ${d.player || "?"}<br>
-📦 ${d.item || "-"} (${d.amount || 0})<br>
-🏠 ${d.warehouse || "?"}<br>
-<span class="small">${new Date(d.time).toLocaleString()}</span>
-`;
-
-logDiv.appendChild(div);
-});
+    logDiv.appendChild(div);
+  });
 
 });
 
