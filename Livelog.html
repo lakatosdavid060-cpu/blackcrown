@@ -71,7 +71,7 @@ input {
 
 <script>
 
-// 🔥 DISCORD WEBHOOK (FIGYELEM: NEM BIZTONSÁGOS FRONTENDBEN)
+// 🔥 DISCORD WEBHOOK
 const WEBHOOK_URL = "https://discord.com/api/webhooks/1498489222452215841/oFvtIytRbCkkcWUmshJsaBLS79K8WDoDjrJKDGVUGGzMqFjcDGWVlh9rfvdpQZHF9cdP";
 
 // 🇭🇺 TÍPUS FORDÍTÁS
@@ -84,7 +84,7 @@ const typeHU = {
 
 // 🔥 FIREBASE INIT
 firebase.initializeApp({
-databaseURL:"https://ordog-fizetes-default-rtdb.europe-west1.firebasedatabase.app"
+  databaseURL: "https://ordog-fizetes-default-rtdb.europe-west1.firebasedatabase.app"
 });
 
 const db = firebase.database();
@@ -101,7 +101,9 @@ let initialized = false;
 let lastSent = 0;
 
 async function sendToDiscord(d){
+
   try {
+
     if(Date.now() - lastSent < 1000) return;
     lastSent = Date.now();
 
@@ -112,29 +114,45 @@ async function sendToDiscord(d){
       DELETE: 15548997
     };
 
-    const title = typeHU[d.type] || d.type || "LOG";
+    const titleHU = typeHU[d.type] || d.type || "LOG";
 
-    let payload = {
+    const payload = {
+      username: "📦 Raktár Log",
       embeds: [{
-        title: d.amount > 100 ? "🚨 GYANÚS AKTIVITÁS!" : title,
+        title: d.amount > 100 ? "🚨 GYANÚS AKTIVITÁS!" : titleHU,
         color: d.amount > 100 ? 16711680 : (colorMap[d.type] || 9807270),
+
         fields: [
           { name: "👤 Játékos", value: d.player || "?", inline: true },
           { name: "📦 Item", value: `${d.item || "-"} (${d.amount || 0})`, inline: true },
           { name: "🏠 Raktár", value: d.warehouse || "?", inline: true }
         ],
-        footer: { text: new Date(d.time).toLocaleString("hu-HU") }
+
+        footer: {
+          text: new Date(d.time || Date.now()).toLocaleString("hu-HU")
+        }
       }]
     };
 
-    await fetch(WEBHOOK_URL, {
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify(payload)
+    const res = await fetch(WEBHOOK_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload)
     });
 
+    if(!res.ok){
+      const err = await res.text();
+      console.log("❌ Discord hiba:", res.status, err);
+      status.innerText = "🔴 Discord hiba (console)";
+    } else {
+      console.log("✅ Discord küldve:", d.type);
+    }
+
   } catch(e){
-    console.log("Discord hiba:", e);
+    console.log("❌ Fetch error:", e);
+    status.innerText = "🔴 Discord kapcsolat hiba";
   }
 }
 
@@ -142,10 +160,12 @@ async function sendToDiscord(d){
 // RENDER
 // --------------------
 function render(){
+
   let q = search.value.toLowerCase();
   logDiv.innerHTML = "";
 
   Object.keys(cache).reverse().forEach(id => {
+
     let d = cache[id];
 
     if(q &&
@@ -154,7 +174,7 @@ function render(){
       !(d.warehouse||"").toLowerCase().includes(q)
     ) return;
 
-    const div = document.createElement("div");
+    let div = document.createElement("div");
     div.className = "item " + (d.type || "");
 
     if(d.amount > 100) div.classList.add("error");
@@ -164,7 +184,7 @@ function render(){
       👤 ${d.player || "?"}<br>
       📦 ${d.item || "-"} (${d.amount || 0})<br>
       🏠 ${d.warehouse || "?"}<br>
-      <span class="small">${new Date(d.time).toLocaleString("hu-HU")}</span>
+      <span class="small">${new Date(d.time || Date.now()).toLocaleString("hu-HU")}</span>
     `;
 
     logDiv.appendChild(div);
@@ -172,9 +192,10 @@ function render(){
 }
 
 // --------------------
-// FIREBASE LISTENER
+// FIREBASE LIVE
 // --------------------
 db.ref("logs").limitToLast(100).on("child_added", snap => {
+
   let d = snap.val();
   cache[snap.key] = d;
 
@@ -185,7 +206,7 @@ db.ref("logs").limitToLast(100).on("child_added", snap => {
   render();
 });
 
-// első betöltés
+// első load
 db.ref("logs").limitToLast(100).once("value", () => {
   initialized = true;
   status.innerText = "🟢 ONLINE (LIVE)";
