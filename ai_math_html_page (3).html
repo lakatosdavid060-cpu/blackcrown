@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<title>AI Matek FULL Frontend</title>
+
+<style>
+body {
+  font-family: Arial;
+  background: #020617;
+  color: white;
+  display: flex;
+  justify-content: center;
+}
+.container {
+  width: 800px;
+}
+.chat {
+  background: #1e293b;
+  height: 300px;
+  overflow: auto;
+  padding: 10px;
+  border-radius: 10px;
+}
+input, button {
+  padding: 10px;
+  border-radius: 8px;
+  border: none;
+}
+.inputRow {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+.card {
+  background: #1e293b;
+  padding: 15px;
+  border-radius: 10px;
+  margin-top: 15px;
+}
+video, img {
+  width: 100%;
+  margin-top: 10px;
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+
+<h1>🤖 AI Matek (Frontend)</h1>
+
+<div id="chat" class="chat"></div>
+
+<div class="inputRow">
+  <input id="input" placeholder="Kérdezz...">
+  <button onclick="send()">Küldés</button>
+</div>
+
+<div class="card">
+  <h3>📸 Kép feltöltés</h3>
+  <input type="file" id="imgInput">
+  <button onclick="analyze()">Elemzés</button>
+  <img id="preview">
+</div>
+
+</div>
+
+<script>
+const apiKey = "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"; // ⚠️ ide tedd az ÚJ kulcsot
+
+function add(text){
+  const div = document.createElement("div");
+  div.innerText = text;
+  document.getElementById("chat").appendChild(div);
+}
+
+// ===== CHAT =====
+async function send(){
+  const input = document.getElementById("input").value;
+  add("🧑 " + input);
+
+  const res = await fetch("https://api.openai.com/v1/responses",{
+    method:"POST",
+    headers:{
+      "Content-Type":"application/json",
+      "Authorization":"Bearer "+apiKey
+    },
+    body: JSON.stringify({
+      model:"gpt-4.1-mini",
+      input: input
+    })
+  });
+
+  const data = await res.json();
+  console.log(data);
+
+  const reply = data.output?.[0]?.content?.[0]?.text || "Hiba történt";
+
+  add("🤖 " + reply);
+}
+
+// ===== IMAGE =====
+async function analyze(){
+  const file = document.getElementById("imgInput").files[0];
+  if(!file) return add("Nincs kép!");
+
+  const reader = new FileReader();
+  reader.onload = async function(){
+    document.getElementById("preview").src = reader.result;
+
+    const base64 = reader.result.split(",")[1];
+
+    const res = await fetch("https://api.openai.com/v1/responses",{
+      method:"POST",
+      headers:{
+        "Content-Type":"application/json",
+        "Authorization":"Bearer "+apiKey
+      },
+      body: JSON.stringify({
+        model:"gpt-4.1-mini",
+        input: [
+          {
+            role:"user",
+            content:[
+              {type:"input_text", text:"Oldd meg ezt a matek feladatot:"},
+              {type:"input_image", image_base64: base64}
+            ]
+          }
+        ]
+      })
+    });
+
+    const data = await res.json();
+    console.log(data);
+
+    const reply = data.output?.[0]?.content?.[0]?.text || "Nem sikerült";
+
+    add("🤖 (kép) " + reply);
+  };
+
+  reader.readAsDataURL(file);
+}
+</script>
+
+</body>
+</html>
