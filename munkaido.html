@@ -2,11 +2,43 @@
 <html lang="hu">
 <head>
 <meta charset="UTF-8">
-<title>RP Munkaidő PRO v2</title>
+<title>RP Munkaidő PRO</title>
+
+<style>
+body { font-family: Arial; background:#121212; color:white; text-align:center; }
+input, select, button { padding:10px; margin:8px; border-radius:8px; border:none; }
+button { cursor:pointer; }
+#start { background:green; }
+#stop { background:red; }
+</style>
+
+</head>
+<body>
+
+<h1>RP Munkaidő PRO</h1>
+
+<input type="text" id="nev" placeholder="Név">
+<select id="rang">
+<option>Boss</option>
+<option>UnderBoss</option>
+<option>Capo</option>
+<option>Soldier</option>
+</select>
+
+<br>
+<button id="start" onclick="startWork()">Munka kezdés</button>
+<button id="stop" onclick="stopWork()">Munka vége</button>
+<button onclick="loadStats()">Összesítés</button>
+
+<h2 id="live"></h2>
+<h2 id="status"></h2>
+<h3 id="stats"></h3>
+
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
+/* 🔐 FIREBASE */
 const firebaseConfig = {
   apiKey: "AIzaSyBgbixws2rf6VdqjQATVwZsKg0lgiqy0xI",
   authDomain: "ordog-fizetes.firebaseapp.com",
@@ -20,10 +52,14 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-let startTime = null;
-let timerInterval = null;
+/* ⚙️ BEÁLLÍTÁS */
+const webhook = "https://discord.com/api/webhooks/1498948555254136863/cylpJM9pG0dB5XALUcRqspygDucdu6vyfLuFDCgM57XUK0bW194VvyI1u2KPqn4ZrIp0"; // IDE ÍRD A DISCORD WEBHOOKOT
 const payPerHour = 300;
 
+let startTime = null;
+let timer = null;
+
+/* ⏱️ IDŐ FORMÁZÁS */
 function formatTime(sec){
     const h = Math.floor(sec/3600);
     const m = Math.floor((sec%3600)/60);
@@ -31,114 +67,101 @@ function formatTime(sec){
     return `${h}ó ${m}p ${s}mp`;
 }
 
-function sendDiscordEmbed(title, desc, color) {
-    const webhook = "https://discord.com/api/webhooks/1498948555254136863/cylpJM9pG0dB5XALUcRqspygDucdu6vyfLuFDCgM57XUK0bW194VvyI1u2KPqn4ZrIp0";
-    if(!webhook || webhook === "https://discord.com/api/webhooks/1498948555254136863/cylpJM9pG0dB5XALUcRqspygDucdu6vyfLuFDCgM57XUK0bW194VvyI1u2KPqn4ZrIp0") return; // ne dobjon hibát
+/* 🟣 DISCORD KÜLDÉS (FIX!) */
+function sendDiscord(title, desc, color){
+    if(!webhook || webhook.includes("IDE")) return;
 
     fetch(webhook, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ embeds: [{ title, description: desc, color }] })
-    });
+        body: JSON.stringify({
+            username: "MunkaBot",
+            embeds: [{
+                title: title,
+                description: desc,
+                color: color
+            }]
+        })
+    }).catch(e => console.log("Webhook hiba:", e));
 }
 
+/* ▶️ START */
 window.startWork = function(){
     const nev = document.getElementById("nev").value;
     const rang = document.getElementById("rang").value;
+
     if(!nev) return alert("Adj meg nevet!");
 
     startTime = Date.now();
 
-    timerInterval = setInterval(()=>{
+    timer = setInterval(()=>{
         const diff = Math.floor((Date.now()-startTime)/1000);
-        document.getElementById("live").innerText = "⏱ Folyamatban: " + formatTime(diff);
+        document.getElementById("live").innerText =
+            "⏱ Folyamatban: " + formatTime(diff);
     },1000);
 
-    sendDiscordEmbed("Munka kezdés", `👤 ${nev}\n🎖 ${rang}`, 65280);
+    sendDiscord("🟢 Munka kezdés",
+        `👤 ${nev}\n🎖 ${rang}`, 65280);
 }
 
+/* ⛔ STOP */
 window.stopWork = async function(){
     const nev = document.getElementById("nev").value;
     const rang = document.getElementById("rang").value;
 
-    if(!startTime) return alert("Nem indítottad el!");
+    if(!startTime) return alert("Nem indítottad!");
 
-    clearInterval(timerInterval);
+    clearInterval(timer);
 
     const diff = Math.floor((Date.now()-startTime)/1000);
     const payment = Math.round((diff/3600)*payPerHour);
 
-    const dayKey = new Date().toISOString().split("T")[0];
+    const day = new Date().toISOString().split("T")[0];
 
-    const playerRef = ref(db, `players/${nev}`);
-    const snapshot = await get(playerRef);
-    let data = snapshot.exists() ? snapshot.val() : {};
+    const playerRef = ref(db, "players/"+nev);
+    const snap = await get(playerRef);
+
+    let data = snap.exists() ? snap.val() : {};
 
     if(!data.daily) data.daily = {};
     if(!data.earnings) data.earnings = {};
 
-    data.daily[dayKey] = (data.daily[dayKey]||0)+diff;
-    data.earnings[dayKey] = (data.earnings[dayKey]||0)+payment;
+    data.daily[day] = (data.daily[day] || 0) + diff;
+    data.earnings[day] = (data.earnings[day] || 0) + payment;
     data.rang = rang;
 
     await set(playerRef, data);
 
-    document.getElementById("status").innerText = `Munka vége: ${formatTime(diff)} | 💰 ${payment}$`;
+    document.getElementById("status").innerText =
+        `Munka vége: ${formatTime(diff)} | 💰 ${payment}$`;
 
-    sendDiscordEmbed("Munka vége", `👤 ${nev}\n🎖 ${rang}\n⏱ ${formatTime(diff)}\n💰 ${payment}$`, 16711680);
+    sendDiscord("🔴 Munka vége",
+        `👤 ${nev}\n🎖 ${rang}\n⏱ ${formatTime(diff)}\n💰 ${payment}$`,
+        16711680);
 
-    loadStats(nev);
     startTime = null;
 }
 
-async function loadStats(nev){
-    const playerRef = ref(db, `players/${nev}`);
-    const snapshot = await get(playerRef);
-    if(!snapshot.exists()) return;
+/* 📊 ÖSSZESÍTÉS */
+window.loadStats = async function(){
+    const nev = document.getElementById("nev").value;
+    if(!nev) return alert("Adj meg nevet!");
 
-    const data = snapshot.val();
+    const snap = await get(ref(db, "players/"+nev));
+    if(!snap.exists()) return;
+
+    const data = snap.val();
 
     let totalTime = 0;
     let totalMoney = 0;
 
-    for(let d in data.daily){ totalTime += data.daily[d]; }
-    for(let d in data.earnings){ totalMoney += data.earnings[d]; }
+    for(let d in data.daily) totalTime += data.daily[d];
+    for(let d in data.earnings) totalMoney += data.earnings[d];
 
     document.getElementById("stats").innerText =
-        `Összes idő: ${formatTime(totalTime)} | 💰 Összes kereset: ${totalMoney}$`;
+        `Összes idő: ${formatTime(totalTime)} | 💰 ${totalMoney}$`;
 }
-
-window.loadStats = loadStats;
 </script>
-
-<style>
-body { font-family: Arial; background:#121212; color:white; text-align:center; }
-input, select, button { padding:10px; margin:8px; border-radius:8px; border:none; }
-button { cursor:pointer; }
-#start { background:green; }
-#stop { background:red; }
-</style>
-</head>
-<body>
-
-<h1>RP Munkaidő PRO v2</h1>
-
-<input type="text" id="nev" placeholder="Név">
-<select id="rang">
-<option>Boss</option>
-<option>UnderBoss</option>
-<option>Capo</option>
-<option>Soldier</option>
-</select>
-
-<br>
-<button id="start" onclick="startWork()">Munka kezdés</button>
-<button id="stop" onclick="stopWork()">Munka vége</button>
-<button onclick="loadStats(document.getElementById('nev').value)">Összesítés</button>
-
-<h2 id="live"></h2>
-<h2 id="status"></h2>
-<h3 id="stats"></h3>
 
 </body>
 </html>
