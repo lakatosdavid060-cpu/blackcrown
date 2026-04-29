@@ -2,43 +2,11 @@
 <html lang="hu">
 <head>
 <meta charset="UTF-8">
-<title>RP Munkaidő PRO</title>
-
-<style>
-body { font-family: Arial; background:#121212; color:white; text-align:center; }
-input, select, button { padding:10px; margin:8px; border-radius:8px; border:none; }
-button { cursor:pointer; }
-#start { background:green; }
-#stop { background:red; }
-</style>
-
-</head>
-<body>
-
-<h1>RP Munkaidő PRO</h1>
-
-<input type="text" id="nev" placeholder="Név">
-<select id="rang">
-<option>Boss</option>
-<option>UnderBoss</option>
-<option>Capo</option>
-<option>Soldier</option>
-</select>
-
-<br>
-<button id="start" onclick="startWork()">Munka kezdés</button>
-<button id="stop" onclick="stopWork()">Munka vége</button>
-<button onclick="loadStats()">Összesítés</button>
-
-<h2 id="live"></h2>
-<h2 id="status"></h2>
-<h3 id="stats"></h3>
-
+<title>RP Munkaidő PRO v3</title>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-/* 🔐 FIREBASE */
 const firebaseConfig = {
   apiKey: "AIzaSyBgbixws2rf6VdqjQATVwZsKg0lgiqy0xI",
   authDomain: "ordog-fizetes.firebaseapp.com",
@@ -52,14 +20,10 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-/* ⚙️ BEÁLLÍTÁS */
-const webhook = "https://discord.com/api/webhooks/1498948555254136863/cylpJM9pG0dB5XALUcRqspygDucdu6vyfLuFDCgM57XUK0bW194VvyI1u2KPqn4ZrIp0"; // IDE ÍRD A DISCORD WEBHOOKOT
-const payPerHour = 300;
-
 let startTime = null;
 let timer = null;
+const payPerHour = 300;
 
-/* ⏱️ IDŐ FORMÁZÁS */
 function formatTime(sec){
     const h = Math.floor(sec/3600);
     const m = Math.floor((sec%3600)/60);
@@ -67,48 +31,38 @@ function formatTime(sec){
     return `${h}ó ${m}p ${s}mp`;
 }
 
-/* 🟣 DISCORD KÜLDÉS (FIX!) */
 function sendDiscord(title, desc, color){
+    const webhook = "IDE_WEBHOOK_URL";
     if(!webhook || webhook.includes("IDE")) return;
 
     fetch(webhook, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-            username: "MunkaBot",
-            embeds: [{
-                title: title,
-                description: desc,
-                color: color
-            }]
+            username: "RP Bot",
+            embeds: [{ title, description: desc, color }]
         })
-    }).catch(e => console.log("Webhook hiba:", e));
+    }).catch(e => console.log(e));
 }
 
-/* ▶️ START */
 window.startWork = function(){
     const nev = document.getElementById("nev").value;
     const rang = document.getElementById("rang").value;
-
     if(!nev) return alert("Adj meg nevet!");
 
     startTime = Date.now();
 
     timer = setInterval(()=>{
         const diff = Math.floor((Date.now()-startTime)/1000);
-        document.getElementById("live").innerText =
-            "⏱ Folyamatban: " + formatTime(diff);
+        document.getElementById("live").innerText = "⏱ " + formatTime(diff);
     },1000);
 
-    sendDiscord("🟢 Munka kezdés",
-        `👤 ${nev}\n🎖 ${rang}`, 65280);
+    sendDiscord("🟢 Munka kezdés", `👤 ${nev}\n🎖 ${rang}`, 65280);
 }
 
-/* ⛔ STOP */
 window.stopWork = async function(){
     const nev = document.getElementById("nev").value;
     const rang = document.getElementById("rang").value;
-
     if(!startTime) return alert("Nem indítottad!");
 
     clearInterval(timer);
@@ -118,50 +72,121 @@ window.stopWork = async function(){
 
     const day = new Date().toISOString().split("T")[0];
 
-    const playerRef = ref(db, "players/"+nev);
-    const snap = await get(playerRef);
+    const logRef = ref(db, `logs/${day}/${nev}`);
+    const snap = await get(logRef);
 
-    let data = snap.exists() ? snap.val() : {};
+    let data = snap.exists() ? snap.val() : { name: nev, rang, time:0, money:0 };
 
-    if(!data.daily) data.daily = {};
-    if(!data.earnings) data.earnings = {};
-
-    data.daily[day] = (data.daily[day] || 0) + diff;
-    data.earnings[day] = (data.earnings[day] || 0) + payment;
+    data.name = nev;
     data.rang = rang;
+    data.time += diff;
+    data.money += payment;
 
-    await set(playerRef, data);
+    await set(logRef, data);
 
-    document.getElementById("status").innerText =
-        `Munka vége: ${formatTime(diff)} | 💰 ${payment}$`;
+    document.getElementById("status").innerText = `${formatTime(diff)} | ${payment}$`;
 
-    sendDiscord("🔴 Munka vége",
-        `👤 ${nev}\n🎖 ${rang}\n⏱ ${formatTime(diff)}\n💰 ${payment}$`,
-        16711680);
+    sendDiscord("🔴 Munka vége", `👤 ${nev}\n⏱ ${formatTime(diff)}\n💰 ${payment}$`, 16711680);
 
     startTime = null;
 }
 
-/* 📊 ÖSSZESÍTÉS */
+/* 📅 HETI LEZÁRÁS */
+window.weekClose = async function(){
+    const webhook = "https://discord.com/api/webhooks/1498948555254136863/cylpJM9pG0dB5XALUcRqspygDucdu6vyfLuFDCgM57XUK0bW194VvyI1u2KPqn4ZrIp0";
+
+    const now = new Date();
+    let totalReport = "";
+
+    let playerTotals = {};
+
+    for(let i=0;i<7;i++){
+        let d = new Date();
+        d.setDate(now.getDate()-i);
+        let key = d.toISOString().split("T")[0];
+
+        const snap = await get(ref(db, `logs/${key}`));
+        if(!snap.exists()) continue;
+
+        const data = snap.val();
+
+        for(let p in data){
+            if(!playerTotals[p]) playerTotals[p] = { money:0, time:0 };
+
+            playerTotals[p].money += data[p].money;
+            playerTotals[p].time += data[p].time;
+        }
+    }
+
+    let msg = "📅 HETI ÖSSZESÍTÉS\n\n";
+    let totalMoney = 0;
+
+    for(let p in playerTotals){
+        const t = playerTotals[p];
+        totalMoney += t.money;
+
+        msg += `👤 ${p}\n⏱ ${formatTime(t.time)}\n💰 ${t.money}$\n\n`;
+    }
+
+    msg += `━━━━━━━━━━━━\n💰 Összes heti pénz: ${totalMoney}$`;
+
+    fetch(webhook, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            embeds: [{ title:"📊 Heti lezárás", description: msg, color: 3447003 }]
+        })
+    });
+}
+
 window.loadStats = async function(){
     const nev = document.getElementById("nev").value;
-    if(!nev) return alert("Adj meg nevet!");
+    if(!nev) return;
 
-    const snap = await get(ref(db, "players/"+nev));
+    let total = 0;
+    const snap = await get(ref(db,"logs"));
     if(!snap.exists()) return;
 
     const data = snap.val();
 
-    let totalTime = 0;
-    let totalMoney = 0;
+    for(let day in data){
+        if(data[day][nev]){
+            total += data[day][nev].time;
+        }
+    }
 
-    for(let d in data.daily) totalTime += data.daily[d];
-    for(let d in data.earnings) totalMoney += data.earnings[d];
-
-    document.getElementById("stats").innerText =
-        `Összes idő: ${formatTime(totalTime)} | 💰 ${totalMoney}$`;
+    document.getElementById("stats").innerText = "Összes: " + formatTime(total);
 }
 </script>
+
+<style>
+body{background:#121212;color:white;text-align:center;font-family:Arial}
+input,select,button{padding:10px;margin:6px;border-radius:8px;border:none}
+button{cursor:pointer}
+#start{background:green}
+#stop{background:red}
+</style>
+</head>
+<body>
+
+<h1>RP Munka PRO</h1>
+
+<input id="nev" placeholder="Név">
+<select id="rang">
+<option>Boss</option>
+<option>UnderBoss</option>
+<option>Capo</option>
+<option>Soldier</option>
+</select>
+
+<br>
+<button id="start" onclick="startWork()">Start</button>
+<button id="stop" onclick="stopWork()">Stop</button>
+<button onclick="weekClose()">📅 Heti lezárás</button>
+
+<h2 id="live"></h2>
+<h2 id="status"></h2>
+<h3 id="stats"></h3>
 
 </body>
 </html>
