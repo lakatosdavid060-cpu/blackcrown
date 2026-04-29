@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<title>RP Munkaidő Rendszer PRO</title>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js"></script>
+<style>
+body { font-family: Arial; background:#121212; color:white; text-align:center; }
+input, select, button { padding:10px; margin:8px; border-radius:8px; border:none; }
+button { cursor:pointer; }
+#start { background:green; }
+#stop { background:red; }
+</style>
+</head>
+<body>
+
+<h1>RP Munkaidő PRO</h1>
+
+<input type="text" id="nev" placeholder="Név">
+<select id="rang">
+<option>Boss</option>
+<option>UnderBoss</option>
+<option>Capo</option>
+<option>Soldier</option>
+</select>
+
+<br>
+<button id="start" onclick="startWork()">Munka kezdés</button>
+<button id="stop" onclick="stopWork()">Munka vége</button>
+
+<h2 id="status"></h2>
+<h3 id="stats"></h3>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getDatabase, ref, set, get, child, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBgbixws2rf6VdqjQATVwZsKg0lgiqy0xI",
+  authDomain: "ordog-fizetes.firebaseapp.com",
+  databaseURL: "https://ordog-fizetes-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "ordog-fizetes",
+  storageBucket: "ordog-fizetes.firebasestorage.app",
+  messagingSenderId: "672089263660",
+  appId: "1:672089263660:web:70086de26402ceb3464b89"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+let startTime = null;
+
+function getDateKey() {
+    return new Date().toISOString().split("T")[0];
+}
+
+function getWeekKey() {
+    const d = new Date();
+    const first = d.getDate() - d.getDay();
+    const weekStart = new Date(d.setDate(first));
+    return weekStart.toISOString().split("T")[0];
+}
+
+function sendDiscordEmbed(title, desc, color) {
+    const webhook = "https://discord.com/api/webhooks/1498948555254136863/cylpJM9pG0dB5XALUcRqspygDucdu6vyfLuFDCgM57XUK0bW194VvyI1u2KPqn4ZrIp0";
+
+    fetch(webhook, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            embeds: [{ title, description: desc, color }]
+        })
+    });
+}
+
+window.startWork = function() {
+    const nev = document.getElementById("nev").value;
+    const rang = document.getElementById("rang").value;
+
+    if (!nev) return alert("Adj meg nevet!");
+
+    startTime = Date.now();
+
+    sendDiscordEmbed("Munka kezdés",
+        `👤 ${nev}\n🎖 ${rang}\n🟢 Start`, 65280);
+}
+
+window.stopWork = async function() {
+    const nev = document.getElementById("nev").value;
+    const rang = document.getElementById("rang").value;
+
+    if (!startTime) return alert("Nem indítottad!");
+
+    const diff = Math.floor((Date.now() - startTime) / 1000);
+
+    const dayKey = getDateKey();
+    const weekKey = getWeekKey();
+
+    const playerRef = ref(db, `players/${nev}`);
+    const snapshot = await get(playerRef);
+
+    let data = snapshot.exists() ? snapshot.val() : {};
+
+    if (!data.daily) data.daily = {};
+    if (!data.weekly) data.weekly = {};
+
+    data.daily[dayKey] = (data.daily[dayKey] || 0) + diff;
+    if (!data.earnings) data.earnings = {};
+    data.earnings[dayKey] = (data.earnings[dayKey] || 0) + payment;
+    data.weekly[weekKey] = (data.weekly[weekKey] || 0) + diff;
+    data.rang = rang;
+
+    await set(playerRef, data);
+
+    const h = Math.floor(diff/3600);
+    const m = Math.floor((diff%3600)/60);
+
+    const payPerHour = 300;
+    const hoursDecimal = diff / 3600;
+    const payment = Math.round(hoursDecimal * payPerHour);
+
+    document.getElementById("status").innerText = `${h}ó ${m}p dolgoztál | Fizetés: ${payment}$`;
+
+    sendDiscordEmbed("Munka vége",
+        `👤 ${nev}
+🎖 ${rang}
+⏱ ${h}ó ${m}p
+💰 Fizetés: ${payment}$`, 16711680);
+
+    loadStats(nev);
+    startTime = null;
+}
+
+async function loadStats(nev) {
+    const playerRef = ref(db, `players/${nev}`);
+    const snapshot = await get(playerRef);
+
+    if (!snapshot.exists()) return;
+
+    const data = snapshot.val();
+
+    let weekly = 0;
+    let monthly = 0;
+
+    const now = new Date();
+    const month = now.getMonth();
+
+    for (let day in data.daily) {
+        let d = new Date(day);
+
+        if (d.getMonth() === month) {
+            monthly += data.daily[day];
+        }
+    }
+
+    for (let w in data.weekly) {
+        weekly += data.weekly[w];
+    }
+
+    document.getElementById("stats").innerText =
+        `Heti: ${Math.floor(weekly/3600)} óra | Havi: ${Math.floor(monthly/3600)} óra`;
+}
+</script>
+
+</body>
+</html>
