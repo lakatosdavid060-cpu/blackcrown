@@ -1,31 +1,27 @@
-<<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="hu">
 <head>
 <meta charset="UTF-8">
 <title>Munkaidő Követő PRO</title>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { getDatabase, ref, push, set, onChildAdded }
+from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 /* FIREBASE */
 const firebaseConfig = {
   apiKey: "AIzaSyBgbixws2rf6VdqjQATVwZsKg0lgiqy0xI",
   authDomain: "ordog-fizetes.firebaseapp.com",
   databaseURL: "https://ordog-fizetes-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "ordog-fizetes",
-  storageBucket: "ordog-fizetes.firebasestorage.app",
-  messagingSenderId: "672089263660",
-  appId: "1:672089263660:web:70086de26402ceb3464b89"
+  projectId: "ordog-fizetes"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-/* BACKEND */
-const BACKEND = "http://localhost:3000/munka-vege";
+/* DISCORD WEBHOOK */
+const WEBHOOK = "https://discord.com/api/webhooks/1499539374319341741/xQbPJ7rM8Vi4nGicNzTPpvPEIjqSQXq7JvNdCxQiO_cFezR3BQXzAHp7-HZ-9rHVz1aN";
 
 /* RANGOK */
 const jobs = {
@@ -36,44 +32,21 @@ const jobs = {
 };
 
 /* STATE */
-let startTime = null;
-let timer = null;
-let paused = false;
-let pausedTime = 0;
-let pauseStart = null;
+let startTime=null, timer=null, paused=false, pausedTime=0, pauseStart=null;
 
 /* FORMAT */
-function format(sec){
-  const h = Math.floor(sec / 3600);
-  const m = Math.floor((sec % 3600) / 60);
-  return `${h} óra ${m} perc`;
-}
+const format = s => `${Math.floor(s/3600)}h ${Math.floor((s%3600)/60)}m`;
+
+const getPay = () =>
+  jobs[document.getElementById("rang").value] || 300;
+
+const getDiff = () => {
+  let d = Math.floor((Date.now()-startTime)/1000)-pausedTime;
+  if(paused && pauseStart) d -= Math.floor((Date.now()-pauseStart)/1000);
+  return d;
+};
 
 /* TIMER */
-function getPay(){
-  return jobs[document.getElementById("rang").value] || 300;
-}
-
-function getDiff(){
-  let diff = Math.floor((Date.now()-startTime)/1000) - pausedTime;
-
-  if(paused && pauseStart){
-    diff -= Math.floor((Date.now() - pauseStart)/1000);
-  }
-
-  return diff;
-}
-
-function updateDashboard(diff, money){
-  document.getElementById("cardMoney").innerText = money + "$";
-  document.getElementById("cardTime").innerText = format(diff);
-  document.getElementById("cardRank").innerText =
-    document.getElementById("rang").value;
-
-  document.getElementById("cardStatus").innerText =
-    paused ? "Szünet" : "Aktív";
-}
-
 function startTimer(){
   timer = setInterval(()=>{
     if(!startTime) return;
@@ -81,123 +54,97 @@ function startTimer(){
     const diff = getDiff();
     const money = Math.floor((diff/3600)*getPay());
 
-    document.getElementById("elo").innerText =
+    document.getElementById("live").innerText =
       `⏱ ${format(diff)} | 💰 ${money}$`;
-
-    updateDashboard(diff, money);
   },1000);
 }
 
-/* ACTIONS */
-window.munkaInditas = function(){
-  const nev = document.getElementById("nev").value;
-  if(!nev) return alert("Adj meg nevet!");
+/* LOG LIVE (MINDENKINEK) */
+const logRef = ref(db,"logs");
 
-  startTime = Date.now();
-  paused = false;
-  pausedTime = 0;
-  pauseStart = null;
+onChildAdded(logRef,(snap)=>{
+  const v = snap.val();
+
+  const box = document.getElementById("logBox");
+  const div = document.createElement("div");
+
+  div.className="log";
+  div.innerText = `👤 ${v.nev} | 💰 ${v.money}$ | ⏱ ${v.time}s`;
+
+  box.prepend(div);
+});
+
+/* ACTIONS */
+window.start = function(){
+  const nev=document.getElementById("nev").value;
+  if(!nev) return alert("Név kell!");
+
+  startTime=Date.now();
+  paused=false;
+  pausedTime=0;
+  pauseStart=null;
 
   clearInterval(timer);
   startTimer();
-
-  document.getElementById("cardStatus").innerText = "Aktív";
-
-  addLog(`🟢 Indítás: ${nev}`);
 };
 
-window.szünet = function(){
+window.pause = function(){
   if(!paused){
-    pauseStart = Date.now();
-    paused = true;
-    document.getElementById("cardStatus").innerText = "Szünet";
-
-    addLog("⏸ Szünet");
+    pauseStart=Date.now();
+    paused=true;
   }
 };
 
-window.folytatas = function(){
-  if(paused && pauseStart){
-    pausedTime += Math.floor((Date.now() - pauseStart)/1000);
+window.resume = function(){
+  if(paused){
+    pausedTime += Math.floor((Date.now()-pauseStart)/1000);
   }
-  paused = false;
-  pauseStart = null;
-  document.getElementById("cardStatus").innerText = "Aktív";
-
-  addLog("▶ Folytatás");
+  paused=false;
 };
 
-window.munkaVege = async function(){
-  const nev = document.getElementById("nev").value;
+window.end = async function(){
+  const nev=document.getElementById("nev").value;
 
   if(paused && pauseStart){
-    pausedTime += Math.floor((Date.now() - pauseStart)/1000);
+    pausedTime += Math.floor((Date.now()-pauseStart)/1000);
   }
 
   clearInterval(timer);
 
-  const diff = getDiff();
-  const money = Math.floor((diff/3600)*getPay());
+  const diff=getDiff();
+  const money=Math.floor((diff/3600)*getPay());
 
   document.getElementById("status").innerText =
     `${format(diff)} | ${money}$`;
 
-  document.getElementById("cardStatus").innerText = "Offline";
-
-  addLog(`🔴 Befejezés: ${nev} | ${money}$`);
-
-  /* BACKEND */
-  await fetch(BACKEND, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      nev,
-      diff,
-      money,
-      rank: document.getElementById("rang").value
-    })
+  /* FIREBASE LOG (MINDENKINEK) */
+  await set(push(ref(db,"logs")),{
+    nev,
+    money,
+    time:diff,
+    rank:document.getElementById("rang").value,
+    createdAt:Date.now()
   });
-};
 
-/* LOG SYSTEM */
-function addLog(text){
-  const box = document.getElementById("logBox");
-  const item = document.createElement("div");
-  item.className = "log-item";
-  item.innerText = `[${new Date().toLocaleTimeString()}] ${text}`;
-  box.prepend(item);
-}
-
-/* RANGLISTA */
-window.ranglista = async function(){
-  const snap = await get(ref(db,"logs"));
-  if(!snap.exists()) return;
-
-  const data = snap.val();
-  let total = {};
-
-  for(let d in data){
-    for(let p in data[d]){
-      total[p] = (total[p]||0) + data[d][p].money;
-    }
+  /* DISCORD (BEST EFFORT) */
+  try{
+    await fetch(WEBHOOK,{
+      method:"POST",
+      body:JSON.stringify({
+        content:`📊 Munka vége\n👤 ${nev}\n⏱ ${format(diff)}\n💰 ${money}$`
+      })
+    });
+  }catch(e){
+    console.log("Discord fail (nem kritikus)");
   }
-
-  const sorted = Object.entries(total).sort((a,b)=>b[1]-a[1]);
-
-  let out = "🏆 Ranglista\n\n";
-  sorted.forEach((p,i)=>{
-    out += `${i+1}. ${p[0]} - ${p[1]}$\n`;
-  });
-
-  document.getElementById("statisztika").innerText = out;
 };
 </script>
 
 <style>
 body{
   margin:0;
-  font-family:'Segoe UI',sans-serif;
-  background:linear-gradient(135deg,#0f172a,#020617);
+  font-family:Arial;
+  background:#0f172a;
   color:white;
   display:flex;
   justify-content:center;
@@ -205,23 +152,19 @@ body{
   height:100vh;
 }
 
-.grid{
-  display:grid;
-  grid-template-columns:300px 500px;
-  gap:25px;
-}
+.grid{display:grid;grid-template-columns:300px 500px;gap:20px;}
 
 .panel{
-  background:rgba(17,24,39,0.9);
+  background:#111827;
   padding:20px;
   border-radius:15px;
 }
 
 input,select{
   width:100%;
-  padding:12px;
-  margin:8px 0;
-  border-radius:10px;
+  padding:10px;
+  margin:5px 0;
+  border-radius:8px;
   border:none;
   background:#1f2937;
   color:white;
@@ -229,44 +172,30 @@ input,select{
 
 button{
   width:100%;
-  padding:12px;
-  margin:6px 0;
+  padding:10px;
+  margin:5px 0;
   border-radius:10px;
   border:none;
-  font-weight:bold;
   cursor:pointer;
-  transition:0.2s;
+  font-weight:bold;
+  background:linear-gradient(45deg,#3b82f6,#8b5cf6);
+  color:white;
 }
 
 button:hover{transform:scale(1.05);}
 
-.cards{
-  display:grid;
-  grid-template-columns: repeat(2,1fr);
-  gap:15px;
-  margin-bottom:20px;
-}
-
-.card{
-  padding:20px;
-  border-radius:15px;
-  background:#111827;
-}
-
 #logBox{
   max-height:200px;
-  overflow-y:auto;
-  background:#0f172a;
+  overflow:auto;
+  background:#0b1220;
   padding:10px;
   border-radius:10px;
   font-size:12px;
-  margin-top:10px;
 }
 
-.log-item{
-  padding:5px;
+.log{
   border-bottom:1px solid #1f2937;
-  color:#cbd5e1;
+  padding:5px;
 }
 </style>
 </head>
@@ -279,52 +208,22 @@ button:hover{transform:scale(1.05);}
 <input id="nev" placeholder="Név">
 
 <select id="rang">
-<option value="Boss">Főnök</option>
-<option value="UnderBoss">Alfőnök</option>
-<option value="Capo">Capo</option>
-<option value="Soldier">Közkatona</option>
+<option>Boss</option>
+<option>UnderBoss</option>
+<option>Capo</option>
+<option>Soldier</option>
 </select>
 
-<button onclick="munkaInditas()">Indítás</button>
-<button onclick="szünet()">Szünet</button>
-<button onclick="folytatas()">Folytatás</button>
-<button onclick="munkaVege()">Befejezés</button>
-<button onclick="ranglista()">Ranglista</button>
+<button onclick="start()">START</button>
+<button onclick="pause()">PAUSE</button>
+<button onclick="resume()">RESUME</button>
+<button onclick="end()">END</button>
 
-<div id="elo"></div>
-<h3 id="status"></h3>
+<div id="live"></div>
+<div id="status"></div>
 
-<h3>📜 LOG</h3>
+<h3>LOG</h3>
 <div id="logBox"></div>
-
-</div>
-
-<div>
-
-<div class="cards">
-  <div class="card">
-    <h3>💰 Pénz</h3>
-    <p id="cardMoney">0$</p>
-  </div>
-
-  <div class="card">
-    <h3>⏱ Munkaidő</h3>
-    <p id="cardTime">0 óra</p>
-  </div>
-
-  <div class="card">
-    <h3>💼 Rang</h3>
-    <p id="cardRank">-</p>
-  </div>
-
-  <div class="card">
-    <h3>🟢 Státusz</h3>
-    <p id="cardStatus">Offline</p>
-  </div>
-</div>
-
-<pre id="statisztika"></pre>
-
 </div>
 
 </div>
