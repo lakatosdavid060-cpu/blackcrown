@@ -61,20 +61,23 @@ onChildAdded(ref(db,"logs"),(snap)=>{
   box.prepend(div);
 });
 
-/* USER LOG */
+/* USER LIST */
 const users=[
   "David Jackson",
   "Dylen Benedict",
   "Olla Ronaldo",
-  "Clinton Morris"
+  "Clinton Morris",
   "Jackson West"
 ];
 
+/* USER LOG LOADER */
 function loadUserLogs(){
   users.forEach(name=>{
-    onChildAdded(ref(db,`userLogs/${name}`),(snap)=>{
+    const safeName = name.replaceAll(" ","_");
+
+    onChildAdded(ref(db,`userLogs/${safeName}`),(snap)=>{
       const v=snap.val();
-      const box=document.getElementById("log_"+name);
+      const box=document.getElementById("log_"+safeName);
 
       const div=document.createElement("div");
       div.className="log user";
@@ -141,7 +144,7 @@ window.end=async function(){
   document.getElementById("status").innerText =
     `${format(diff)} | ${money}$`;
 
-  /* GLOBAL */
+  /* GLOBAL LOG */
   await set(push(ref(db,"logs")),{
     nev,
     money,
@@ -149,8 +152,10 @@ window.end=async function(){
     createdAt:Date.now()
   });
 
-  /* USER */
-  await set(push(ref(db,`userLogs/${nev}`)),{
+  /* USER LOG */
+  const safeNev = nev.replaceAll(" ","_");
+
+  await set(push(ref(db,`userLogs/${safeNev}`)),{
     time:diff,
     money,
     createdAt:Date.now()
@@ -220,6 +225,8 @@ button{
   background:linear-gradient(45deg,#3b82f6,#8b5cf6);
   color:white;
 }
+
+button:hover{transform:scale(1.05);}
 
 /* LOG */
 .log{
@@ -294,11 +301,11 @@ button{
 
 <h3>👤 User Logok</h3>
 
-<div>David Jackson<div class="userBox" id="log_David Jackson"></div></div>
-<div>Dylen Benedict<div class="userBox" id="log_Dylen Benedict"></div></div>
-<div>Olla Ronaldo<div class="userBox" id="log_Olla Ronaldo"></div></div>
-<div>Clinton Morris<div class="userBox" id="log_Clinton Morris"></div></div>
-<div>Jackson West<div class="userBox" id="log_Jackson West"></div></div>
+<div>David Jackson<div class="userBox" id="log_David_Jackson"></div></div>
+<div>Dylen Benedict<div class="userBox" id="log_Dylen_Benedict"></div></div>
+<div>Olla Ronaldo<div class="userBox" id="log_Olla_Ronaldo"></div></div>
+<div>Clinton Morris<div class="userBox" id="log_Clinton_Morris"></div></div>
+<div>Jackson West<div class="userBox" id="log_Jackson_West"></div></div>
 
 </div>
 
