@@ -10,9 +10,9 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-/* ---------------- FIREBASE ---------------- */
+/* FIREBASE */
 const firebaseConfig = {
-  apiKey: "AIzaSyBgbixws2rf6VdqjQATVwZsKg0lgiqy0x",
+  apiKey: "AIzaSy...",
   authDomain: "ordog-fizetes.firebaseapp.com",
   databaseURL: "https://ordog-fizetes-default-rtdb.europe-west1.firebasedatabase.app",
   projectId: "ordog-fizetes",
@@ -24,33 +24,32 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-/* ⚠️ IDE A SAJÁT WEBHOOK */
+/* WEBHOOK */
 const WEBHOOK = "https://discord.com/api/webhooks/1498948555254136863/cylpJM9pG0dB5XALUcRqspygDucdu6vyfLuFDCgM57XUK0bW194VvyI1u2KPqn4ZrIp0";
 
-/* ---------------- RANGOK ---------------- */
+/* RANGOK */
 const jobs = {
-  Boss: 500,
+  Boss: 1000,
   UnderBoss: 400,
   Capo: 300,
   Soldier: 200
 };
 
-/* ---------------- STATE ---------------- */
+/* STATE */
 let startTime = null;
 let timer = null;
 let paused = false;
 let pausedTime = 0;
 let pauseStart = null;
-let chart = null;
 
-/* ---------------- FORMAT ---------------- */
+/* FORMAT */
 function format(sec){
   const h = Math.floor(sec / 3600);
   const m = Math.floor((sec % 3600) / 60);
   return `${h} óra ${m} perc`;
 }
 
-/* ---------------- DISCORD ---------------- */
+/* DISCORD */
 function sendDiscord(title, desc, color=3447003){
   if(!WEBHOOK) return;
 
@@ -58,54 +57,31 @@ function sendDiscord(title, desc, color=3447003){
     method:"POST",
     headers:{"Content-Type":"application/json"},
     body:JSON.stringify({
-      embeds:[{
-        title,
-        description: desc,
-        color
-      }]
+      embeds:[{ title, description: desc, color }]
     })
   });
 }
 
-/* ---------------- INVOICE ---------------- */
-function sendInvoice(nev, rang, diff, money){
-  const h = Math.floor(diff/3600);
-  const m = Math.floor((diff%3600)/60);
-  const s = diff%60;
-  const id = Math.floor(Math.random()*900000+100000);
-
-  fetch(WEBHOOK,{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({
-      embeds:[{
-        title:"🧾 MUNKABÉR SZÁMLA",
-        color:0xf59e0b,
-        fields:[
-          {name:"📄 Számla ID", value:`#${id}`, inline:true},
-          {name:"👤 Név", value:nev, inline:true},
-          {name:"💼 Rang", value:rang, inline:true},
-
-          {name:"⏱ Munkaidő", value:`${h}h ${m}m ${s}s`, inline:false},
-          {name:"💰 Kifizetés", value:`${money}$`, inline:true},
-
-          {name:"🏦 Státusz", value:"KIFIZETVE", inline:true}
-        ]
-      }]
-    })
-  });
-}
-
-/* ---------------- TIMER ---------------- */
+/* TIMER LOGIKA */
 function getPay(){
   return jobs[document.getElementById("rang").value] || 300;
 }
 
+function getDiff(){
+  let diff = Math.floor((Date.now()-startTime)/1000) - pausedTime;
+
+  if(paused && pauseStart){
+    diff -= Math.floor((Date.now() - pauseStart)/1000);
+  }
+
+  return diff;
+}
+
 function startTimer(){
   timer = setInterval(()=>{
-    if(paused) return;
+    if(!startTime) return;
 
-    const diff = Math.floor((Date.now()-startTime)/1000) + pausedTime;
+    const diff = getDiff();
     const money = Math.floor((diff/3600)*getPay());
 
     document.getElementById("elo").innerText =
@@ -113,7 +89,7 @@ function startTimer(){
   },1000);
 }
 
-/* ---------------- ACTIONS ---------------- */
+/* ACTIONS */
 window.munkaInditas = function(){
   const nev = document.getElementById("nev").value;
   if(!nev) return alert("Adj meg nevet!");
@@ -121,8 +97,11 @@ window.munkaInditas = function(){
   startTime = Date.now();
   paused = false;
   pausedTime = 0;
+  pauseStart = null;
 
+  clearInterval(timer);
   startTimer();
+
   sendDiscord("🟢 Munka kezdés", nev);
 };
 
@@ -138,15 +117,20 @@ window.folytatas = function(){
     pausedTime += Math.floor((Date.now() - pauseStart)/1000);
   }
   paused = false;
+  pauseStart = null;
 };
 
 window.munkaVege = async function(){
   const nev = document.getElementById("nev").value;
   const rang = document.getElementById("rang").value;
 
+  if(paused && pauseStart){
+    pausedTime += Math.floor((Date.now() - pauseStart)/1000);
+  }
+
   clearInterval(timer);
 
-  const diff = Math.floor((Date.now()-startTime)/1000) + pausedTime;
+  const diff = getDiff();
   const money = Math.floor((diff/3600)*getPay());
 
   const day = new Date().toISOString().split("T")[0];
@@ -163,51 +147,10 @@ window.munkaVege = async function(){
   document.getElementById("status").innerText =
     `${format(diff)} | ${money}$`;
 
-  sendInvoice(nev,rang,diff,money);
   sendDiscord("🔴 Munka vége", `${nev} | ${money}$`, 0xff0000);
 };
 
-/* ---------------- DAILY ---------------- */
-window.dailySummary = async function(){
-  const day = new Date().toISOString().split("T")[0];
-  const snap = await get(ref(db,`logs/${day}`));
-  if(!snap.exists()) return;
-
-  const data = snap.val();
-
-  let total = 0;
-  let text = "";
-
-  for(let u in data){
-    total += data[u].money;
-    text += `👤 ${u}: ${data[u].money}$\n`;
-  }
-
-  sendDiscord("📊 NAPI ÖSSZESÍTŐ", `${text}\n💰 Total: ${total}$`, 3066993);
-};
-
-/* ---------------- WEEKLY ---------------- */
-window.weeklyClose = async function(){
-  const snap = await get(ref(db,"logs"));
-  if(!snap.exists()) return;
-
-  const data = snap.val();
-  const days = Object.keys(data).slice(-7);
-
-  let total = 0;
-  let msg = "";
-
-  for(let d of days){
-    for(let u in data[d]){
-      total += data[d][u].money;
-      msg += `📅 ${d} | ${u}: ${data[d][u].money}$\n`;
-    }
-  }
-
-  sendDiscord("📆 HETI LEZÁRÁS", `${msg}\n💰 Total: ${total}$`, 15158332);
-};
-
-/* ---------------- RANKLIST ---------------- */
+/* RANGLISTA */
 window.ranglista = async function(){
   const snap = await get(ref(db,"logs"));
   if(!snap.exists()) return;
@@ -230,46 +173,6 @@ window.ranglista = async function(){
 
   document.getElementById("statisztika").innerText = out;
 };
-
-/* ---------------- DASHBOARD ---------------- */
-window.dashboard = async function(){
-  const nev = document.getElementById("nev").value;
-  const day = new Date().toISOString().split("T")[0];
-
-  const snap = await get(ref(db,`logs/${day}`));
-  if(!snap.exists()) return;
-
-  const t = snap.val()[nev] || {time:0,money:0};
-
-  document.getElementById("kartyak").innerHTML = `
-    <div class="kartya">💰 ${t.money}$</div>
-    <div class="kartya">⏱ ${format(t.time)}</div>
-  `;
-};
-
-/* ---------------- CHART ---------------- */
-window.diagram = async function(){
-  const nev = document.getElementById("nev").value;
-  const snap = await get(ref(db,"logs"));
-  if(!snap.exists()) return;
-
-  const data = snap.val();
-  let labels=[], values=[];
-
-  for(let d in data){
-    if(data[d][nev]){
-      labels.push(d);
-      values.push(data[d][nev].money);
-    }
-  }
-
-  if(chart) chart.destroy();
-
-  chart = new Chart(document.getElementById("chart"),{
-    type:"line",
-    data:{labels,datasets:[{label:"$",data:values}]}
-  });
-};
 </script>
 
 <style>
@@ -278,7 +181,6 @@ body{background:#0b1220;color:white;font-family:Arial;padding:20px}
 .panel{background:#111827;padding:15px;border-radius:10px}
 input,select,button{width:100%;padding:10px;margin:5px 0;border-radius:8px;border:none}
 button{background:#2563eb;color:white;cursor:pointer}
-.kartya{background:#111827;padding:10px;margin:5px 0;border-radius:8px}
 </style>
 </head>
 
@@ -289,7 +191,6 @@ button{background:#2563eb;color:white;cursor:pointer}
 <div class="grid">
 
 <div class="panel">
-
 <input id="nev" placeholder="Név">
 
 <select id="rang">
@@ -305,23 +206,13 @@ button{background:#2563eb;color:white;cursor:pointer}
 <button onclick="munkaVege()">Befejezés</button>
 
 <button onclick="ranglista()">Ranglista</button>
-<button onclick="dashboard()">Dashboard</button>
-<button onclick="diagram()">Grafikon</button>
-
-<button onclick="dailySummary()">Napi összesítő</button>
-<button onclick="weeklyClose()">Heti lezárás</button>
 
 <div id="elo"></div>
 <h3 id="status"></h3>
-
 </div>
 
 <div>
-
-<div id="kartyak"></div>
 <pre id="statisztika"></pre>
-<canvas id="chart"></canvas>
-
 </div>
 
 </div>
