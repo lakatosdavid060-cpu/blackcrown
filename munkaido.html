@@ -20,9 +20,6 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-/* DISCORD WEBHOOK */
-const WEBHOOK = "https://discord.com/api/webhooks/1499539374319341741/xQbPJ7rM8Vi4nGicNzTPpvPEIjqSQXq7JvNdCxQiO_cFezR3BQXzAHp7-HZ-9rHVz1aN";
-
 /* RANGOK */
 const jobs = {
   Boss: 500,
@@ -31,14 +28,11 @@ const jobs = {
   Soldier: 200
 };
 
-/* STATE */
 let startTime=null, timer=null, paused=false, pausedTime=0, pauseStart=null;
 
-/* FORMAT */
-const format = s => `${Math.floor(s/3600)}h ${Math.floor((s%3600)/60)}m`;
+const format = s => `${Math.floor(s/3600)} óra ${Math.floor((s%3600)/60)} perc`;
 
-const getPay = () =>
-  jobs[document.getElementById("rang").value] || 300;
+const getPay = () => jobs[document.getElementById("rang").value] || 300;
 
 const getDiff = () => {
   let d = Math.floor((Date.now()-startTime)/1000)-pausedTime;
@@ -46,38 +40,42 @@ const getDiff = () => {
   return d;
 };
 
-/* TIMER */
-function startTimer(){
-  timer = setInterval(()=>{
-    if(!startTime) return;
-
-    const diff = getDiff();
-    const money = Math.floor((diff/3600)*getPay());
-
-    document.getElementById("live").innerText =
-      `⏱ ${format(diff)} | 💰 ${money}$`;
-  },1000);
-}
-
-/* LOG LIVE (MINDENKINEK) */
+/* LIVE LOG */
 const logRef = ref(db,"logs");
 
 onChildAdded(logRef,(snap)=>{
   const v = snap.val();
-
   const box = document.getElementById("logBox");
-  const div = document.createElement("div");
 
+  const div = document.createElement("div");
   div.className="log";
   div.innerText = `👤 ${v.nev} | 💰 ${v.money}$ | ⏱ ${v.time}s`;
 
   box.prepend(div);
 });
 
+/* TIMER */
+function startTimer(){
+  timer=setInterval(()=>{
+    if(!startTime) return;
+
+    const diff=getDiff();
+    const money=Math.floor((diff/3600)*getPay());
+
+    document.getElementById("live").innerText =
+      `⏱ ${format(diff)} | 💰 ${money}$`;
+
+    document.getElementById("d_money").innerText = money+"$";
+    document.getElementById("d_time").innerText = format(diff);
+    document.getElementById("d_rank").innerText =
+      document.getElementById("rang").value;
+  },1000);
+}
+
 /* ACTIONS */
-window.start = function(){
+window.inditas = function(){
   const nev=document.getElementById("nev").value;
-  if(!nev) return alert("Név kell!");
+  if(!nev) return alert("Adj meg nevet!");
 
   startTime=Date.now();
   paused=false;
@@ -88,21 +86,21 @@ window.start = function(){
   startTimer();
 };
 
-window.pause = function(){
+window.szünet = function(){
   if(!paused){
     pauseStart=Date.now();
     paused=true;
   }
 };
 
-window.resume = function(){
+window.folytatas = function(){
   if(paused){
     pausedTime += Math.floor((Date.now()-pauseStart)/1000);
   }
   paused=false;
 };
 
-window.end = async function(){
+window.vege = async function(){
   const nev=document.getElementById("nev").value;
 
   if(paused && pauseStart){
@@ -117,7 +115,6 @@ window.end = async function(){
   document.getElementById("status").innerText =
     `${format(diff)} | ${money}$`;
 
-  /* FIREBASE LOG (MINDENKINEK) */
   await set(push(ref(db,"logs")),{
     nev,
     money,
@@ -125,18 +122,6 @@ window.end = async function(){
     rank:document.getElementById("rang").value,
     createdAt:Date.now()
   });
-
-  /* DISCORD (BEST EFFORT) */
-  try{
-    await fetch(WEBHOOK,{
-      method:"POST",
-      body:JSON.stringify({
-        content:`📊 Munka vége\n👤 ${nev}\n⏱ ${format(diff)}\n💰 ${money}$`
-      })
-    });
-  }catch(e){
-    console.log("Discord fail (nem kritikus)");
-  }
 };
 </script>
 
@@ -152,14 +137,39 @@ body{
   height:100vh;
 }
 
-.grid{display:grid;grid-template-columns:300px 500px;gap:20px;}
+/* CENTER LAYOUT */
+.container{
+  display:flex;
+  gap:20px;
+  align-items:flex-start;
+}
 
+/* PANEL */
 .panel{
   background:#111827;
   padding:20px;
   border-radius:15px;
+  width:300px;
 }
 
+/* DASHBOARD */
+.dashboard{
+  background:#0b1220;
+  padding:20px;
+  border-radius:15px;
+  width:250px;
+  text-align:center;
+  box-shadow:0 0 20px rgba(59,130,246,0.2);
+}
+
+.card{
+  margin:10px 0;
+  padding:10px;
+  background:#1f2937;
+  border-radius:10px;
+}
+
+/* INPUT */
 input,select{
   width:100%;
   padding:10px;
@@ -170,6 +180,7 @@ input,select{
   color:white;
 }
 
+/* BUTTONS */
 button{
   width:100%;
   padding:10px;
@@ -180,10 +191,14 @@ button{
   font-weight:bold;
   background:linear-gradient(45deg,#3b82f6,#8b5cf6);
   color:white;
+  transition:0.2s;
 }
 
-button:hover{transform:scale(1.05);}
+button:hover{
+  transform:scale(1.05);
+}
 
+/* LOG */
 #logBox{
   max-height:200px;
   overflow:auto;
@@ -194,17 +209,21 @@ button:hover{transform:scale(1.05);}
 }
 
 .log{
-  border-bottom:1px solid #1f2937;
   padding:5px;
+  border-bottom:1px solid #1f2937;
 }
 </style>
 </head>
 
 <body>
 
-<div class="grid">
+<div class="container">
 
+<!-- BAL PANEL -->
 <div class="panel">
+
+<h3>🧑 Munka vezérlő</h3>
+
 <input id="nev" placeholder="Név">
 
 <select id="rang">
@@ -214,16 +233,28 @@ button:hover{transform:scale(1.05);}
 <option>Soldier</option>
 </select>
 
-<button onclick="start()">START</button>
-<button onclick="pause()">PAUSE</button>
-<button onclick="resume()">RESUME</button>
-<button onclick="end()">END</button>
+<button onclick="inditas()">▶ Indítás</button>
+<button onclick="szünet()">⏸ Szünet</button>
+<button onclick="folytatas()">▶ Folytatás</button>
+<button onclick="vege()">🔴 Befejezés</button>
 
 <div id="live"></div>
 <div id="status"></div>
 
-<h3>LOG</h3>
+<h3>📜 Log</h3>
 <div id="logBox"></div>
+
+</div>
+
+<!-- DASHBOARD -->
+<div class="dashboard">
+
+<h3>📊 Dashboard</h3>
+
+<div class="card">💰 Pénz: <span id="d_money">0$</span></div>
+<div class="card">⏱ Idő: <span id="d_time">0</span></div>
+<div class="card">💼 Rang: <span id="d_rank">-</span></div>
+
 </div>
 
 </div>
