@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<<!DOCTYPE html>
 <html lang="hu">
 <head>
 <meta charset="UTF-8">
@@ -24,8 +24,8 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-/* WEBHOOK */
-const WEBHOOK = "https://discord.com/api/webhooks/1499539374319341741/xQbPJ7rM8Vi4nGicNzTPpvPEIjqSQXq7JvNdCxQiO_cFezR3BQXzAHp7-HZ-9rHVz1aN";
+/* BACKEND */
+const BACKEND = "http://localhost:3000/munka-vege";
 
 /* RANGOK */
 const jobs = {
@@ -102,6 +102,8 @@ window.munkaInditas = function(){
   startTimer();
 
   document.getElementById("cardStatus").innerText = "Aktív";
+
+  addLog(`🟢 Indítás: ${nev}`);
 };
 
 window.szünet = function(){
@@ -109,6 +111,8 @@ window.szünet = function(){
     pauseStart = Date.now();
     paused = true;
     document.getElementById("cardStatus").innerText = "Szünet";
+
+    addLog("⏸ Szünet");
   }
 };
 
@@ -119,6 +123,8 @@ window.folytatas = function(){
   paused = false;
   pauseStart = null;
   document.getElementById("cardStatus").innerText = "Aktív";
+
+  addLog("▶ Folytatás");
 };
 
 window.munkaVege = async function(){
@@ -133,32 +139,34 @@ window.munkaVege = async function(){
   const diff = getDiff();
   const money = Math.floor((diff/3600)*getPay());
 
-  const day = new Date().toISOString().split("T")[0];
-  const r = ref(db, `logs/${day}/${nev}`);
-
-  const snap = await get(r);
-  let data = snap.exists()?snap.val():{time:0,money:0};
-
-  data.time += diff;
-  data.money += money;
-
-  await set(r,data);
-
   document.getElementById("status").innerText =
     `${format(diff)} | ${money}$`;
 
   document.getElementById("cardStatus").innerText = "Offline";
 
-  /* DISCORD FIX (JAVÍTOTT) */
-  if (WEBHOOK && nev) {
-    fetch(WEBHOOK, {
-      method: "POST",
-      body: JSON.stringify({
-        content: `📊 Munka vége\n👤 Név: ${nev}\n⏱ Idő: ${format(diff)}\n💰 Pénz: ${money}$`
-      })
-    }).catch(err => console.error("Discord hiba:", err));
-  }
+  addLog(`🔴 Befejezés: ${nev} | ${money}$`);
+
+  /* BACKEND */
+  await fetch(BACKEND, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      nev,
+      diff,
+      money,
+      rank: document.getElementById("rang").value
+    })
+  });
 };
+
+/* LOG SYSTEM */
+function addLog(text){
+  const box = document.getElementById("logBox");
+  const item = document.createElement("div");
+  item.className = "log-item";
+  item.innerText = `[${new Date().toLocaleTimeString()}] ${text}`;
+  box.prepend(item);
+}
 
 /* RANGLISTA */
 window.ranglista = async function(){
@@ -188,8 +196,8 @@ window.ranglista = async function(){
 <style>
 body{
   margin:0;
-  font-family: 'Segoe UI', sans-serif;
-  background: linear-gradient(135deg,#0f172a,#020617);
+  font-family:'Segoe UI',sans-serif;
+  background:linear-gradient(135deg,#0f172a,#020617);
   color:white;
   display:flex;
   justify-content:center;
@@ -204,7 +212,7 @@ body{
 }
 
 .panel{
-  background: rgba(17,24,39,0.9);
+  background:rgba(17,24,39,0.9);
   padding:20px;
   border-radius:15px;
 }
@@ -244,6 +252,22 @@ button:hover{transform:scale(1.05);}
   border-radius:15px;
   background:#111827;
 }
+
+#logBox{
+  max-height:200px;
+  overflow-y:auto;
+  background:#0f172a;
+  padding:10px;
+  border-radius:10px;
+  font-size:12px;
+  margin-top:10px;
+}
+
+.log-item{
+  padding:5px;
+  border-bottom:1px solid #1f2937;
+  color:#cbd5e1;
+}
 </style>
 </head>
 
@@ -269,6 +293,10 @@ button:hover{transform:scale(1.05);}
 
 <div id="elo"></div>
 <h3 id="status"></h3>
+
+<h3>📜 LOG</h3>
+<div id="logBox"></div>
+
 </div>
 
 <div>
