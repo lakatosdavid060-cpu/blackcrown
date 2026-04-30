@@ -12,15 +12,11 @@ import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/1
 
 /* FIREBASE */
 const firebaseConfig = {
-  apiKey: "AIzaSyBgbixws2rf6VdqjQATVwZsKg0lgiqy0xI",
+  apiKey: "AIzaSy...",
   authDomain: "ordog-fizetes.firebaseapp.com",
   databaseURL: "https://ordog-fizetes-default-rtdb.europe-west1.firebasedatabase.app",
   projectId: "ordog-fizetes",
-  storageBucket: "ordog-fizetes.firebasestorage.app",
-  messagingSenderId: "672089263660",
-  appId: "1:672089263660:web:70086de26402ceb3464b89"
 };
-
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
@@ -149,6 +145,20 @@ window.munkaVege = async function(){
     `${format(diff)} | ${money}$`;
 
   document.getElementById("cardStatus").innerText = "Offline";
+
+  /* DISCORD FIX */
+  if (WEBHOOK && nev) {
+    fetch(WEBHOOK, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      mode: "no-cors",
+      body: JSON.stringify({
+        content: `📊 Munka vége\n👤 Név: ${nev}\n⏱ Idő: ${format(diff)}\n💰 Pénz: ${money}$`
+      })
+    });
+  }
 };
 
 /* RANGLISTA */
@@ -182,7 +192,6 @@ body{
   font-family: 'Segoe UI', sans-serif;
   background: linear-gradient(135deg,#0f172a,#020617);
   color:white;
-
   display:flex;
   justify-content:center;
   align-items:center;
@@ -195,14 +204,12 @@ body{
   gap:25px;
 }
 
-/* panel */
 .panel{
   background: rgba(17,24,39,0.9);
   padding:20px;
   border-radius:15px;
 }
 
-/* input */
 input,select{
   width:100%;
   padding:12px;
@@ -213,7 +220,6 @@ input,select{
   color:white;
 }
 
-/* buttons */
 button{
   width:100%;
   padding:12px;
@@ -225,17 +231,8 @@ button{
   transition:0.2s;
 }
 
-button:nth-child(3){background:#22c55e;}
-button:nth-child(4){background:#eab308;}
-button:nth-child(5){background:#3b82f6;}
-button:nth-child(6){background:#ef4444;}
-button:nth-child(7){background:#8b5cf6;}
+button:hover{transform:scale(1.05);}
 
-button:hover{
-  transform:scale(1.05);
-}
-
-/* dashboard */
 .cards{
   display:grid;
   grid-template-columns: repeat(2,1fr);
@@ -247,32 +244,6 @@ button:hover{
   padding:20px;
   border-radius:15px;
   background:#111827;
-  transition:0.3s;
-}
-
-.card h3{
-  margin:0;
-  font-size:14px;
-  color:#9ca3af;
-}
-
-.card p{
-  font-size:26px;
-  margin-top:10px;
-  font-weight:bold;
-}
-
-.card.money{box-shadow:0 0 20px rgba(34,197,94,0.5);}
-.card.time{box-shadow:0 0 20px rgba(59,130,246,0.5);}
-.card.rank{box-shadow:0 0 20px rgba(168,85,247,0.5);}
-.card.status{box-shadow:0 0 20px rgba(234,179,8,0.5);}
-
-.card:hover{transform:scale(1.05);}
-
-#elo{
-  margin-top:10px;
-  font-weight:bold;
-  color:#38bdf8;
 }
 </style>
 </head>
@@ -304,22 +275,22 @@ button:hover{
 <div>
 
 <div class="cards">
-  <div class="card money">
+  <div class="card">
     <h3>💰 Pénz</h3>
     <p id="cardMoney">0$</p>
   </div>
 
-  <div class="card time">
+  <div class="card">
     <h3>⏱ Munkaidő</h3>
     <p id="cardTime">0 óra</p>
   </div>
 
-  <div class="card rank">
+  <div class="card">
     <h3>💼 Rang</h3>
     <p id="cardRank">-</p>
   </div>
 
-  <div class="card status">
+  <div class="card">
     <h3>🟢 Státusz</h3>
     <p id="cardStatus">Offline</p>
   </div>
