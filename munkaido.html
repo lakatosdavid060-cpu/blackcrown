@@ -149,18 +149,14 @@ window.munkaVege = async function(){
 
   document.getElementById("cardStatus").innerText = "Offline";
 
-  /* DISCORD FIX */
+  /* DISCORD FIX (JAVÍTOTT) */
   if (WEBHOOK && nev) {
     fetch(WEBHOOK, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      mode: "no-cors",
       body: JSON.stringify({
         content: `📊 Munka vége\n👤 Név: ${nev}\n⏱ Idő: ${format(diff)}\n💰 Pénz: ${money}$`
       })
-    });
+    }).catch(err => console.error("Discord hiba:", err));
   }
 };
 
