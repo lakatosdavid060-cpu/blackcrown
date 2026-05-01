@@ -3,29 +3,95 @@
 <head>
 <meta charset="UTF-8">
 <title>Munka beküldő</title>
+
+<style>
+body {
+    margin: 0;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: linear-gradient(135deg, #0f172a, #1e293b);
+    font-family: Arial, sans-serif;
+    color: white;
+}
+
+.container {
+    background: rgba(255,255,255,0.08);
+    padding: 25px;
+    border-radius: 15px;
+    width: 390px;
+    backdrop-filter: blur(12px);
+    box-shadow: 0 0 25px rgba(0,0,0,0.5);
+}
+
+h2 {
+    text-align: center;
+}
+
+input[type="text"], input[type="number"] {
+    width: 100%;
+    padding: 8px;
+    margin: 6px 0;
+    border-radius: 8px;
+    border: none;
+    outline: none;
+}
+
+label {
+    display: block;
+    margin: 5px 0;
+}
+
+button {
+    width: 100%;
+    padding: 10px;
+    margin-top: 15px;
+    border: none;
+    border-radius: 8px;
+    background: #5865F2;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #4752c4;
+}
+
+.small {
+    text-align: center;
+    font-size: 12px;
+    opacity: 0.7;
+    margin-top: 10px;
+}
+</style>
+
 </head>
 <body>
 
-<h2>Munka beküldés</h2>
+<div class="container">
+    <h2>📋 RP Beküldő</h2>
 
-<input type="text" id="name" placeholder="Neved"><br><br>
+    <input type="text" id="name" placeholder="Neved">
 
-<h3>Választható munkák:</h3>
+    <h3>Munkák / Rablások:</h3>
 
-<label><input type="checkbox" value="Autólopás" class="job"> Autólopás (db szám)</label>
-<input type="number" id="carCount" placeholder="db" min="1"><br><br>
+    <label><input type="checkbox" value="Autólopás" class="job"> Autólopás</label>
+    <input type="number" id="carCount" placeholder="Autólopás db">
 
-<label><input type="checkbox" value="Automatarablás" class="job"> Automatarablás</label><br>
+    <label><input type="checkbox" value="Automatarablás" class="job"> Automatarablás</label>
+    <label><input type="checkbox" value="Bankrablás" class="job"> Bankrablás</label>
+    <label><input type="checkbox" value="Bobcat" class="job"> Bobcat</label>
+    <label><input type="checkbox" value="Craft" class="job"> Craft</label>
 
-<label><input type="checkbox" value="Bankrablás" class="job"> Bankrablás</label><br>
+    <label><input type="checkbox" value="Házrablás" class="job"> Házrablás</label>
+    <label><input type="checkbox" value="Múzeumrablás" class="job"> Múzeumrablás</label>
 
-<label><input type="checkbox" value="Bobcat" class="job"> Bobcat</label><br>
+    <button onclick="send()">📤 Küldés Discordra</button>
 
-<label><input type="checkbox" value="Craft" class="job"> Craft</label><br><br>
-    
-<label><input type="checkbox" value="HázRablás" class="job"> HázRablás</label><br><br>
-
-<button onclick="send()">Küldés</button>
+    <div class="small">RP webhook embed rendszer</div>
+</div>
 
 <script>
 function send() {
@@ -33,16 +99,40 @@ function send() {
 
     let jobs = [];
     document.querySelectorAll(".job").forEach(cb => {
-        if (cb.checked) {
-            jobs.push(cb.value);
-        }
+        if (cb.checked) jobs.push(cb.value);
     });
 
-    let carCount = document.getElementById("carCount").value;
-    if (!carCount) carCount = "0";
+    let carCount = document.getElementById("carCount").value || "0";
 
-    const payload = {
-        content: `👤 Név: ${name}\n🧰 Munkák: ${jobs.join(", ")}\n🚗 Autólopás db: ${carCount}`
+    const embed = {
+        username: "RP Rendszer",
+        embeds: [
+            {
+                title: "📋 Új RP tevékenység",
+                color: 16753920,
+                fields: [
+                    {
+                        name: "👤 Játékos",
+                        value: name || "Nincs megadva",
+                        inline: false
+                    },
+                    {
+                        name: "🧰 Tevékenységek",
+                        value: jobs.length ? jobs.join(", ") : "Nincs kiválasztva",
+                        inline: false
+                    },
+                    {
+                        name: "🚗 Autólopás",
+                        value: carCount + " db",
+                        inline: false
+                    }
+                ],
+                footer: {
+                    text: "RP Log rendszer"
+                },
+                timestamp: new Date()
+            }
+        ]
     };
 
     fetch("https://discord.com/api/webhooks/1499582105829507272/2sFH5RUQAaCyUi9NZx_5FPRdei8SlA2I17Hb4XcftPswSVnDvxOiuyOfh-O-O5LWbQLS", {
@@ -50,7 +140,7 @@ function send() {
         headers: {
             "Content-Type": "application/json"
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(embed)
     });
 
     alert("Elküldve!");
