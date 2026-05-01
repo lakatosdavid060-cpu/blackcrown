@@ -2,7 +2,7 @@
 <html lang="hu">
 <head>
 <meta charset="UTF-8">
-<title>Munka beküldő</title>
+<title>RP Pénzszámoló</title>
 
 <style>
 body {
@@ -20,7 +20,7 @@ body {
     background: rgba(255,255,255,0.08);
     padding: 25px;
     border-radius: 15px;
-    width: 390px;
+    width: 400px;
     backdrop-filter: blur(12px);
     box-shadow: 0 0 25px rgba(0,0,0,0.5);
 }
@@ -59,11 +59,10 @@ button:hover {
     background: #4752c4;
 }
 
-.small {
-    text-align: center;
-    font-size: 12px;
-    opacity: 0.7;
+.result {
     margin-top: 10px;
+    text-align: center;
+    font-weight: bold;
 }
 </style>
 
@@ -71,44 +70,52 @@ button:hover {
 <body>
 
 <div class="container">
-    <h2>📋 RP Beküldő</h2>
+    <h2>💰 RP Pénzszámoló</h2>
 
     <input type="text" id="name" placeholder="Neved">
 
-    <h3>Munkák / Rablások:</h3>
-
-    <label><input type="checkbox" value="Autólopás" class="job"> Autólopás</label>
-    <input type="number" id="carCount" placeholder="Autólopás db">
+    <h3>Tevékenységek (500$ / db):</h3>
 
     <label><input type="checkbox" value="Automatarablás" class="job"> Automatarablás</label>
     <label><input type="checkbox" value="Bankrablás" class="job"> Bankrablás</label>
     <label><input type="checkbox" value="Bobcat" class="job"> Bobcat</label>
     <label><input type="checkbox" value="Craft" class="job"> Craft</label>
-
     <label><input type="checkbox" value="Házrablás" class="job"> Házrablás</label>
     <label><input type="checkbox" value="Múzeumrablás" class="job"> Múzeumrablás</label>
 
+    <h3>🚗 Autólopás</h3>
+    <input type="number" id="carCount" placeholder="db szám">
+
     <button onclick="send()">📤 Küldés Discordra</button>
 
-    <div class="small">RP webhook embed rendszer</div>
+    <div class="result" id="result"></div>
 </div>
 
 <script>
 function send() {
     const name = document.getElementById("name").value;
 
+    const PRICE = 500;
+
     let jobs = [];
     document.querySelectorAll(".job").forEach(cb => {
         if (cb.checked) jobs.push(cb.value);
     });
 
-    let carCount = document.getElementById("carCount").value || "0";
+    let carCount = parseInt(document.getElementById("carCount").value || 0);
+
+    // 💰 számolás
+    let jobMoney = jobs.length * PRICE;
+    let carMoney = carCount * PRICE;
+    let total = jobMoney + carMoney;
+
+    document.getElementById("result").innerText = "💰 Végösszeg: " + total + "$";
 
     const embed = {
-        username: "RP Rendszer",
+        username: "RP Pénzrendszer",
         embeds: [
             {
-                title: "📋 Új RP tevékenység",
+                title: "📋 RP Tevékenység elszámolás",
                 color: 16753920,
                 fields: [
                     {
@@ -118,17 +125,22 @@ function send() {
                     },
                     {
                         name: "🧰 Tevékenységek",
-                        value: jobs.length ? jobs.join(", ") : "Nincs kiválasztva",
+                        value: jobs.length ? jobs.join(", ") : "Nincs",
                         inline: false
                     },
                     {
                         name: "🚗 Autólopás",
-                        value: carCount + " db",
+                        value: carCount + " db (" + carMoney + "$)",
+                        inline: false
+                    },
+                    {
+                        name: "💰 Végösszeg",
+                        value: "**" + total + "$**",
                         inline: false
                     }
                 ],
                 footer: {
-                    text: "RP Log rendszer"
+                    text: "RP elszámoló rendszer"
                 },
                 timestamp: new Date()
             }
