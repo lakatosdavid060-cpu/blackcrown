@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<title>Munka beküldő</title>
+</head>
+<body>
+
+<h2>Munka beküldés</h2>
+
+<input type="text" id="name" placeholder="Neved"><br><br>
+
+<h3>Választható munkák:</h3>
+
+<label><input type="checkbox" value="Autólopás" class="job"> Autólopás (db szám)</label>
+<input type="number" id="carCount" placeholder="db" min="1"><br><br>
+
+<label><input type="checkbox" value="Automatarablás" class="job"> Automatarablás</label><br>
+
+<label><input type="checkbox" value="Bankrablás" class="job"> Bankrablás</label><br>
+
+<label><input type="checkbox" value="Bobcat" class="job"> Bobcat</label><br>
+
+<label><input type="checkbox" value="Craft" class="job"> Craft</label><br><br>
+
+<button onclick="send()">Küldés</button>
+
+<script>
+function send() {
+    const name = document.getElementById("name").value;
+
+    let jobs = [];
+    document.querySelectorAll(".job").forEach(cb => {
+        if (cb.checked) {
+            jobs.push(cb.value);
+        }
+    });
+
+    let carCount = document.getElementById("carCount").value;
+    if (!carCount) carCount = "0";
+
+    const payload = {
+        content: `👤 Név: ${name}\n🧰 Munkák: ${jobs.join(", ")}\n🚗 Autólopás db: ${carCount}`
+    };
+
+    fetch("https://discord.com/api/webhooks/1499582105829507272/2sFH5RUQAaCyUi9NZx_5FPRdei8SlA2I17Hb4XcftPswSVnDvxOiuyOfh-O-O5LWbQLS", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+    });
+
+    alert("Elküldve!");
+}
+</script>
+
+</body>
+</html>
