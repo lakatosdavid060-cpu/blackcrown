@@ -2,7 +2,10 @@
 <html lang="hu">
 <head>
 <meta charset="UTF-8">
-<title>RP Pénzszámoló</title>
+<title>RP Firebase Rendszer</title>
+
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 
 <style>
 body {
@@ -11,70 +14,54 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    background: linear-gradient(135deg, #0f172a, #1e293b);
-    font-family: Arial, sans-serif;
+    background: #0f172a;
+    font-family: Arial;
     color: white;
 }
 
 .container {
-    background: rgba(255,255,255,0.08);
-    padding: 25px;
+    width: 420px;
+    padding: 20px;
     border-radius: 15px;
-    width: 400px;
-    backdrop-filter: blur(12px);
-    box-shadow: 0 0 25px rgba(0,0,0,0.5);
+    background: rgba(255,255,255,0.08);
 }
 
-h2 {
-    text-align: center;
-}
-
-input[type="text"], input[type="number"] {
+input, select {
     width: 100%;
     padding: 8px;
     margin: 6px 0;
     border-radius: 8px;
     border: none;
-    outline: none;
-}
-
-label {
-    display: block;
-    margin: 5px 0;
 }
 
 button {
     width: 100%;
     padding: 10px;
-    margin-top: 15px;
-    border: none;
+    margin-top: 10px;
     border-radius: 8px;
+    border: none;
     background: #5865F2;
     color: white;
-    font-size: 16px;
     cursor: pointer;
 }
-
-button:hover {
-    background: #4752c4;
-}
-
-.result {
-    margin-top: 10px;
-    text-align: center;
-    font-weight: bold;
-}
 </style>
-
 </head>
+
 <body>
 
 <div class="container">
-    <h2>💰 RP Pénzszámoló</h2>
+    <h2>🔥 RP Rendszer</h2>
 
-    <input type="text" id="name" placeholder="Neved">
+    <!-- fix nevek -->
+    <select id="nameSelect"></select>
 
-    <h3>Tevékenységek (500$ / db):</h3>
+    <!-- új név -->
+    <input type="text" id="newName" placeholder="Új név hozzáadása">
+    <button onclick="addName()">➕ Név hozzáadása</button>
+
+    <hr>
+
+    <h3>Tevékenységek</h3>
 
     <label><input type="checkbox" value="Automatarablás" class="job"> Automatarablás</label>
     <label><input type="checkbox" value="Bankrablás" class="job"> Bankrablás</label>
@@ -84,18 +71,53 @@ button:hover {
     <label><input type="checkbox" value="Múzeumrablás" class="job"> Múzeumrablás</label>
 
     <h3>🚗 Autólopás</h3>
-    <input type="number" id="carCount" placeholder="db szám">
+    <input type="number" id="carCount" placeholder="db">
 
     <button onclick="send()">📤 Küldés Discordra</button>
-
-    <div class="result" id="result"></div>
 </div>
 
 <script>
-function send() {
-    const name = document.getElementById("name").value;
+// 🔥 FIREBASE CONFIG (IDE A SAJÁTOD KELL)
+const firebaseConfig = {
+    apiKey: "AIzaSyBgbixws2rf6VdqjQATVwZsKg0lgiqy0xI",
+    authDomain: "ordog-fizetes.firebaseapp.com",
+    databaseURL: "https://ordog-fizetes-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "ordog-fizetes",
+};
 
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+const nameSelect = document.getElementById("nameSelect");
+
+// 🔄 nevek betöltése
+function loadNames() {
+    db.ref("names").on("value", (snap) => {
+        nameSelect.innerHTML = "";
+        snap.forEach(child => {
+            let option = document.createElement("option");
+            option.value = child.val();
+            option.innerText = child.val();
+            nameSelect.appendChild(option);
+        });
+    });
+}
+loadNames();
+
+// ➕ új név
+function addName() {
+    const newName = document.getElementById("newName").value;
+    if (!newName) return;
+
+    db.ref("names").push(newName);
+    document.getElementById("newName").value = "";
+}
+
+// 📤 küldés + számolás
+function send() {
     const PRICE = 500;
+
+    const name = nameSelect.value;
 
     let jobs = [];
     document.querySelectorAll(".job").forEach(cb => {
@@ -104,54 +126,29 @@ function send() {
 
     let carCount = parseInt(document.getElementById("carCount").value || 0);
 
-    // 💰 számolás
     let jobMoney = jobs.length * PRICE;
     let carMoney = carCount * PRICE;
     let total = jobMoney + carMoney;
 
-    document.getElementById("result").innerText = "💰 Végösszeg: " + total + "$";
-
     const embed = {
-        username: "RP Pénzrendszer",
+        username: "RP Rendszer",
         embeds: [
             {
-                title: "📋 RP Tevékenység elszámolás",
-                color: 16753920,
+                title: "📋 RP Log",
+                color: 7506394,
                 fields: [
-                    {
-                        name: "👤 Játékos",
-                        value: name || "Nincs megadva",
-                        inline: false
-                    },
-                    {
-                        name: "🧰 Tevékenységek",
-                        value: jobs.length ? jobs.join(", ") : "Nincs",
-                        inline: false
-                    },
-                    {
-                        name: "🚗 Autólopás",
-                        value: carCount + " db (" + carMoney + "$)",
-                        inline: false
-                    },
-                    {
-                        name: "💰 Végösszeg",
-                        value: "**" + total + "$**",
-                        inline: false
-                    }
-                ],
-                footer: {
-                    text: "RP elszámoló rendszer"
-                },
-                timestamp: new Date()
+                    { name: "👤 Név", value: name },
+                    { name: "🧰 Munkák", value: jobs.join(", ") || "Nincs" },
+                    { name: "🚗 Autólopás", value: carCount + " db (" + carMoney + "$)" },
+                    { name: "💰 Végösszeg", value: "**" + total + "$**" }
+                ]
             }
         ]
     };
 
-    fetch("https://discord.com/api/webhooks/1499582105829507272/2sFH5RUQAaCyUi9NZx_5FPRdei8SlA2I17Hb4XcftPswSVnDvxOiuyOfh-O-O5LWbQLS", {
+    fetch("WEBHOOK_URL_IDE", {
         method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(embed)
     });
 
