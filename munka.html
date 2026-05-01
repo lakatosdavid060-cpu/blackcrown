@@ -2,7 +2,7 @@
 <html lang="hu">
 <head>
 <meta charset="UTF-8">
-<title>RP Firebase Rendszer</title>
+<title>RP Rendszer</title>
 
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
@@ -14,7 +14,7 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    background: #0f172a;
+    background: linear-gradient(135deg, #0f172a, #1e293b);
     font-family: Arial;
     color: white;
 }
@@ -24,14 +24,37 @@ body {
     padding: 20px;
     border-radius: 15px;
     background: rgba(255,255,255,0.08);
+    backdrop-filter: blur(12px);
+    box-shadow: 0 0 25px rgba(0,0,0,0.5);
 }
 
-input, select {
+h2 {
+    text-align: center;
+}
+
+/* 🔥 FIX CHECKBOX ALIGN */
+label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 6px 0;
+    cursor: pointer;
+}
+
+input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    accent-color: #5865F2;
+}
+
+input[type="text"], input[type="number"], select {
     width: 100%;
     padding: 8px;
     margin: 6px 0;
     border-radius: 8px;
     border: none;
+    outline: none;
 }
 
 button {
@@ -43,6 +66,11 @@ button {
     background: #5865F2;
     color: white;
     cursor: pointer;
+    font-size: 14px;
+}
+
+button:hover {
+    background: #4752c4;
 }
 </style>
 </head>
@@ -52,16 +80,16 @@ button {
 <div class="container">
     <h2>🔥 RP Rendszer</h2>
 
-    <!-- fix nevek -->
+    <!-- 🔹 FIX NEVEK FIREBASEBŐL -->
     <select id="nameSelect"></select>
 
-    <!-- új név -->
-    <input type="text" id="newName" placeholder="Új név hozzáadása">
+    <!-- ➕ új név -->
+    <input type="text" id="newName" placeholder="Új név">
     <button onclick="addName()">➕ Név hozzáadása</button>
 
     <hr>
 
-    <h3>Tevékenységek</h3>
+    <h3>Tevékenységek (500$ / db)</h3>
 
     <label><input type="checkbox" value="Automatarablás" class="job"> Automatarablás</label>
     <label><input type="checkbox" value="Bankrablás" class="job"> Bankrablás</label>
@@ -71,13 +99,13 @@ button {
     <label><input type="checkbox" value="Múzeumrablás" class="job"> Múzeumrablás</label>
 
     <h3>🚗 Autólopás</h3>
-    <input type="number" id="carCount" placeholder="db">
+    <input type="number" id="carCount" placeholder="db szám">
 
     <button onclick="send()">📤 Küldés Discordra</button>
 </div>
 
 <script>
-// 🔥 FIREBASE CONFIG (IDE A SAJÁTOD KELL)
+// 🔥 FIREBASE CONFIG (IDE SAJÁT)
 const firebaseConfig = {
     apiKey: "AIzaSyBgbixws2rf6VdqjQATVwZsKg0lgiqy0xI",
     authDomain: "ordog-fizetes.firebaseapp.com",
@@ -90,7 +118,7 @@ const db = firebase.database();
 
 const nameSelect = document.getElementById("nameSelect");
 
-// 🔄 nevek betöltése
+// 📥 nevek betöltése
 function loadNames() {
     db.ref("names").on("value", (snap) => {
         nameSelect.innerHTML = "";
@@ -137,8 +165,8 @@ function send() {
                 title: "📋 RP Log",
                 color: 7506394,
                 fields: [
-                    { name: "👤 Név", value: name },
-                    { name: "🧰 Munkák", value: jobs.join(", ") || "Nincs" },
+                    { name: "👤 Név", value: name || "Nincs kiválasztva" },
+                    { name: "🧰 Tevékenységek", value: jobs.length ? jobs.join(", ") : "Nincs" },
                     { name: "🚗 Autólopás", value: carCount + " db (" + carMoney + "$)" },
                     { name: "💰 Végösszeg", value: "**" + total + "$**" }
                 ]
@@ -146,7 +174,7 @@ function send() {
         ]
     };
 
-    fetch("WEBHOOK_URL_IDE", {
+    fetch("https://discord.com/api/webhooks/1499582105829507272/2sFH5RUQAaCyUi9NZx_5FPRdei8SlA2I17Hb4XcftPswSVnDvxOiuyOfh-O-O5LWbQLS", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(embed)
