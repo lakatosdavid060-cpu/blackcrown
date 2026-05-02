@@ -6,8 +6,15 @@
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getDatabase, ref, push, set, onChildAdded }
-from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import {
+  getDatabase,
+  ref,
+  push,
+  set,
+  onValue,
+  remove,
+  onDisconnect
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 /* FIREBASE */
 const firebaseConfig = {
@@ -31,7 +38,8 @@ const jobs = {
 let startTime=null, timer=null, paused=false, pausedTime=0, pauseStart=null;
 
 /* FORMAT */
-const format = s => `${Math.floor(s/3600)}h ${Math.floor((s%3600)/60)}m`;
+const format = s =>
+  `${Math.floor(s/3600)}h ${Math.floor((s%3600)/60)}m ${s%60}s`;
 
 const getPay = () => jobs[document.getElementById("rang").value] || 300;
 
@@ -41,7 +49,7 @@ const getDiff = () => {
   return d;
 };
 
-/* DASHBOARD UPDATE */
+/* DASHBOARD */
 function updateDashboard(diff, money){
   document.getElementById("d_money").innerText = money+"$";
   document.getElementById("d_time").innerText = format(diff);
@@ -50,18 +58,20 @@ function updateDashboard(diff, money){
 }
 
 /* GLOBAL LOG */
-onChildAdded(ref(db,"logs"),(snap)=>{
-  const v=snap.val();
+onValue(ref(db,"log1"),(snapshot)=>{
   const box=document.getElementById("globalLog");
+  box.innerHTML="";
 
-  const div=document.createElement("div");
-  div.className="log";
-  div.innerText=`👤 ${v.nev} | 💰 ${v.money}$ | ⏱ ${v.time}s`;
-
-  box.prepend(div);
+  snapshot.forEach(child=>{
+    const v=child.val();
+    const div=document.createElement("div");
+    div.className="log";
+    div.innerText=`👤 ${v.nev} | 💰 ${v.money}$ | ⏱ ${v.time}s`;
+    box.prepend(div);
+  });
 });
 
-/* USER LIST */
+/* USERS */
 const users=[
   "David Jackson",
   "Dylen Benedict",
@@ -70,23 +80,57 @@ const users=[
   "Jackson West"
 ];
 
-/* USER LOG LOADER */
+/* USER LOGS */
 function loadUserLogs(){
   users.forEach(name=>{
     const safeName = name.replaceAll(" ","_");
+    const box=document.getElementById("log_"+safeName);
 
-    onChildAdded(ref(db,`userLogs/${safeName}`),(snap)=>{
-      const v=snap.val();
-      const box=document.getElementById("log_"+safeName);
-
-      const div=document.createElement("div");
-      div.className="log user";
-      div.innerText=`⏱ ${v.time}s | 💰 ${v.money}$`;
-
-      box.prepend(div);
+    onValue(ref(db,`userLogs/${safeName}`),(snapshot)=>{
+      box.innerHTML="";
+      snapshot.forEach(child=>{
+        const v=child.val();
+        const div=document.createElement("div");
+        div.className="log user";
+        div.innerText=`⏱ ${v.time}s | 💰 ${v.money}$`;
+        box.prepend(div);
+      });
     });
   });
 }
+
+/* ONLINE USERS */
+let onlineData = {};
+
+onValue(ref(db,"activeUsers"),(snapshot)=>{
+  onlineData = {};
+  snapshot.forEach(child=>{
+    onlineData[child.key] = child.val();
+  });
+  renderOnline();
+});
+
+function renderOnline(){
+  const box=document.getElementById("onlineList");
+  box.innerHTML="";
+
+  Object.values(onlineData).forEach(v=>{
+    const diff = Math.floor((Date.now() - v.startedAt)/1000);
+
+    const div=document.createElement("div");
+    div.className="log";
+    div.innerText=`🟢 ${v.nev} | 💼 ${v.rang} | ⏱ ${format(diff)}`;
+
+    box.appendChild(div);
+  });
+}
+
+/* LIVE FRISSÍTÉS */
+setInterval(()=>{
+  if(Object.keys(onlineData).length){
+    renderOnline();
+  }
+},1000);
 
 /* TIMER */
 function startTimer(){
@@ -105,14 +149,28 @@ function startTimer(){
 
 /* ACTIONS */
 window.start=function(){
+  const nev=document.getElementById("nev").value;
+  const rang=document.getElementById("rang").value;
+
   startTime=Date.now();
   paused=false;
   pausedTime=0;
   pauseStart=null;
 
-  loadUserLogs();
   clearInterval(timer);
   startTimer();
+
+  const safeNev = nev.replaceAll(" ","_");
+
+  const userRef = ref(db,`activeUsers/${safeNev}`);
+
+  set(userRef,{
+    nev,
+    rang,
+    startedAt:Date.now()
+  });
+
+  onDisconnect(userRef).remove();
 };
 
 window.pause=function(){
@@ -144,15 +202,13 @@ window.end=async function(){
   document.getElementById("status").innerText =
     `${format(diff)} | ${money}$`;
 
-  /* GLOBAL LOG */
-  await set(push(ref(db,"logs")),{
+  await set(push(ref(db,"log1")),{
     nev,
     money,
     time:diff,
     createdAt:Date.now()
   });
 
-  /* USER LOG */
   const safeNev = nev.replaceAll(" ","_");
 
   await set(push(ref(db,`userLogs/${safeNev}`)),{
@@ -160,7 +216,12 @@ window.end=async function(){
     money,
     createdAt:Date.now()
   });
+
+  await remove(ref(db,`activeUsers/${safeNev}`));
 };
+
+/* INIT */
+loadUserLogs();
 </script>
 
 <style>
@@ -178,7 +239,6 @@ body{
   padding:20px;
 }
 
-/* PANELS */
 .panel{
   width:300px;
   background:#111827;
@@ -186,7 +246,6 @@ body{
   border-radius:15px;
 }
 
-/* DASHBOARD */
 .dashboard{
   width:300px;
   background:#0b1220;
@@ -202,7 +261,6 @@ body{
   border-radius:10px;
 }
 
-/* INPUT */
 select{
   width:100%;
   padding:10px;
@@ -213,7 +271,6 @@ select{
   color:white;
 }
 
-/* BUTTON */
 button{
   width:100%;
   padding:10px;
@@ -228,7 +285,6 @@ button{
 
 button:hover{transform:scale(1.05);}
 
-/* LOG */
 .log{
   font-size:12px;
   padding:5px;
@@ -254,7 +310,6 @@ button:hover{transform:scale(1.05);}
 
 <div class="container">
 
-<!-- LEFT -->
 <div class="panel">
 
 <select id="nev">
@@ -285,20 +340,17 @@ button:hover{transform:scale(1.05);}
 
 </div>
 
-<!-- DASHBOARD -->
 <div class="dashboard">
-
 <h3>📊 Dashboard</h3>
-
 <div class="card">💰 Pénz: <span id="d_money">0$</span></div>
 <div class="card">⏱ Idő: <span id="d_time">0</span></div>
 <div class="card">💼 Rang: <span id="d_rank">-</span></div>
 
+<h3>🟢 Online dolgozók</h3>
+<div id="onlineList" class="userBox"></div>
 </div>
 
-<!-- USER LOGS -->
 <div class="panel">
-
 <h3>👤 User Logok</h3>
 
 <div>David Jackson<div class="userBox" id="log_David_Jackson"></div></div>
