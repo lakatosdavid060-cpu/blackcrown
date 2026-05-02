@@ -2,7 +2,7 @@
 <html lang="hu">
 <head>
 <meta charset="UTF-8">
-<title>Munkaidő PRO + Dashboard</title>
+<title>Munkaidő PRO (STABIL)</title>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
@@ -11,6 +11,7 @@ import {
   ref,
   push,
   set,
+  update,
   onValue,
   remove,
   onDisconnect
@@ -36,6 +37,7 @@ const jobs = {
 };
 
 let startTime=null, timer=null, paused=false, pausedTime=0, pauseStart=null;
+let restored=false;
 
 /* FORMAT */
 const format = s =>
@@ -45,8 +47,12 @@ const getPay = () => jobs[document.getElementById("rang").value] || 300;
 
 const getDiff = () => {
   let d = Math.floor((Date.now()-startTime)/1000)-pausedTime;
-  if(paused && pauseStart) d -= Math.floor((Date.now()-pauseStart)/1000);
-  return d;
+
+  if(paused && pauseStart){
+    d -= Math.floor((Date.now()-pauseStart)/1000);
+  }
+
+  return Math.max(0,d);
 };
 
 /* DASHBOARD */
@@ -121,6 +127,7 @@ function renderOnline(){
     }
 
     diff -= v.pausedTime || 0;
+    diff = Math.max(0,diff);
 
     const div=document.createElement("div");
     div.className="log";
@@ -138,6 +145,7 @@ setInterval(()=>{
 
 /* TIMER */
 function startTimer(){
+  clearInterval(timer);
   timer=setInterval(()=>{
     if(!startTime) return;
 
@@ -161,7 +169,6 @@ window.start=function(){
   pausedTime=0;
   pauseStart=null;
 
-  clearInterval(timer);
   startTimer();
 
   const safeNev = nev.replaceAll(" ","_");
@@ -188,12 +195,8 @@ window.pause=function(){
     const nev=document.getElementById("nev").value;
     const safeNev = nev.replaceAll(" ","_");
 
-    set(ref(db,`activeUsers/${safeNev}`),{
-      nev,
-      rang:document.getElementById("rang").value,
-      startedAt:startTime,
+    update(ref(db,`activeUsers/${safeNev}`),{
       paused:true,
-      pausedTime,
       pauseStart
     });
   }
@@ -209,10 +212,7 @@ window.resume=function(){
   const nev=document.getElementById("nev").value;
   const safeNev = nev.replaceAll(" ","_");
 
-  set(ref(db,`activeUsers/${safeNev}`),{
-    nev,
-    rang:document.getElementById("rang").value,
-    startedAt:startTime,
+  update(ref(db,`activeUsers/${safeNev}`),{
     paused:false,
     pausedTime,
     pauseStart:null
@@ -253,8 +253,10 @@ window.end=async function(){
   await remove(ref(db,`activeUsers/${safeNev}`));
 };
 
-/* RESTORE SESSION */
+/* RESTORE */
 function restoreSession(){
+  if(restored) return;
+
   const nev=document.getElementById("nev").value;
   const safeNev = nev.replaceAll(" ","_");
 
@@ -268,8 +270,8 @@ function restoreSession(){
     pausedTime = data.pausedTime || 0;
     pauseStart = data.pauseStart || null;
 
-    clearInterval(timer);
     startTimer();
+    restored=true;
   });
 }
 
@@ -280,74 +282,16 @@ restoreSession();
 </script>
 
 <style>
-body{
-  margin:0;
-  font-family:Arial;
-  background:#0f172a;
-  color:white;
-}
-.container{
-  display:flex;
-  justify-content:center;
-  gap:20px;
-  padding:20px;
-}
-.panel{
-  width:300px;
-  background:#111827;
-  padding:20px;
-  border-radius:15px;
-}
-.dashboard{
-  width:300px;
-  background:#0b1220;
-  padding:20px;
-  border-radius:15px;
-  text-align:center;
-}
-.card{
-  background:#1f2937;
-  padding:10px;
-  margin:5px 0;
-  border-radius:10px;
-}
-select{
-  width:100%;
-  padding:10px;
-  margin:5px 0;
-  border-radius:8px;
-  border:none;
-  background:#1f2937;
-  color:white;
-}
-button{
-  width:100%;
-  padding:10px;
-  margin:5px 0;
-  border-radius:10px;
-  border:none;
-  cursor:pointer;
-  font-weight:bold;
-  background:linear-gradient(45deg,#3b82f6,#8b5cf6);
-  color:white;
-}
-button:hover{transform:scale(1.05);}
-.log{
-  font-size:12px;
-  padding:5px;
-  border-bottom:1px solid #1f2937;
-}
-.user{
-  color:#38bdf8;
-}
-.userBox{
-  max-height:120px;
-  overflow:auto;
-  background:#0b1220;
-  padding:8px;
-  border-radius:10px;
-  margin-bottom:10px;
-}
+body{margin:0;font-family:Arial;background:#0f172a;color:white;}
+.container{display:flex;justify-content:center;gap:20px;padding:20px;}
+.panel{width:300px;background:#111827;padding:20px;border-radius:15px;}
+.dashboard{width:300px;background:#0b1220;padding:20px;border-radius:15px;text-align:center;}
+.card{background:#1f2937;padding:10px;margin:5px 0;border-radius:10px;}
+select,button{width:100%;padding:10px;margin:5px 0;border-radius:10px;border:none;}
+button{cursor:pointer;font-weight:bold;background:linear-gradient(45deg,#3b82f6,#8b5cf6);color:white;}
+.log{font-size:12px;padding:5px;border-bottom:1px solid #1f2937;}
+.user{color:#38bdf8;}
+.userBox{max-height:120px;overflow:auto;background:#0b1220;padding:8px;border-radius:10px;}
 </style>
 </head>
 
@@ -356,20 +300,19 @@ button:hover{transform:scale(1.05);}
 <div class="container">
 
 <div class="panel">
-
 <select id="nev">
-  <option>David Jackson</option>
-  <option>Dylen Benedict</option>
-  <option>Olla Ronaldo</option>
-  <option>Clinton Morris</option>
-  <option>Jackson West</option>
+<option>David Jackson</option>
+<option>Dylen Benedict</option>
+<option>Olla Ronaldo</option>
+<option>Clinton Morris</option>
+<option>Jackson West</option>
 </select>
 
 <select id="rang">
-  <option>Boss</option>
-  <option>UnderBoss</option>
-  <option>Capo</option>
-  <option>Soldier</option>
+<option>Boss</option>
+<option>UnderBoss</option>
+<option>Capo</option>
+<option>Soldier</option>
 </select>
 
 <button onclick="start()">Indítás</button>
@@ -382,28 +325,25 @@ button:hover{transform:scale(1.05);}
 
 <h3>🌍 Global Log</h3>
 <div id="globalLog"></div>
-
 </div>
 
 <div class="dashboard">
 <h3>📊 Dashboard</h3>
-<div class="card">💰 Pénz: <span id="d_money">0$</span></div>
-<div class="card">⏱ Idő: <span id="d_time">0</span></div>
-<div class="card">💼 Rang: <span id="d_rank">-</span></div>
+<div class="card">💰 <span id="d_money">0$</span></div>
+<div class="card">⏱ <span id="d_time">0</span></div>
+<div class="card">💼 <span id="d_rank">-</span></div>
 
-<h3>🟢 Online dolgozók</h3>
+<h3>🟢 Online</h3>
 <div id="onlineList" class="userBox"></div>
 </div>
 
 <div class="panel">
 <h3>👤 User Logok</h3>
-
-<div>David Jackson<div class="userBox" id="log_David_Jackson"></div></div>
-<div>Dylen Benedict<div class="userBox" id="log_Dylen_Benedict"></div></div>
-<div>Olla Ronaldo<div class="userBox" id="log_Olla_Ronaldo"></div></div>
-<div>Clinton Morris<div class="userBox" id="log_Clinton_Morris"></div></div>
-<div>Jackson West<div class="userBox" id="log_Jackson_West"></div></div>
-
+<div>David Jackson<div id="log_David_Jackson" class="userBox"></div></div>
+<div>Dylen Benedict<div id="log_Dylen_Benedict" class="userBox"></div></div>
+<div>Olla Ronaldo<div id="log_Olla_Ronaldo" class="userBox"></div></div>
+<div>Clinton Morris<div id="log_Clinton_Morris" class="userBox"></div></div>
+<div>Jackson West<div id="log_Jackson_West" class="userBox"></div></div>
 </div>
 
 </div>
