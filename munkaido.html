@@ -61,7 +61,6 @@ function updateDashboard(diff, money){
 onValue(ref(db,"log1"),(snapshot)=>{
   const box=document.getElementById("globalLog");
   box.innerHTML="";
-
   snapshot.forEach(child=>{
     const v=child.val();
     const div=document.createElement("div");
@@ -115,7 +114,13 @@ function renderOnline(){
   box.innerHTML="";
 
   Object.values(onlineData).forEach(v=>{
-    const diff = Math.floor((Date.now() - v.startedAt)/1000);
+    let diff = Math.floor((Date.now() - v.startedAt)/1000);
+
+    if(v.paused && v.pauseStart){
+      diff -= Math.floor((Date.now()-v.pauseStart)/1000);
+    }
+
+    diff -= v.pausedTime || 0;
 
     const div=document.createElement("div");
     div.className="log";
@@ -125,7 +130,6 @@ function renderOnline(){
   });
 }
 
-/* LIVE FRISSÍTÉS */
 setInterval(()=>{
   if(Object.keys(onlineData).length){
     renderOnline();
@@ -147,7 +151,7 @@ function startTimer(){
   },1000);
 }
 
-/* ACTIONS */
+/* START */
 window.start=function(){
   const nev=document.getElementById("nev").value;
   const rang=document.getElementById("rang").value;
@@ -161,32 +165,61 @@ window.start=function(){
   startTimer();
 
   const safeNev = nev.replaceAll(" ","_");
-
   const userRef = ref(db,`activeUsers/${safeNev}`);
 
   set(userRef,{
     nev,
     rang,
-    startedAt:Date.now()
+    startedAt:startTime,
+    paused:false,
+    pausedTime:0,
+    pauseStart:null
   });
 
   onDisconnect(userRef).remove();
 };
 
+/* PAUSE */
 window.pause=function(){
   if(!paused){
     pauseStart=Date.now();
     paused=true;
+
+    const nev=document.getElementById("nev").value;
+    const safeNev = nev.replaceAll(" ","_");
+
+    set(ref(db,`activeUsers/${safeNev}`),{
+      nev,
+      rang:document.getElementById("rang").value,
+      startedAt:startTime,
+      paused:true,
+      pausedTime,
+      pauseStart
+    });
   }
 };
 
+/* RESUME */
 window.resume=function(){
   if(paused){
     pausedTime += Math.floor((Date.now()-pauseStart)/1000);
   }
   paused=false;
+
+  const nev=document.getElementById("nev").value;
+  const safeNev = nev.replaceAll(" ","_");
+
+  set(ref(db,`activeUsers/${safeNev}`),{
+    nev,
+    rang:document.getElementById("rang").value,
+    startedAt:startTime,
+    paused:false,
+    pausedTime,
+    pauseStart:null
+  });
 };
 
+/* END */
 window.end=async function(){
   const nev=document.getElementById("nev").value;
 
@@ -220,8 +253,30 @@ window.end=async function(){
   await remove(ref(db,`activeUsers/${safeNev}`));
 };
 
+/* RESTORE SESSION */
+function restoreSession(){
+  const nev=document.getElementById("nev").value;
+  const safeNev = nev.replaceAll(" ","_");
+
+  onValue(ref(db,`activeUsers/${safeNev}`),(snap)=>{
+    if(!snap.exists()) return;
+
+    const data = snap.val();
+
+    startTime = data.startedAt;
+    paused = data.paused;
+    pausedTime = data.pausedTime || 0;
+    pauseStart = data.pauseStart || null;
+
+    clearInterval(timer);
+    startTimer();
+  });
+}
+
 /* INIT */
 loadUserLogs();
+restoreSession();
+
 </script>
 
 <style>
@@ -231,21 +286,18 @@ body{
   background:#0f172a;
   color:white;
 }
-
 .container{
   display:flex;
   justify-content:center;
   gap:20px;
   padding:20px;
 }
-
 .panel{
   width:300px;
   background:#111827;
   padding:20px;
   border-radius:15px;
 }
-
 .dashboard{
   width:300px;
   background:#0b1220;
@@ -253,14 +305,12 @@ body{
   border-radius:15px;
   text-align:center;
 }
-
 .card{
   background:#1f2937;
   padding:10px;
   margin:5px 0;
   border-radius:10px;
 }
-
 select{
   width:100%;
   padding:10px;
@@ -270,7 +320,6 @@ select{
   background:#1f2937;
   color:white;
 }
-
 button{
   width:100%;
   padding:10px;
@@ -282,19 +331,15 @@ button{
   background:linear-gradient(45deg,#3b82f6,#8b5cf6);
   color:white;
 }
-
 button:hover{transform:scale(1.05);}
-
 .log{
   font-size:12px;
   padding:5px;
   border-bottom:1px solid #1f2937;
 }
-
 .user{
   color:#38bdf8;
 }
-
 .userBox{
   max-height:120px;
   overflow:auto;
