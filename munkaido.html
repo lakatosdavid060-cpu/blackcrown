@@ -2,7 +2,7 @@
 <html lang="hu">
 <head>
 <meta charset="UTF-8">
-<title>Munkaidő PRO V2 FINAL</title>
+<title>Munkaidő PRO Dashboard</title>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -30,7 +30,6 @@ let paused=false;
 let pauseStart=null;
 let pausedTime=0;
 let timer=null;
-let payDate=null;
 let chart;
 
 /* RANGOK */
@@ -41,88 +40,26 @@ const jobs={
   Soldier:200
 };
 
+const users=[
+  "David Jackson",
+  "Dylen Benedict",
+  "Olla Ronaldo",
+  "Clinton Morris",
+  "Jackson West"
+];
+
 /* FORMAT */
 const format=s=>`${Math.floor(s/3600)}h ${Math.floor((s%3600)/60)}m ${s%60}s`;
 
-function nevSafe(){
+function safe(){
   return document.getElementById("nev").value.replaceAll(" ","_");
-}
-
-/* PAY DATE */
-function getCountdown(){
-  if(!payDate) return "nincs beállítva";
-  const diff=payDate-Date.now();
-  if(diff<=0) return "lejárt";
-
-  const d=Math.floor(diff/86400000);
-  const h=Math.floor((diff/3600000)%24);
-  return `${d} nap ${h} óra`;
-}
-
-window.savePayDate=()=>{
-  const v=document.getElementById("payDate").value;
-  if(!v) return;
-
-  set(ref(db,"settings/payDate"),{
-    value:new Date(v).getTime()
-  });
-};
-
-window.addWeek=()=>{
-  if(!payDate) return;
-  payDate+=604800000;
-  set(ref(db,"settings/payDate"),{value:payDate});
-};
-
-onValue(ref(db,"settings/payDate"),snap=>{
-  if(!snap.exists()) return;
-  payDate=snap.val().value;
-
-  document.getElementById("payDate").value=
-    new Date(payDate).toISOString().slice(0,16);
-});
-
-/* MESSAGE BAR */
-let msgIndex=0;
-function rotateMessages(){
-  const msgs=[
-    "⚠️ Heti elszámolás aktív",
-    `💰 Következő fizetés: ${getCountdown()}`,
-    "📊 Minden adat mentve",
-    "🟢 Online státusz él"
-  ];
-
-  document.getElementById("noticeText").innerText=
-    msgs[msgIndex%msgs.length];
-
-  msgIndex++;
-}
-setInterval(rotateMessages,5000);
-
-/* SESSION CHECK */
-async function checkSession(){
-  const safe=nevSafe();
-
-  const snap=await get(ref(db,`sessions/${safe}`));
-
-  if(snap.exists()){
-    const s=snap.val();
-
-    sessionId=s.sessionId;
-    startTime=s.startTime;
-    paused=s.paused;
-    pausedTime=s.pausedTime||0;
-    pauseStart=s.pauseStart||null;
-
-    startTimer();
-  }
 }
 
 /* START */
 window.start=async()=>{
-  const safe=nevSafe();
+  const s=safe();
 
-  const exists=await get(ref(db,`sessions/${safe}`));
+  const exists=await get(ref(db,`sessions/${s}`));
   if(exists.exists()){
     alert("Már fut munkaidő!");
     return;
@@ -139,13 +76,13 @@ window.start=async()=>{
     nev:document.getElementById("nev").value,
     rang:document.getElementById("rang").value,
     startTime,
-    paused,
-    pausedTime,
-    pauseStart
+    paused:false,
+    pausedTime:0,
+    pauseStart:null
   };
 
-  set(ref(db,`sessions/${safe}`),data);
-  onDisconnect(ref(db,`sessions/${safe}`)).remove();
+  set(ref(db,`sessions/${s}`),data);
+  onDisconnect(ref(db,`sessions/${s}`)).remove();
 
   startTimer();
 };
@@ -153,14 +90,10 @@ window.start=async()=>{
 /* PAUSE */
 window.pause=()=>{
   if(paused) return;
-
   pauseStart=Date.now();
   paused=true;
 
-  update(ref(db,`sessions/${nevSafe()}`),{
-    paused,
-    pauseStart
-  });
+  update(ref(db,`sessions/${safe()}`),{paused:true,pauseStart});
 };
 
 /* RESUME */
@@ -170,8 +103,8 @@ window.resume=()=>{
   pausedTime+=Math.floor((Date.now()-pauseStart)/1000);
   paused=false;
 
-  update(ref(db,`sessions/${nevSafe()}`),{
-    paused,
+  update(ref(db,`sessions/${safe()}`),{
+    paused:false,
     pausedTime,
     pauseStart:null
   });
@@ -179,7 +112,7 @@ window.resume=()=>{
 
 /* END */
 window.end=async()=>{
-  const safe=nevSafe();
+  const s=safe();
 
   if(paused && pauseStart){
     pausedTime+=Math.floor((Date.now()-pauseStart)/1000);
@@ -191,7 +124,6 @@ window.end=async()=>{
   const pay=jobs[document.getElementById("rang").value];
   const money=Math.floor((diff/3600)*pay);
 
-  /* GLOBAL LOG -> log1 */
   await set(push(ref(db,"log1")),{
     nev:document.getElementById("nev").value,
     money,
@@ -199,14 +131,11 @@ window.end=async()=>{
     createdAt:Date.now()
   });
 
-  /* USER LOG */
-  await set(push(ref(db,`userLogs/${safe}`)),{
-    money,
-    time:diff,
-    createdAt:Date.now()
+  await set(push(ref(db,`userLogs/${s}`)),{
+    money,time:diff,createdAt:Date.now()
   });
 
-  await remove(ref(db,`sessions/${safe}`));
+  await remove(ref(db,`sessions/${s}`));
 };
 
 /* DIFF */
@@ -231,7 +160,7 @@ function startTimer(){
     const money=Math.floor((diff/3600)*jobs[document.getElementById("rang").value]);
 
     document.getElementById("live").innerText=
-      `⏱ ${format(diff)} | 💰 ${money}$`;
+      `${format(diff)} • ${money}$`;
   },1000);
 }
 
@@ -249,9 +178,8 @@ onValue(ref(db,"log1"),snap=>{
     const div=document.createElement("div");
     div.className="log";
     div.innerHTML=`
-      <b>${v.nev}</b><br>
-      💰 ${v.money}$ • ⏱ ${format(v.time)}<br>
-      <small>${new Date(v.createdAt).toLocaleString()}</small>
+      <b>${v.nev}</b>
+      <span>${v.money}$ • ${format(v.time)}</span>
     `;
 
     box.prepend(div);
@@ -261,7 +189,6 @@ onValue(ref(db,"log1"),snap=>{
 });
 
 /* CHART */
-let chart;
 function renderChart(data){
   const ctx=document.getElementById("chart");
 
@@ -272,7 +199,7 @@ function renderChart(data){
     data:{
       labels:Object.keys(data),
       datasets:[{
-        label:"Össz kereset",
+        label:"Kereset",
         data:Object.values(data)
       }]
     }
@@ -280,19 +207,11 @@ function renderChart(data){
 }
 
 /* USER LOG */
-const users=[
-  "David Jackson",
-  "Dylen Benedict",
-  "Olla Ronaldo",
-  "Clinton Morris",
-  "Jackson West"
-];
+users.forEach(n=>{
+  const s=n.replaceAll(" ","_");
 
-users.forEach(name=>{
-  const safe=name.replaceAll(" ","_");
-
-  onValue(ref(db,`userLogs/${safe}`),snap=>{
-    const box=document.getElementById("log_"+safe);
+  onValue(ref(db,`userLogs/${s}`),snap=>{
+    const box=document.getElementById("log_"+s);
     box.innerHTML="";
 
     snap.forEach(c=>{
@@ -301,8 +220,7 @@ users.forEach(name=>{
       const div=document.createElement("div");
       div.className="log user";
       div.innerHTML=`
-        💰 ${v.money}$ • ⏱ ${format(v.time)}<br>
-        <small>${new Date(v.createdAt).toLocaleString()}</small>
+        ${v.money}$ • ${format(v.time)}
       `;
 
       box.prepend(div);
@@ -327,36 +245,101 @@ onValue(ref(db,"sessions"),snap=>{
     diff=Math.max(0,diff);
 
     const div=document.createElement("div");
-    div.className="log";
-    div.innerText=`🟢 ${v.nev} | ${v.rang} | ⏱ ${format(diff)}`;
+    div.className="online";
+    div.innerText=`🟢 ${v.nev} • ${format(diff)}`;
 
     box.appendChild(div);
   });
 });
 
 /* INIT */
-rotateMessages();
-checkSession();
-
 </script>
 
 <style>
-body{margin:0;font-family:Arial;background:#0f172a;color:white;}
-.notice{background:#3b82f6;padding:10px;text-align:center;}
-.container{display:flex;gap:20px;padding:20px;}
-.panel,.dashboard{background:#111827;padding:20px;border-radius:15px;width:300px;}
-button,select,input{width:100%;margin:5px 0;padding:10px;border:none;border-radius:8px;}
-.log{background:#1f2937;padding:10px;margin:5px 0;border-radius:10px;}
+body{
+  margin:0;
+  font-family:system-ui;
+  background:#0b1220;
+  color:white;
+}
+
+/* LAYOUT */
+.container{
+  display:grid;
+  grid-template-columns:300px 1fr 300px;
+  gap:15px;
+  padding:15px;
+}
+
+/* PANELS */
+.panel,.dash{
+  background:#111827;
+  border-radius:16px;
+  padding:15px;
+}
+
+/* INPUT */
+select{
+  width:100%;
+  padding:10px;
+  margin:5px 0;
+  border-radius:10px;
+  border:none;
+  background:#0b1220;
+  color:white;
+}
+
+/* BUTTON */
+button{
+  width:100%;
+  padding:10px;
+  margin:5px 0;
+  border-radius:10px;
+  border:none;
+  background:linear-gradient(135deg,#3b82f6,#8b5cf6);
+  color:white;
+  font-weight:bold;
+}
+
+/* LIVE */
+#live{
+  margin-top:10px;
+  padding:10px;
+  background:#0b1220;
+  border-radius:10px;
+}
+
+/* LOG */
+.log{
+  background:#0b1220;
+  padding:8px;
+  margin:5px 0;
+  border-radius:10px;
+  font-size:13px;
+  display:flex;
+  justify-content:space-between;
+}
+
+/* USER LOG */
 .user{border-left:3px solid #38bdf8;}
+
+/* ONLINE */
+.online{
+  background:#0b1220;
+  padding:8px;
+  margin:5px 0;
+  border-radius:10px;
+}
+
+/* RESPONSIVE */
+@media(max-width:1000px){
+  .container{grid-template-columns:1fr;}
+}
 </style>
 
 </head>
 
 <body>
-
-<div class="notice">
-  <span id="noticeText"></span>
-</div>
 
 <div class="container">
 
@@ -384,23 +367,18 @@ button,select,input{width:100%;margin:5px 0;padding:10px;border:none;border-radi
 
 <div id="live"></div>
 
-<h3>GLOBAL LOG</h3>
+<h3>GLOBAL</h3>
 <div id="globalLog"></div>
 
 </div>
 
-<div class="dashboard">
+<div class="dash">
 
-<h3>📊 STATS</h3>
+<h3>STATS</h3>
 <canvas id="chart"></canvas>
 
-<h3>🟢 ONLINE</h3>
+<h3>ONLINE</h3>
 <div id="online"></div>
-
-<h3>⚙️ PAY</h3>
-<input type="datetime-local" id="payDate">
-<button onclick="savePayDate()">SAVE</button>
-<button onclick="addWeek()">+1 WEEK</button>
 
 </div>
 
