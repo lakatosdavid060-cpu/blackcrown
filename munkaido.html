@@ -24,12 +24,12 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
 /* STATE */
-let sessionId=null;
 let startTime=null;
 let paused=false;
 let pauseStart=null;
 let pausedTime=0;
 let timer=null;
+let payDate=null;
 let chart;
 
 /* RANGOK */
@@ -40,14 +40,6 @@ const jobs={
   Soldier:200
 };
 
-const users=[
-  "David Jackson",
-  "Dylen Benedict",
-  "Olla Ronaldo",
-  "Clinton Morris",
-  "Jackson West"
-];
-
 /* FORMAT */
 const format=s=>`${Math.floor(s/3600)}h ${Math.floor((s%3600)/60)}m ${s%60}s`;
 
@@ -55,62 +47,104 @@ function safe(){
   return document.getElementById("nev").value.replaceAll(" ","_");
 }
 
-/* START */
-window.start=async()=>{
-  const s=safe();
+/* PAY DATE */
+function getCountdown(){
+  if(!payDate) return null;
 
-  const exists=await get(ref(db,`sessions/${s}`));
-  if(exists.exists()){
-    alert("Már fut munkaidő!");
-    return;
+  const diff=payDate-Date.now();
+  if(diff<=0) return {text:"MA VAN A FIZETÉS!",state:"danger"};
+
+  const d=Math.floor(diff/86400000);
+  const h=Math.floor((diff/3600000)%24);
+
+  if(d===0){
+    return {text:`⚠️ Fizetés ma ${h} órán belül`,state:"warning"};
   }
 
-  sessionId=Date.now().toString();
+  if(d<=2){
+    return {text:`🔥 Fizetés közel: ${d} nap ${h} óra`,state:"warning"};
+  }
+
+  return {text:`📅 Következő fizetés: ${d} nap ${h} óra`,state:"ok"};
+}
+
+window.savePayDate=()=>{
+  const v=document.getElementById("payDate").value;
+  if(!v) return;
+
+  set(ref(db,"settings/payDate"),{
+    value:new Date(v).getTime()
+  });
+};
+
+window.addWeek=()=>{
+  if(!payDate) return;
+  payDate+=604800000;
+  set(ref(db,"settings/payDate"),{value:payDate});
+};
+
+onValue(ref(db,"settings/payDate"),snap=>{
+  if(!snap.exists()) return;
+  payDate=snap.val().value;
+
+  document.getElementById("payDate").value=
+    new Date(payDate).toISOString().slice(0,16);
+});
+
+/* SYSTEM MESSAGES */
+let msgIndex=0;
+
+function systemMessages(){
+  const pay=getCountdown();
+
+  const msgs=[
+    "⚠️ Heti elszámolás aktív",
+    pay ? pay.text : "📅 Fizetés nincs beállítva",
+    "📊 Minden adat mentve Firebase-be",
+    "🟢 Online státusz aktív rendszer"
+  ];
+
+  const el=document.getElementById("noticeText");
+  el.innerText=msgs[msgIndex%msgs.length];
+
+  const payBox=document.getElementById("payStatus");
+
+  if(pay){
+    payBox.innerText=pay.text;
+
+    payBox.className=
+      pay.state==="danger" ? "danger" :
+      pay.state==="warning" ? "warning" : "ok";
+  }
+
+  msgIndex++;
+}
+
+setInterval(systemMessages,4000);
+
+/* TIMER */
+window.start=()=>{
   startTime=Date.now();
   paused=false;
   pausedTime=0;
   pauseStart=null;
 
-  const data={
-    sessionId,
-    nev:document.getElementById("nev").value,
-    rang:document.getElementById("rang").value,
-    startTime,
-    paused:false,
-    pausedTime:0,
-    pauseStart:null
-  };
-
-  set(ref(db,`sessions/${s}`),data);
-  onDisconnect(ref(db,`sessions/${s}`)).remove();
-
   startTimer();
 };
 
-/* PAUSE */
 window.pause=()=>{
   if(paused) return;
   pauseStart=Date.now();
   paused=true;
-
-  update(ref(db,`sessions/${safe()}`),{paused:true,pauseStart});
 };
 
-/* RESUME */
 window.resume=()=>{
   if(!paused) return;
 
   pausedTime+=Math.floor((Date.now()-pauseStart)/1000);
   paused=false;
-
-  update(ref(db,`sessions/${safe()}`),{
-    paused:false,
-    pausedTime,
-    pauseStart:null
-  });
 };
 
-/* END */
 window.end=async()=>{
   const s=safe();
 
@@ -121,8 +155,7 @@ window.end=async()=>{
   clearInterval(timer);
 
   const diff=getDiff();
-  const pay=jobs[document.getElementById("rang").value];
-  const money=Math.floor((diff/3600)*pay);
+  const money=Math.floor((diff/3600)*jobs[document.getElementById("rang").value]);
 
   await set(push(ref(db,"log1")),{
     nev:document.getElementById("nev").value,
@@ -164,7 +197,7 @@ function startTimer(){
   },1000);
 }
 
-/* GLOBAL LOG + CHART */
+/* GLOBAL LOG */
 onValue(ref(db,"log1"),snap=>{
   const box=document.getElementById("globalLog");
   box.innerHTML="";
@@ -177,10 +210,7 @@ onValue(ref(db,"log1"),snap=>{
 
     const div=document.createElement("div");
     div.className="log";
-    div.innerHTML=`
-      <b>${v.nev}</b>
-      <span>${v.money}$ • ${format(v.time)}</span>
-    `;
+    div.innerHTML=`${v.nev} • ${v.money}$ • ${format(v.time)}`;
 
     box.prepend(div);
   });
@@ -189,6 +219,7 @@ onValue(ref(db,"log1"),snap=>{
 });
 
 /* CHART */
+let chart;
 function renderChart(data){
   const ctx=document.getElementById("chart");
 
@@ -206,53 +237,8 @@ function renderChart(data){
   });
 }
 
-/* USER LOG */
-users.forEach(n=>{
-  const s=n.replaceAll(" ","_");
-
-  onValue(ref(db,`userLogs/${s}`),snap=>{
-    const box=document.getElementById("log_"+s);
-    box.innerHTML="";
-
-    snap.forEach(c=>{
-      const v=c.val();
-
-      const div=document.createElement("div");
-      div.className="log user";
-      div.innerHTML=`
-        ${v.money}$ • ${format(v.time)}
-      `;
-
-      box.prepend(div);
-    });
-  });
-});
-
-/* ONLINE */
-onValue(ref(db,"sessions"),snap=>{
-  const box=document.getElementById("online");
-  box.innerHTML="";
-
-  snap.forEach(c=>{
-    const v=c.val();
-
-    let diff=Math.floor((Date.now()-v.startTime)/1000);
-    if(v.paused && v.pauseStart){
-      diff-=Math.floor((Date.now()-v.pauseStart)/1000);
-    }
-
-    diff-=v.pausedTime||0;
-    diff=Math.max(0,diff);
-
-    const div=document.createElement("div");
-    div.className="online";
-    div.innerText=`🟢 ${v.nev} • ${format(diff)}`;
-
-    box.appendChild(div);
-  });
-});
-
-/* INIT */
+/* CSS + INIT */
+setInterval(systemMessages,4000);
 </script>
 
 <style>
@@ -263,7 +249,25 @@ body{
   color:white;
 }
 
-/* LAYOUT */
+.notice{
+  padding:12px;
+  text-align:center;
+  background:#111827;
+  border-bottom:1px solid #1f2937;
+}
+
+/* PAY STATUS BAR */
+#payStatus{
+  padding:10px;
+  margin:10px;
+  border-radius:10px;
+  text-align:center;
+}
+
+.ok{background:#065f46;}
+.warning{background:#92400e;}
+.danger{background:#7f1d1d;}
+
 .container{
   display:grid;
   grid-template-columns:300px 1fr 300px;
@@ -271,75 +275,37 @@ body{
   padding:15px;
 }
 
-/* PANELS */
 .panel,.dash{
   background:#111827;
-  border-radius:16px;
+  border-radius:15px;
   padding:15px;
 }
 
-/* INPUT */
-select{
-  width:100%;
-  padding:10px;
-  margin:5px 0;
-  border-radius:10px;
-  border:none;
-  background:#0b1220;
-  color:white;
-}
-
-/* BUTTON */
-button{
-  width:100%;
-  padding:10px;
-  margin:5px 0;
-  border-radius:10px;
-  border:none;
-  background:linear-gradient(135deg,#3b82f6,#8b5cf6);
-  color:white;
-  font-weight:bold;
-}
-
-/* LIVE */
-#live{
-  margin-top:10px;
-  padding:10px;
-  background:#0b1220;
-  border-radius:10px;
-}
-
-/* LOG */
 .log{
   background:#0b1220;
   padding:8px;
   margin:5px 0;
   border-radius:10px;
-  font-size:13px;
-  display:flex;
-  justify-content:space-between;
 }
 
-/* USER LOG */
-.user{border-left:3px solid #38bdf8;}
-
-/* ONLINE */
-.online{
-  background:#0b1220;
-  padding:8px;
+button,select,input{
+  width:100%;
+  padding:10px;
   margin:5px 0;
   border-radius:10px;
-}
-
-/* RESPONSIVE */
-@media(max-width:1000px){
-  .container{grid-template-columns:1fr;}
+  border:none;
+  background:#0b1220;
+  color:white;
 }
 </style>
 
 </head>
 
 <body>
+
+<div class="notice" id="noticeText"></div>
+
+<div id="payStatus">Fizetés betöltés...</div>
 
 <div class="container">
 
@@ -367,7 +333,7 @@ button{
 
 <div id="live"></div>
 
-<h3>GLOBAL</h3>
+<h3>GLOBAL LOG</h3>
 <div id="globalLog"></div>
 
 </div>
@@ -376,21 +342,6 @@ button{
 
 <h3>STATS</h3>
 <canvas id="chart"></canvas>
-
-<h3>ONLINE</h3>
-<div id="online"></div>
-
-</div>
-
-<div class="panel">
-
-<h3>USER LOGS</h3>
-
-<div>David<div id="log_David_Jackson"></div></div>
-<div>Dylen<div id="log_Dylen_Benedict"></div></div>
-<div>Olla<div id="log_Olla_Ronaldo"></div></div>
-<div>Clinton<div id="log_Clinton_Morris"></div></div>
-<div>Jackson<div id="log_Jackson_West"></div></div>
 
 </div>
 
