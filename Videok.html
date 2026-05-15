@@ -1,236 +1,614 @@
 <!DOCTYPE html>
 <html lang="hu">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Videó Feltöltő</title>
 
-  <style>
-    body{
-      background:#0f0f0f;
-      color:white;
-      font-family:Arial;
-      text-align:center;
-      padding:40px;
-    }
+<meta charset="UTF-8">
 
-    .box{
-      max-width:700px;
-      margin:auto;
-      background:#1c1c1c;
-      padding:30px;
-      border-radius:15px;
-    }
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0">
 
-    input{
-      width:90%;
-      padding:12px;
-      margin:10px 0;
-      border-radius:10px;
-      border:none;
-      font-size:16px;
-    }
+<title>Live TikTok Stream</title>
 
-    button{
-      background:#ff3c3c;
-      color:white;
-      border:none;
-      padding:12px 24px;
-      border-radius:10px;
-      cursor:pointer;
-      font-size:16px;
-      margin-top:15px;
-    }
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 
-    button:hover{
-      background:#ff2020;
-    }
+<style>
 
-    video{
-      width:100%;
-      margin-top:20px;
-      border-radius:12px;
-    }
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+}
 
-    .video-card{
-      background:#222;
-      padding:20px;
-      border-radius:15px;
-      margin-top:25px;
-    }
+body{
 
-    .video-title{
-      font-size:22px;
-      margin-bottom:15px;
-      color:#00ff99;
-    }
+  background:black;
 
-    #status{
-      margin-top:15px;
-      color:#00ff99;
-    }
-  </style>
+  font-family:Arial,sans-serif;
+
+  overflow:hidden;
+
+  color:white;
+}
+
+/* LIVE VIDEO */
+
+.live-container{
+
+  position:relative;
+
+  width:100vw;
+
+  height:100vh;
+
+  background:black;
+}
+
+video{
+
+  width:100%;
+
+  height:100%;
+
+  object-fit:cover;
+
+  background:black;
+}
+
+/* OVERLAY */
+
+.overlay{
+
+  position:absolute;
+
+  inset:0;
+
+  background:
+  linear-gradient(
+    to top,
+    rgba(0,0,0,0.7),
+    rgba(0,0,0,0.1),
+    transparent
+  );
+
+  pointer-events:none;
+}
+
+/* TOP BAR */
+
+.top-bar{
+
+  position:absolute;
+
+  top:20px;
+
+  left:20px;
+
+  display:flex;
+
+  align-items:center;
+
+  gap:10px;
+
+  z-index:10;
+}
+
+.live-badge{
+
+  background:red;
+
+  padding:8px 14px;
+
+  border-radius:30px;
+
+  font-weight:bold;
+
+  animation:pulse 1s infinite;
+}
+
+@keyframes pulse{
+
+  0%{
+    transform:scale(1);
+  }
+
+  50%{
+    transform:scale(1.1);
+  }
+
+  100%{
+    transform:scale(1);
+  }
+
+}
+
+/* VIEWERS */
+
+.viewers{
+
+  background:rgba(255,255,255,0.15);
+
+  padding:8px 14px;
+
+  border-radius:30px;
+
+  backdrop-filter:blur(5px);
+}
+
+/* STREAM INFO */
+
+.stream-info{
+
+  position:absolute;
+
+  bottom:120px;
+
+  left:20px;
+
+  z-index:10;
+}
+
+.stream-title{
+
+  font-size:30px;
+
+  font-weight:bold;
+
+  margin-bottom:10px;
+}
+
+.stream-desc{
+
+  font-size:18px;
+
+  color:#ddd;
+}
+
+/* ACTION BUTTONS */
+
+.actions{
+
+  position:absolute;
+
+  right:15px;
+
+  bottom:120px;
+
+  display:flex;
+
+  flex-direction:column;
+
+  gap:20px;
+
+  z-index:10;
+}
+
+.action{
+
+  width:65px;
+
+  height:65px;
+
+  border-radius:50%;
+
+  background:rgba(255,255,255,0.2);
+
+  display:flex;
+
+  align-items:center;
+
+  justify-content:center;
+
+  font-size:30px;
+
+  backdrop-filter:blur(8px);
+
+  cursor:pointer;
+
+  transition:0.2s;
+}
+
+.action:hover{
+
+  transform:scale(1.1);
+}
+
+/* CHAT */
+
+.chat{
+
+  position:absolute;
+
+  left:20px;
+
+  bottom:20px;
+
+  width:350px;
+
+  max-height:300px;
+
+  overflow:auto;
+
+  z-index:10;
+}
+
+.message{
+
+  background:rgba(0,0,0,0.5);
+
+  padding:10px;
+
+  border-radius:12px;
+
+  margin-top:8px;
+
+  backdrop-filter:blur(5px);
+}
+
+/* INPUT */
+
+.chat-input{
+
+  position:absolute;
+
+  bottom:20px;
+
+  right:20px;
+
+  display:flex;
+
+  gap:10px;
+
+  z-index:10;
+}
+
+.chat-input input{
+
+  width:250px;
+
+  padding:14px;
+
+  border:none;
+
+  border-radius:30px;
+
+  outline:none;
+}
+
+.chat-input button{
+
+  border:none;
+
+  border-radius:30px;
+
+  padding:14px 22px;
+
+  background:#ff0050;
+
+  color:white;
+
+  cursor:pointer;
+
+  font-weight:bold;
+}
+
+.chat-input button:hover{
+
+  background:#ff2366;
+}
+
+/* LOADING */
+
+.loading{
+
+  position:absolute;
+
+  inset:0;
+
+  display:flex;
+
+  align-items:center;
+
+  justify-content:center;
+
+  font-size:26px;
+
+  background:black;
+
+  z-index:100;
+}
+
+</style>
+
 </head>
+
 <body>
 
-  <div class="box">
+<div class="live-container">
 
-    <h1>Videó Feltöltés</h1>
+<div class="loading" id="loading">
+LIVE BETÖLTÉS...
+</div>
 
-    <input
-      type="text"
-      id="videoTitle"
-      placeholder="Videó címe"
-    >
+<video
+id="video"
+autoplay
+muted
+playsinline
+controls
+></video>
 
-    <input
-      type="file"
-      id="videoFile"
-      accept="video/*"
-    >
+<div class="overlay"></div>
 
-    <br>
+<!-- TOP -->
 
-    <button onclick="uploadVideo()">
-      Feltöltés
-    </button>
+<div class="top-bar">
 
-    <p id="status"></p>
+<div class="live-badge">
+LIVE
+</div>
 
-    <div id="videos"></div>
+<div class="viewers" id="viewerCount">
+👁 1.2K
+</div>
 
-  </div>
+</div>
 
-  <script type="module">
+<!-- INFO -->
 
-    import { initializeApp }
-    from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+<div class="stream-info">
 
-    import {
-      getStorage,
-      ref,
-      uploadBytes,
-      getDownloadURL
-    }
-    from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
+<div class="stream-title">
+🔥 TikTok Live Stream
+</div>
 
-    import {
-      getDatabase,
-      ref as dbRef,
-      push,
-      onValue
-    }
-    from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+<div class="stream-desc">
+Cloudinary ultra gyors HLS stream
+</div>
 
-    // FIREBASE CONFIG
-    const firebaseConfig = {
-      apiKey: "AIzaSyBgbixws2rf6VdqjQATVwZsKg0lgiqy0xI",
-      authDomain: "ordog-fizetes.firebaseapp.com",
-      databaseURL: "https://ordog-fizetes-default-rtdb.europe-west1.firebasedatabase.app",
-      projectId: "ordog-fizetes",
-      storageBucket: "ordog-fizetes.firebasestorage.app",
-      messagingSenderId: "672089263660",
-      appId: "1:672089263660:web:70086de26402ceb3464b89",
-      measurementId: "G-J8B20N1W06"
-    };
+</div>
 
-    const app = initializeApp(firebaseConfig);
+<!-- ACTIONS -->
 
-    const storage = getStorage(app);
+<div class="actions">
 
-    const database = getDatabase(app);
+<div class="action">❤️</div>
 
-    // VIDEÓ FELTÖLTÉS
-    window.uploadVideo = async function () {
+<div class="action">💬</div>
 
-      const title =
-        document.getElementById("videoTitle").value;
+<div class="action">🔗</div>
 
-      const file =
-        document.getElementById("videoFile").files[0];
+<div class="action">➕</div>
 
-      if (!title || !file) {
+</div>
 
-        alert("Adj meg címet és videót!");
+<!-- CHAT -->
 
-        return;
-      }
+<div class="chat" id="chat">
 
-      document.getElementById("status")
-        .innerText = "Feltöltés folyamatban...";
+<div class="message">
+👤 Dani: Brutál jó stream 🔥
+</div>
 
-      try {
+<div class="message">
+👤 Alex: Nagyon gyors 😮
+</div>
 
-        const storageRef =
-          ref(storage, "videos/" + Date.now() + "_" + file.name);
+</div>
 
-        await uploadBytes(storageRef, file);
+<!-- INPUT -->
 
-        const videoURL =
-          await getDownloadURL(storageRef);
+<div class="chat-input">
 
-        // Mentés adatbázisba
-        await push(dbRef(database, "videos"), {
+<input
+type="text"
+id="messageInput"
+placeholder="Üzenet..."
+>
 
-          title: title,
-          url: videoURL
+<button onclick="sendMessage()">
+Küldés
+</button>
 
-        });
+</div>
 
-        document.getElementById("status")
-          .innerText = "Sikeres feltöltés!";
+</div>
 
-        document.getElementById("videoTitle").value = "";
+<script>
 
-        document.getElementById("videoFile").value = "";
+////////////////////////////////////////////////////////
+// CLOUDINARY HLS
+////////////////////////////////////////////////////////
 
-      } catch (error) {
+const video =
+  document.getElementById("video");
 
-        console.error(error);
+const videoSrc =
+"https://res.cloudinary.com/dueligmyb/video/live/live_stream_19443302297e4abf92092caaf6bf86f9_hls.m3u8";
 
-        document.getElementById("status")
-          .innerText = "Hiba történt!";
+if(Hls.isSupported()){
 
-      }
+  const hls =
+    new Hls({
 
-    }
+      maxBufferLength:30,
 
-    // VIDEÓK LISTÁZÁSA
-    const videosRef = dbRef(database, "videos");
+      maxMaxBufferLength:60,
 
-    onValue(videosRef, (snapshot) => {
+      enableWorker:true,
 
-      const data = snapshot.val();
-
-      const videosDiv =
-        document.getElementById("videos");
-
-      videosDiv.innerHTML = "";
-
-      for (let id in data) {
-
-        const video = data[id];
-
-        videosDiv.innerHTML += `
-
-          <div class="video-card">
-
-            <div class="video-title">
-              ${video.title}
-            </div>
-
-            <video controls>
-              <source src="${video.url}" type="video/mp4">
-            </video>
-
-          </div>
-
-        `;
-      }
+      lowLatencyMode:true
 
     });
 
-  </script>
+  hls.loadSource(videoSrc);
+
+  hls.attachMedia(video);
+
+  hls.on(
+    Hls.Events.MANIFEST_PARSED,
+
+    ()=>{
+
+      video.play();
+
+      document.getElementById(
+        "loading"
+      ).style.display = "none";
+
+    }
+  );
+
+}else if(video.canPlayType(
+'application/vnd.apple.mpegurl'
+)){
+
+  video.src = videoSrc;
+
+  video.addEventListener(
+    'loadedmetadata',
+
+    ()=>{
+
+      video.play();
+
+      document.getElementById(
+        "loading"
+      ).style.display = "none";
+
+    }
+  );
+
+}
+
+////////////////////////////////////////////////////////
+// CHAT
+////////////////////////////////////////////////////////
+
+function sendMessage(){
+
+  const input =
+    document.getElementById(
+      "messageInput"
+    );
+
+  const text =
+    input.value;
+
+  if(!text) return;
+
+  const chat =
+    document.getElementById(
+      "chat"
+    );
+
+  const div =
+    document.createElement("div");
+
+  div.className =
+    "message";
+
+  div.innerHTML =
+    "👤 Te: " + text;
+
+  chat.appendChild(div);
+
+  input.value = "";
+
+  chat.scrollTop =
+    chat.scrollHeight;
+
+}
+
+////////////////////////////////////////////////////////
+// FAKE LIVE VIEWERS
+////////////////////////////////////////////////////////
+
+setInterval(()=>{
+
+  const count =
+    Math.floor(
+      1000 + Math.random()*5000
+    );
+
+  document.getElementById(
+    "viewerCount"
+  ).innerHTML =
+    "👁 " + count;
+
+},3000);
+
+////////////////////////////////////////////////////////
+// DOUBLE TAP LIKE
+////////////////////////////////////////////////////////
+
+let lastTap = 0;
+
+document.addEventListener(
+  "touchend",
+
+  function(event){
+
+    const currentTime =
+      new Date().getTime();
+
+    const tapLength =
+      currentTime - lastTap;
+
+    if(tapLength < 300 && tapLength > 0){
+
+      showHeart(
+        event.changedTouches[0].clientX,
+        event.changedTouches[0].clientY
+      );
+
+    }
+
+    lastTap = currentTime;
+
+  }
+);
+
+function showHeart(x,y){
+
+  const heart =
+    document.createElement("div");
+
+  heart.innerHTML = "❤️";
+
+  heart.style.position = "fixed";
+
+  heart.style.left = x + "px";
+
+  heart.style.top = y + "px";
+
+  heart.style.fontSize = "60px";
+
+  heart.style.zIndex = "9999";
+
+  heart.style.pointerEvents = "none";
+
+  heart.style.transition = "1s";
+
+  document.body.appendChild(heart);
+
+  setTimeout(()=>{
+
+    heart.style.transform =
+      "translateY(-150px) scale(1.5)";
+
+    heart.style.opacity = "0";
+
+  },50);
+
+  setTimeout(()=>{
+
+    heart.remove();
+
+  },1000);
+
+}
+
+</script>
 
 </body>
 </html>
