@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Videó Feltöltő</title>
+
+  <style>
+    body{
+      background:#0f0f0f;
+      color:white;
+      font-family:Arial;
+      text-align:center;
+      padding:40px;
+    }
+
+    .box{
+      max-width:700px;
+      margin:auto;
+      background:#1c1c1c;
+      padding:30px;
+      border-radius:15px;
+    }
+
+    input{
+      width:90%;
+      padding:12px;
+      margin:10px 0;
+      border-radius:10px;
+      border:none;
+      font-size:16px;
+    }
+
+    button{
+      background:#ff3c3c;
+      color:white;
+      border:none;
+      padding:12px 24px;
+      border-radius:10px;
+      cursor:pointer;
+      font-size:16px;
+      margin-top:15px;
+    }
+
+    button:hover{
+      background:#ff2020;
+    }
+
+    video{
+      width:100%;
+      margin-top:20px;
+      border-radius:12px;
+    }
+
+    .video-card{
+      background:#222;
+      padding:20px;
+      border-radius:15px;
+      margin-top:25px;
+    }
+
+    .video-title{
+      font-size:22px;
+      margin-bottom:15px;
+      color:#00ff99;
+    }
+
+    #status{
+      margin-top:15px;
+      color:#00ff99;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="box">
+
+    <h1>Videó Feltöltés</h1>
+
+    <input
+      type="text"
+      id="videoTitle"
+      placeholder="Videó címe"
+    >
+
+    <input
+      type="file"
+      id="videoFile"
+      accept="video/*"
+    >
+
+    <br>
+
+    <button onclick="uploadVideo()">
+      Feltöltés
+    </button>
+
+    <p id="status"></p>
+
+    <div id="videos"></div>
+
+  </div>
+
+  <script type="module">
+
+    import { initializeApp }
+    from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+
+    import {
+      getStorage,
+      ref,
+      uploadBytes,
+      getDownloadURL
+    }
+    from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
+
+    import {
+      getDatabase,
+      ref as dbRef,
+      push,
+      onValue
+    }
+    from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+    // FIREBASE CONFIG
+    const firebaseConfig = {
+      apiKey: "AIzaSyBgbixws2rf6VdqjQATVwZsKg0lgiqy0xI",
+      authDomain: "ordog-fizetes.firebaseapp.com",
+      databaseURL: "https://ordog-fizetes-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "ordog-fizetes",
+      storageBucket: "ordog-fizetes.firebasestorage.app",
+      messagingSenderId: "672089263660",
+      appId: "1:672089263660:web:70086de26402ceb3464b89",
+      measurementId: "G-J8B20N1W06"
+    };
+
+    const app = initializeApp(firebaseConfig);
+
+    const storage = getStorage(app);
+
+    const database = getDatabase(app);
+
+    // VIDEÓ FELTÖLTÉS
+    window.uploadVideo = async function () {
+
+      const title =
+        document.getElementById("videoTitle").value;
+
+      const file =
+        document.getElementById("videoFile").files[0];
+
+      if (!title || !file) {
+
+        alert("Adj meg címet és videót!");
+
+        return;
+      }
+
+      document.getElementById("status")
+        .innerText = "Feltöltés folyamatban...";
+
+      try {
+
+        const storageRef =
+          ref(storage, "videos/" + Date.now() + "_" + file.name);
+
+        await uploadBytes(storageRef, file);
+
+        const videoURL =
+          await getDownloadURL(storageRef);
+
+        // Mentés adatbázisba
+        await push(dbRef(database, "videos"), {
+
+          title: title,
+          url: videoURL
+
+        });
+
+        document.getElementById("status")
+          .innerText = "Sikeres feltöltés!";
+
+        document.getElementById("videoTitle").value = "";
+
+        document.getElementById("videoFile").value = "";
+
+      } catch (error) {
+
+        console.error(error);
+
+        document.getElementById("status")
+          .innerText = "Hiba történt!";
+
+      }
+
+    }
+
+    // VIDEÓK LISTÁZÁSA
+    const videosRef = dbRef(database, "videos");
+
+    onValue(videosRef, (snapshot) => {
+
+      const data = snapshot.val();
+
+      const videosDiv =
+        document.getElementById("videos");
+
+      videosDiv.innerHTML = "";
+
+      for (let id in data) {
+
+        const video = data[id];
+
+        videosDiv.innerHTML += `
+
+          <div class="video-card">
+
+            <div class="video-title">
+              ${video.title}
+            </div>
+
+            <video controls>
+              <source src="${video.url}" type="video/mp4">
+            </video>
+
+          </div>
+
+        `;
+      }
+
+    });
+
+  </script>
+
+</body>
+</html>
