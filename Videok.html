@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>TikTok Clone Pro</title>
+<title>TikTok Pro Clone</title>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js"></script>
@@ -24,7 +24,7 @@ body{
   scroll-snap-type:y mandatory;
 }
 
-/* FEED */
+/* VIDEO */
 
 .video{
   width:100%;
@@ -67,14 +67,13 @@ video{
   border:none;
   border-radius:10px;
   color:white;
-  cursor:pointer;
 }
 
 /* OVERLAY */
 
 .overlay{
   position:absolute;
-  bottom:100px;
+  bottom:120px;
   left:20px;
   color:white;
 }
@@ -89,7 +88,7 @@ video{
 .actions{
   position:absolute;
   right:15px;
-  bottom:120px;
+  bottom:150px;
   display:flex;
   flex-direction:column;
   gap:15px;
@@ -103,10 +102,18 @@ video{
   display:flex;
   align-items:center;
   justify-content:center;
-  font-size:24px;
   color:white;
+  font-size:24px;
   cursor:pointer;
   user-select:none;
+}
+
+/* LIKE COUNT */
+
+.count{
+  color:white;
+  text-align:center;
+  font-size:12px;
 }
 
 /* COMMENTS */
@@ -120,7 +127,7 @@ video{
   padding:10px;
   border-radius:10px;
   color:white;
-  max-height:120px;
+  max-height:150px;
   overflow:auto;
 }
 
@@ -138,11 +145,17 @@ video{
 
 .comment-input button{
   margin-left:5px;
+  padding:8px;
   border:none;
   background:#ff0050;
   color:white;
-  padding:8px;
   border-radius:8px;
+  cursor:pointer;
+}
+
+.comment-item{
+  font-size:13px;
+  margin-bottom:5px;
 }
 
 </style>
@@ -170,15 +183,16 @@ video{
 
 <script type="module">
 
-import {
-  initializeApp
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 
 import {
   getDatabase,
   ref,
   push,
-  onValue
+  onValue,
+  update,
+  get,
+  child
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
 const firebaseConfig = {
@@ -227,55 +241,97 @@ window.uploadVideo = async function(){
   await push(ref(db,"videos"),{
     title:title,
     url:data.secure_url,
-    likes:0,
-    comments:[]
+    likes:0
   });
 
   document.getElementById("status").innerText = "Kész!";
+};
 
-}
+/* LIKE */
+
+window.likeVideo = async function(id, currentLikes){
+
+  const videoRef = ref(db, "videos/" + id);
+
+  await update(videoRef, {
+    likes: (currentLikes || 0) + 1
+  });
+
+};
+
+/* COMMENT */
+
+window.addComment = async function(id){
+
+  const input = document.getElementById("c_" + id);
+  const text = input.value;
+
+  if(!text) return;
+
+  const commentRef = ref(db, "videos/" + id + "/comments");
+
+  await push(commentRef, {
+    text:text,
+    time:Date.now()
+  });
+
+  input.value = "";
+
+};
 
 /* FEED */
-
-const feed = document.getElementById("feed");
 
 onValue(ref(db,"videos"), snap=>{
 
   const data = snap.val();
+  const feed = document.getElementById("feed");
+
   feed.innerHTML = "";
 
   if(!data) return;
 
-  Object.values(data).reverse().forEach(v=>{
+  Object.entries(data).reverse().forEach(([id,v])=>{
 
     const div = document.createElement("div");
     div.className = "video";
 
     div.innerHTML = `
 
-      <video autoplay muted loop playsinline src="${v.url}"></video>
+      <video src="${v.url}" autoplay muted loop playsinline></video>
 
       <div class="overlay">
         <div class="title">${v.title}</div>
       </div>
 
       <div class="actions">
-        <div class="btn">❤️</div>
+
+        <div class="btn" onclick="likeVideo('${id}',${v.likes || 0})">
+          ❤️
+          <div class="count">${v.likes || 0}</div>
+        </div>
+
         <div class="btn">💬</div>
-        <div class="btn">🔗</div>
+
       </div>
 
       <div class="comments">
-        💬 Kommentek (demo)
-        <div class="comment-input">
-          <input placeholder="Írj kommentet...">
-          <button>Küld</button>
+
+        <div id="comments_${id}">
+          Betöltés...
         </div>
+
+        <div class="comment-input">
+          <input id="c_${id}" placeholder="Komment...">
+          <button onclick="addComment('${id}')">Küld</button>
+        </div>
+
       </div>
 
     `;
 
     feed.appendChild(div);
+
+    loadComments(id);
 
   });
 
@@ -283,22 +339,59 @@ onValue(ref(db,"videos"), snap=>{
 
 });
 
+/* COMMENTS LOAD */
+
+function loadComments(id){
+
+  const commentRef = ref(db,"videos/"+id+"/comments");
+
+  onValue(commentRef, snap=>{
+
+    const data = snap.val();
+    const box = document.getElementById("comments_"+id);
+
+    if(!data){
+      box.innerHTML = "Nincs komment";
+      return;
+    }
+
+    box.innerHTML = "";
+
+    Object.values(data).forEach(c=>{
+
+      const div = document.createElement("div");
+
+      div.className = "comment-item";
+
+      div.innerText = "💬 " + c.text;
+
+      box.appendChild(div);
+
+    });
+
+  });
+
+}
+
 /* AUTOPLAY */
 
 function setupAutoPlay(){
 
   const vids = document.querySelectorAll("video");
 
-  const obs = new IntersectionObserver(e=>{
+  const obs = new IntersectionObserver(entries=>{
 
-    e.forEach(v=>{
+    entries.forEach(e=>{
 
-      if(v.isIntersecting) v.target.play();
-      else v.target.pause();
+      if(e.isIntersecting){
+        e.target.play();
+      } else {
+        e.target.pause();
+      }
 
     });
 
-  },{threshold:0.7});
+  },{threshold:0.8});
 
   vids.forEach(v=>obs.observe(v));
 
