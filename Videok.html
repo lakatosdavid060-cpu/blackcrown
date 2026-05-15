@@ -1,16 +1,12 @@
 <!DOCTYPE html>
 <html lang="hu">
 <head>
-
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<meta name="viewport"
-content="width=device-width, initial-scale=1.0">
-
-<title>TikTok Clone</title>
+<title>TikTok Clone Pro</title>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"></script>
-
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js"></script>
 
 <style>
@@ -23,152 +19,133 @@ content="width=device-width, initial-scale=1.0">
 
 body{
   background:black;
+  font-family:Arial;
   overflow-y:scroll;
   scroll-snap-type:y mandatory;
-  height:100vh;
-  font-family:Arial;
 }
 
-.video-container{
+/* FEED */
 
+.video{
   width:100%;
-
   height:100vh;
-
   position:relative;
-
   scroll-snap-align:start;
-
-  overflow:hidden;
 }
 
 video{
-
   width:100%;
-
   height:100%;
-
   object-fit:cover;
-}
-
-.overlay{
-
-  position:absolute;
-
-  bottom:100px;
-
-  left:20px;
-
-  color:white;
-
-  z-index:5;
-}
-
-.title{
-
-  font-size:28px;
-
-  font-weight:bold;
-}
-
-.actions{
-
-  position:absolute;
-
-  right:15px;
-
-  bottom:120px;
-
-  display:flex;
-
-  flex-direction:column;
-
-  gap:20px;
-
-  z-index:5;
-}
-
-.action{
-
-  width:65px;
-
-  height:65px;
-
-  border-radius:50%;
-
-  background:rgba(255,255,255,0.2);
-
-  display:flex;
-
-  align-items:center;
-
-  justify-content:center;
-
-  color:white;
-
-  font-size:28px;
-
-  backdrop-filter:blur(5px);
 }
 
 /* UPLOAD */
 
 .upload{
-
   position:fixed;
-
   top:10px;
-
   left:10px;
-
   z-index:9999;
-
   background:rgba(0,0,0,0.7);
-
   padding:15px;
-
   border-radius:15px;
+  color:white;
 }
 
 .upload input{
-
   width:220px;
-
-  padding:12px;
-
+  padding:10px;
   margin:5px 0;
-
-  border:none;
-
   border-radius:10px;
+  border:none;
 }
 
 .upload button{
-
   width:100%;
-
-  padding:12px;
-
-  border:none;
-
-  border-radius:10px;
-
+  padding:10px;
   background:#ff0050;
-
+  border:none;
+  border-radius:10px;
   color:white;
-
   cursor:pointer;
 }
 
-#progress{
+/* OVERLAY */
 
+.overlay{
+  position:absolute;
+  bottom:100px;
+  left:20px;
   color:white;
+}
 
-  margin-top:10px;
+.title{
+  font-size:24px;
+  font-weight:bold;
+}
+
+/* ACTIONS */
+
+.actions{
+  position:absolute;
+  right:15px;
+  bottom:120px;
+  display:flex;
+  flex-direction:column;
+  gap:15px;
+}
+
+.btn{
+  width:60px;
+  height:60px;
+  border-radius:50%;
+  background:rgba(255,255,255,0.2);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:24px;
+  color:white;
+  cursor:pointer;
+  user-select:none;
+}
+
+/* COMMENTS */
+
+.comments{
+  position:absolute;
+  bottom:20px;
+  left:20px;
+  right:20px;
+  background:rgba(0,0,0,0.5);
+  padding:10px;
+  border-radius:10px;
+  color:white;
+  max-height:120px;
+  overflow:auto;
+}
+
+.comment-input{
+  display:flex;
+  margin-top:5px;
+}
+
+.comment-input input{
+  flex:1;
+  padding:8px;
+  border:none;
+  border-radius:8px;
+}
+
+.comment-input button{
+  margin-left:5px;
+  border:none;
+  background:#ff0050;
+  color:white;
+  padding:8px;
+  border-radius:8px;
 }
 
 </style>
-
 </head>
 
 <body>
@@ -177,23 +154,13 @@ video{
 
 <div class="upload">
 
-<input
-type="text"
-id="title"
-placeholder="Videó címe"
->
+<input id="title" placeholder="Videó cím">
 
-<input
-type="file"
-id="file"
-accept="video/*"
->
+<input type="file" id="file" accept="video/*">
 
-<button onclick="uploadVideo()">
-Feltöltés
-</button>
+<button onclick="uploadVideo()">Feltöltés</button>
 
-<div id="progress"></div>
+<div id="status"></div>
 
 </div>
 
@@ -203,282 +170,137 @@ Feltöltés
 
 <script type="module">
 
-////////////////////////////////////////////////////////
-// FIREBASE
-////////////////////////////////////////////////////////
-
 import {
   initializeApp
-}
-from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 
 import {
   getDatabase,
   ref,
   push,
   onValue
-}
-from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
 const firebaseConfig = {
-
   apiKey: "AIzaSyBgbixws2rf6VdqjQATVwZsKg0lgiqy0xI",
-
   authDomain: "ordog-fizetes.firebaseapp.com",
-
-  databaseURL:
-  "https://ordog-fizetes-default-rtdb.europe-west1.firebasedatabase.app",
-
+  databaseURL: "https://ordog-fizetes-default-rtdb.europe-west1.firebasedatabase.app",
   projectId: "ordog-fizetes",
-
-  storageBucket:
-  "ordog-fizetes.firebasestorage.app",
-
-  messagingSenderId:
-  "672089263660",
-
-  appId:
-  "1:672089263660:web:70086de26402ceb3464b89"
-
+  storageBucket: "ordog-fizetes.firebasestorage.app",
+  messagingSenderId: "672089263660",
+  appId: "1:672089263660:web:70086de26402ceb3464b89"
 };
 
-const app =
-  initializeApp(firebaseConfig);
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
 
-const db =
-  getDatabase(app);
-
-////////////////////////////////////////////////////////
-// CLOUDINARY
-////////////////////////////////////////////////////////
+/* CLOUDINARY */
 
 const CLOUD_NAME = "dueligmyb";
-
 const UPLOAD_PRESET = "ml_default";
 
-////////////////////////////////////////////////////////
-// UPLOAD
-////////////////////////////////////////////////////////
+/* UPLOAD */
 
-window.uploadVideo =
-async function(){
+window.uploadVideo = async function(){
 
-  const file =
-    document.getElementById(
-      "file"
-    ).files[0];
-
-  const title =
-    document.getElementById(
-      "title"
-    ).value;
+  const file = document.getElementById("file").files[0];
+  const title = document.getElementById("title").value;
 
   if(!file || !title){
-
-    alert("Adj videót és címet");
-
+    alert("Adj címet és videót!");
     return;
   }
 
-  const formData =
-    new FormData();
+  document.getElementById("status").innerText = "Feltöltés...";
 
-  formData.append(
-    "file",
-    file
+  const form = new FormData();
+  form.append("file", file);
+  form.append("upload_preset", UPLOAD_PRESET);
+
+  const res = await fetch(
+    `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/video/upload`,
+    { method:"POST", body:form }
   );
 
-  formData.append(
-    "upload_preset",
-    UPLOAD_PRESET
-  );
+  const data = await res.json();
 
-  const xhr =
-    new XMLHttpRequest();
+  await push(ref(db,"videos"),{
+    title:title,
+    url:data.secure_url,
+    likes:0,
+    comments:[]
+  });
 
-  xhr.open(
-    "POST",
-    `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/video/upload`
-  );
-
-  xhr.upload.addEventListener(
-    "progress",
-
-    (e)=>{
-
-      const percent =
-        Math.floor(
-          (e.loaded/e.total)*100
-        );
-
-      document.getElementById(
-        "progress"
-      ).innerText =
-        "Feltöltés: " +
-        percent + "%";
-
-    }
-  );
-
-  xhr.onload =
-  async ()=>{
-
-    const data =
-      JSON.parse(
-        xhr.responseText
-      );
-
-    await push(
-
-      ref(db,"videos"),
-
-      {
-
-        title:title,
-
-        url:data.secure_url,
-
-        created:Date.now()
-
-      }
-
-    );
-
-    document.getElementById(
-      "progress"
-    ).innerText =
-      "Kész!";
-
-  };
-
-  xhr.send(formData);
+  document.getElementById("status").innerText = "Kész!";
 
 }
 
-////////////////////////////////////////////////////////
-// REALTIME FEED
-////////////////////////////////////////////////////////
+/* FEED */
 
-const feed =
-  document.getElementById(
-    "feed"
-  );
+const feed = document.getElementById("feed");
 
-onValue(
+onValue(ref(db,"videos"), snap=>{
 
-  ref(db,"videos"),
+  const data = snap.val();
+  feed.innerHTML = "";
 
-  (snapshot)=>{
+  if(!data) return;
 
-    const data =
-      snapshot.val();
+  Object.values(data).reverse().forEach(v=>{
 
-    feed.innerHTML = "";
+    const div = document.createElement("div");
+    div.className = "video";
 
-    if(!data) return;
+    div.innerHTML = `
 
-    const videos =
-      Object.values(data)
-      .reverse();
-
-    videos.forEach(video=>{
-
-      const div =
-        document.createElement("div");
-
-      div.className =
-        "video-container";
-
-      div.innerHTML = `
-
-      <video
-      src="${video.url}"
-      autoplay
-      muted
-      loop
-      playsinline
-      preload="auto"
-      ></video>
+      <video autoplay muted loop playsinline src="${v.url}"></video>
 
       <div class="overlay">
-
-        <div class="title">
-          ${video.title}
-        </div>
-
+        <div class="title">${v.title}</div>
       </div>
 
       <div class="actions">
-
-        <div class="action">
-        ❤️
-        </div>
-
-        <div class="action">
-        💬
-        </div>
-
-        <div class="action">
-        🔗
-        </div>
-
+        <div class="btn">❤️</div>
+        <div class="btn">💬</div>
+        <div class="btn">🔗</div>
       </div>
 
-      `;
+      <div class="comments">
+        💬 Kommentek (demo)
+        <div class="comment-input">
+          <input placeholder="Írj kommentet...">
+          <button>Küld</button>
+        </div>
+      </div>
 
-      feed.appendChild(div);
+    `;
+
+    feed.appendChild(div);
+
+  });
+
+  setupAutoPlay();
+
+});
+
+/* AUTOPLAY */
+
+function setupAutoPlay(){
+
+  const vids = document.querySelectorAll("video");
+
+  const obs = new IntersectionObserver(e=>{
+
+    e.forEach(v=>{
+
+      if(v.isIntersecting) v.target.play();
+      else v.target.pause();
 
     });
 
-    autoplay();
+  },{threshold:0.7});
 
-  }
-
-);
-
-////////////////////////////////////////////////////////
-// AUTOPLAY
-////////////////////////////////////////////////////////
-
-function autoplay(){
-
-  const videos =
-    document.querySelectorAll(
-      "video"
-    );
-
-  const observer =
-    new IntersectionObserver(
-
-      (entries)=>{
-
-        entries.forEach(entry=>{
-
-          if(entry.isIntersecting){
-
-            entry.target.play();
-
-          }else{
-
-            entry.target.pause();
-
-          }
-
-        });
-
-      },
-
-      {
-        threshold:0.7
-      }
-
-    );
-
-  videos.forEach(video=>{
-
-    observer.observe(video);
-
-  });
+  vids.forEach(v=>obs.observe(v));
 
 }
 
