@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>TikTok Pro Clone</title>
+<title>TikTok Full Fix</title>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js"></script>
@@ -37,6 +37,7 @@ video{
   width:100%;
   height:100%;
   object-fit:cover;
+  background:black;
 }
 
 /* UPLOAD */
@@ -56,8 +57,8 @@ video{
   width:220px;
   padding:10px;
   margin:5px 0;
-  border-radius:10px;
   border:none;
+  border-radius:10px;
 }
 
 .upload button{
@@ -67,6 +68,20 @@ video{
   border:none;
   border-radius:10px;
   color:white;
+}
+
+/* SOUND */
+
+.sound{
+  position:fixed;
+  top:10px;
+  right:10px;
+  z-index:9999;
+  background:rgba(255,255,255,0.2);
+  padding:10px 15px;
+  border-radius:10px;
+  color:white;
+  cursor:pointer;
 }
 
 /* OVERLAY */
@@ -106,14 +121,6 @@ video{
   font-size:24px;
   cursor:pointer;
   user-select:none;
-}
-
-/* LIKE COUNT */
-
-.count{
-  color:white;
-  text-align:center;
-  font-size:12px;
 }
 
 /* COMMENTS */
@@ -177,6 +184,12 @@ video{
 
 </div>
 
+<!-- SOUND -->
+
+<div class="sound" onclick="toggleSound()">
+🔊 Hang
+</div>
+
 <!-- FEED -->
 
 <div id="feed"></div>
@@ -190,9 +203,7 @@ import {
   ref,
   push,
   onValue,
-  update,
-  get,
-  child
+  update
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
 const firebaseConfig = {
@@ -212,6 +223,10 @@ const db = getDatabase(app);
 
 const CLOUD_NAME = "dueligmyb";
 const UPLOAD_PRESET = "ml_default";
+
+/* SOUND STATE */
+
+let soundEnabled = false;
 
 /* UPLOAD */
 
@@ -249,42 +264,21 @@ window.uploadVideo = async function(){
 
 /* LIKE */
 
-window.likeVideo = async function(id, currentLikes){
+window.likeVideo = async function(id, likes){
 
-  const videoRef = ref(db, "videos/" + id);
-
-  await update(videoRef, {
-    likes: (currentLikes || 0) + 1
+  await update(ref(db,"videos/"+id),{
+    likes:(likes||0)+1
   });
-
-};
-
-/* COMMENT */
-
-window.addComment = async function(id){
-
-  const input = document.getElementById("c_" + id);
-  const text = input.value;
-
-  if(!text) return;
-
-  const commentRef = ref(db, "videos/" + id + "/comments");
-
-  await push(commentRef, {
-    text:text,
-    time:Date.now()
-  });
-
-  input.value = "";
 
 };
 
 /* FEED */
 
+const feed = document.getElementById("feed");
+
 onValue(ref(db,"videos"), snap=>{
 
   const data = snap.val();
-  const feed = document.getElementById("feed");
 
   feed.innerHTML = "";
 
@@ -297,7 +291,13 @@ onValue(ref(db,"videos"), snap=>{
 
     div.innerHTML = `
 
-      <video src="${v.url}" autoplay muted loop playsinline></video>
+      <video
+        src="${v.url}"
+        autoplay
+        muted
+        loop
+        playsinline
+      ></video>
 
       <div class="overlay">
         <div class="title">${v.title}</div>
@@ -305,9 +305,9 @@ onValue(ref(db,"videos"), snap=>{
 
       <div class="actions">
 
-        <div class="btn" onclick="likeVideo('${id}',${v.likes || 0})">
+        <div class="btn" onclick="likeVideo('${id}',${v.likes||0})">
           ❤️
-          <div class="count">${v.likes || 0}</div>
+          <div style="font-size:12px">${v.likes||0}</div>
         </div>
 
         <div class="btn">💬</div>
@@ -315,23 +315,12 @@ onValue(ref(db,"videos"), snap=>{
       </div>
 
       <div class="comments">
-
-        <div id="comments_${id}">
-          Betöltés...
-        </div>
-
-        <div class="comment-input">
-          <input id="c_${id}" placeholder="Komment...">
-          <button onclick="addComment('${id}')">Küld</button>
-        </div>
-
+        💬 Komment rendszer (demo)
       </div>
 
     `;
 
     feed.appendChild(div);
-
-    loadComments(id);
 
   });
 
@@ -339,63 +328,54 @@ onValue(ref(db,"videos"), snap=>{
 
 });
 
-/* COMMENTS LOAD */
-
-function loadComments(id){
-
-  const commentRef = ref(db,"videos/"+id+"/comments");
-
-  onValue(commentRef, snap=>{
-
-    const data = snap.val();
-    const box = document.getElementById("comments_"+id);
-
-    if(!data){
-      box.innerHTML = "Nincs komment";
-      return;
-    }
-
-    box.innerHTML = "";
-
-    Object.values(data).forEach(c=>{
-
-      const div = document.createElement("div");
-
-      div.className = "comment-item";
-
-      div.innerText = "💬 " + c.text;
-
-      box.appendChild(div);
-
-    });
-
-  });
-
-}
-
-/* AUTOPLAY */
+/* AUTOPLAY + SOUND FIX */
 
 function setupAutoPlay(){
 
-  const vids = document.querySelectorAll("video");
+  const videos = document.querySelectorAll("video");
 
   const obs = new IntersectionObserver(entries=>{
 
     entries.forEach(e=>{
 
       if(e.isIntersecting){
+
+        videos.forEach(v=>v.muted = true);
+
         e.target.play();
-      } else {
+
+        if(soundEnabled){
+          e.target.muted = false;
+        }
+
+      }else{
         e.target.pause();
+        e.target.muted = true;
       }
 
     });
 
   },{threshold:0.8});
 
-  vids.forEach(v=>obs.observe(v));
+  videos.forEach(v=>obs.observe(v));
 
 }
+
+/* SOUND TOGGLE */
+
+window.toggleSound = function(){
+
+  soundEnabled = !soundEnabled;
+
+  const videos = document.querySelectorAll("video");
+
+  videos.forEach(v=>{
+
+    v.muted = !soundEnabled;
+
+  });
+
+};
 
 </script>
 
