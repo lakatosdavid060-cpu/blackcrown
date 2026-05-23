@@ -2,7 +2,7 @@
 <html lang="hu">
 <head>
 <meta charset="UTF-8">
-<title>🔥 Pro Insta</title>
+<title>🔥 PRO INSTA FIX</title>
 
 <style>
 body {
@@ -67,10 +67,10 @@ button {
 
 <body>
 
-<header>🔥 PRO INSTA</header>
+<header>🔥 PRO INSTA FIX</header>
 
 <div id="loginBox">
-  <button onclick="login()">🔐 Login Google-fiókkal</button>
+  <button onclick="login()">🔐 Google Login</button>
 </div>
 
 <div id="uploadBox" style="display:none;">
@@ -82,8 +82,8 @@ button {
 <div id="feed"></div>
 
 <script type="module">
-
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+
 import {
   getAuth,
   GoogleAuthProvider,
@@ -108,7 +108,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyB...",
+  apiKey: "AIzaSyBgbixws2rf6VdqjQATVwZsKg0lgiqy0x",
   authDomain: "ordog-fizetes.firebaseapp.com",
   databaseURL: "https://ordog-fizetes-default-rtdb.europe-west1.firebasedatabase.app",
   projectId: "ordog-fizetes",
@@ -124,53 +124,89 @@ const storage = getStorage(app);
 
 let user = null;
 
-// 🔐 LOGIN
-window.login = function () {
-  const provider = new GoogleAuthProvider();
-  signInWithPopup(auth, provider);
+//
+// 🔐 LOGIN (FIXED)
+//
+window.login = async function () {
+  try {
+    const provider = new GoogleAuthProvider();
+    const result = await signInWithPopup(auth, provider);
+
+    console.log("LOGIN OK:", result.user.displayName);
+
+  } catch (err) {
+    console.error("LOGIN ERROR:", err.code, err.message);
+    alert("Login hiba:\n" + err.message);
+  }
 };
 
+//
+// 👤 AUTH STATE
+//
 onAuthStateChanged(auth, (u) => {
   if (u) {
     user = u;
+
+    console.log("Bejelentkezve:", u.displayName);
+
     document.getElementById("uploadBox").style.display = "block";
     document.getElementById("loginBox").style.display = "none";
+  } else {
+    user = null;
+
+    document.getElementById("uploadBox").style.display = "none";
+    document.getElementById("loginBox").style.display = "block";
   }
 });
 
+//
 // 📤 UPLOAD POST
+//
 window.upload = async function () {
   const file = document.getElementById("file").files[0];
   const text = document.getElementById("text").value;
 
-  if (!file || !text) return;
+  if (!file || !text) {
+    alert("Tölts ki mindent!");
+    return;
+  }
 
-  const storageRef = sRef(storage, "posts/" + Date.now());
+  try {
+    const storageRef = sRef(storage, "posts/" + Date.now());
 
-  await uploadBytes(storageRef, file);
-  const url = await getDownloadURL(storageRef);
+    await uploadBytes(storageRef, file);
+    const url = await getDownloadURL(storageRef);
 
-  const newRef = push(ref(db, "posts"));
+    const newRef = push(ref(db, "posts"));
 
-  set(newRef, {
-    img: url,
-    text,
-    likes: 0,
-    user: user.displayName,
-    time: Date.now()
-  });
+    set(newRef, {
+      img: url,
+      text,
+      likes: 0,
+      user: user.displayName,
+      time: Date.now()
+    });
 
-  document.getElementById("text").value = "";
+    document.getElementById("text").value = "";
+
+  } catch (err) {
+    console.error(err);
+    alert("Upload hiba: " + err.message);
+  }
 };
 
+//
 // ❤️ LIKE
-window.like = function(id, likes) {
+//
+window.like = function (id, likes) {
   update(ref(db, "posts/" + id), {
     likes: likes + 1
   });
 };
 
-// 📡 FEED
+//
+// 🌍 FEED
+//
 function render(data) {
   const feed = document.getElementById("feed");
   feed.innerHTML = "";
