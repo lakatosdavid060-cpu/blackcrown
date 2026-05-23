@@ -18,31 +18,9 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
 
 <body>
 
-<!-- LOGIN -->
+<!-- APP (LOGIN KI VAN VÉVE) -->
 
-<div id="loginScreen" class="login-screen">
-
-    <div class="login-box">
-
-        <h1>Discord Clone</h1>
-
-        <p>Realtime Firebase System</p>
-
-        <button id="googleLogin">
-
-            <i class="fa-brands fa-google"></i>
-
-            Belépés Google-lel
-
-        </button>
-
-    </div>
-
-</div>
-
-<!-- APP -->
-
-<div id="app" class="app hidden">
+<div id="app" class="app">
 
     <!-- SERVERS -->
 
@@ -101,28 +79,14 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
         <div class="topbar">
 
             <div class="top-left">
-
                 <h2># általános</h2>
-
             </div>
 
             <div class="top-right">
 
-                <button id="voiceBtn">
-                    🎤
-                </button>
-
-                <button id="videoBtn">
-                    📹
-                </button>
-
-                <button id="screenBtn">
-                    🖥️
-                </button>
-
-                <button id="logoutBtn">
-                    Kilépés
-                </button>
+                <button id="voiceBtn">🎤</button>
+                <button id="videoBtn">📹</button>
+                <button id="screenBtn">🖥️</button>
 
             </div>
 
@@ -132,16 +96,9 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
 
         <div class="videos">
 
-            <video
-                id="localVideo"
-                autoplay
-                muted
-            ></video>
+            <video id="localVideo" autoplay muted></video>
 
-            <video
-                id="remoteVideo"
-                autoplay
-            ></video>
+            <video id="remoteVideo" autoplay></video>
 
         </div>
 
@@ -161,15 +118,9 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
                 <i class="fa-solid fa-image"></i>
             </label>
 
-            <input
-                type="file"
-                id="imageInput"
-                hidden
-            >
+            <input type="file" id="imageInput" hidden>
 
-            <button id="emojiBtn">
-                😀
-            </button>
+            <button id="emojiBtn">😀</button>
 
             <input
                 type="text"
