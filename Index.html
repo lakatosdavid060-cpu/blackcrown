@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Ultimate Discord System</title>
+
+<link rel="stylesheet" href="style.css">
+
+<link
+rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+/>
+
+</head>
+
+<body>
+
+<!-- LOGIN -->
+
+<div id="loginScreen" class="login-screen">
+
+    <div class="login-box">
+
+        <h1>Discord Clone</h1>
+
+        <p>Realtime Firebase System</p>
+
+        <button id="googleLogin">
+
+            <i class="fa-brands fa-google"></i>
+
+            Belépés Google-lel
+
+        </button>
+
+    </div>
+
+</div>
+
+<!-- APP -->
+
+<div id="app" class="app hidden">
+
+    <!-- SERVERS -->
+
+    <div class="sidebar">
+
+        <div class="server active">D</div>
+        <div class="server">R</div>
+        <div class="server">P</div>
+
+        <div class="separator"></div>
+
+        <div class="server plus">+</div>
+
+    </div>
+
+    <!-- CHANNELS -->
+
+    <div class="channels">
+
+        <div class="channel-header">
+            Discord Clone
+        </div>
+
+        <div class="channel active-channel">
+            # általános
+        </div>
+
+        <div class="channel">
+            # gaming
+        </div>
+
+        <div class="channel">
+            # memes
+        </div>
+
+        <div class="channel">
+            # music
+        </div>
+
+        <div class="online-users">
+
+            <h3>ONLINE</h3>
+
+            <div id="usersList"></div>
+
+        </div>
+
+    </div>
+
+    <!-- MAIN -->
+
+    <div class="main">
+
+        <!-- TOPBAR -->
+
+        <div class="topbar">
+
+            <div class="top-left">
+
+                <h2># általános</h2>
+
+            </div>
+
+            <div class="top-right">
+
+                <button id="voiceBtn">
+                    🎤
+                </button>
+
+                <button id="videoBtn">
+                    📹
+                </button>
+
+                <button id="screenBtn">
+                    🖥️
+                </button>
+
+                <button id="logoutBtn">
+                    Kilépés
+                </button>
+
+            </div>
+
+        </div>
+
+        <!-- VIDEOS -->
+
+        <div class="videos">
+
+            <video
+                id="localVideo"
+                autoplay
+                muted
+            ></video>
+
+            <video
+                id="remoteVideo"
+                autoplay
+            ></video>
+
+        </div>
+
+        <!-- CHAT -->
+
+        <div id="messages" class="messages"></div>
+
+        <!-- TYPING -->
+
+        <div id="typing" class="typing"></div>
+
+        <!-- INPUT -->
+
+        <div class="bottom">
+
+            <label for="imageInput" class="upload-btn">
+                <i class="fa-solid fa-image"></i>
+            </label>
+
+            <input
+                type="file"
+                id="imageInput"
+                hidden
+            >
+
+            <button id="emojiBtn">
+                😀
+            </button>
+
+            <input
+                type="text"
+                id="messageInput"
+                placeholder="Üzenet küldése..."
+            >
+
+            <button id="sendBtn">
+                Küldés
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+<script type="module" src="app.js"></script>
+
+</body>
+</html>
