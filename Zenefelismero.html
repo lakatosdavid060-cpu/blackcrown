@@ -2,7 +2,7 @@
 <html lang="hu">
 <head>
 <meta charset="UTF-8">
-<title>🌌 Cyberpunk OS 3.0</title>
+<title>🌌 Cyberpunk OS 4.0</title>
 
 <style>
 body {
@@ -17,10 +17,10 @@ body {
   position: absolute;
   top: 10px;
   left: 10px;
-  z-index: 10;
   width: 260px;
+  z-index: 10;
   padding: 10px;
-  background: rgba(0,0,0,0.5);
+  background: rgba(0,0,0,0.6);
   border: 1px solid rgba(0,255,255,0.3);
   backdrop-filter: blur(10px);
   border-radius: 10px;
@@ -40,9 +40,19 @@ button {
   cursor: pointer;
 }
 
-canvas {
-  display: block;
+#inventory {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  width: 200px;
+  padding: 10px;
+  background: rgba(0,0,0,0.5);
+  border: 1px solid rgba(255,0,255,0.3);
+  border-radius: 10px;
+  z-index: 10;
 }
+
+canvas { display:block; }
 </style>
 </head>
 
@@ -52,227 +62,165 @@ canvas {
   <input id="msg" placeholder="Üzenet..." />
   <input id="date" type="datetime-local" />
   <button onclick="send()">Küldés 🚀</button>
-  <p style="font-size:12px;opacity:0.7">
-    WASD = mozgás | egér = nézés
-  </p>
+  <button onclick="teleport()">Teleport ✨</button>
+</div>
+
+<div id="inventory">
+  <b>🎒 Inventory</b>
+  <div id="invList"></div>
 </div>
 
 <script type="module">
 
 import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.161/build/three.module.js";
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import {
-  getDatabase,
-  ref,
-  push,
-  set,
-  onValue
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+// ---------------- AUDIO ----------------
+const audio = new (window.AudioContext || window.webkitAudioContext)();
 
-// ---------------- FIREBASE ----------------
-const firebaseConfig = {
-  apiKey: "AIzaSyBgbixws2rf6VdqjQATVwZsKg0lgiqy0xI",
-  authDomain: "ordog-fizetes.firebaseapp.com",
-  databaseURL: "https://ordog-fizetes-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "ordog-fizetes",
-  storageBucket: "ordog-fizetes.firebasestorage.app",
-  messagingSenderId: "672089263660",
-  appId: "1:672089263660:web:3797a2fc935c63a0464b89"
-};
+function beep(freq=440){
+  const osc = audio.createOscillator();
+  const gain = audio.createGain();
 
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
+  osc.frequency.value = freq;
+  osc.type = "sine";
+
+  gain.gain.value = 0.05;
+
+  osc.connect(gain);
+  gain.connect(audio.destination);
+
+  osc.start();
+  osc.stop(audio.currentTime + 0.1);
+}
 
 // ---------------- SCENE ----------------
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x000008);
 
-const camera = new THREE.PerspectiveCamera(
-  75,
-  innerWidth / innerHeight,
-  0.1,
-  1000
-);
-
+const camera = new THREE.PerspectiveCamera(75, innerWidth/innerHeight, 0.1, 1000);
 camera.position.set(0, 10, 40);
 
-const renderer = new THREE.WebGLRenderer({ antialias: true });
+const renderer = new THREE.WebGLRenderer({ antialias:true });
 renderer.setSize(innerWidth, innerHeight);
 document.body.appendChild(renderer.domElement);
 
-// ---------------- LIGHT ----------------
-scene.add(new THREE.AmbientLight(0xffffff, 1));
-const light = new THREE.PointLight(0x00f5ff, 2);
-light.position.set(20, 20, 20);
-scene.add(light);
+// light
+scene.add(new THREE.AmbientLight(0xffffff,1));
 
 // ---------------- BLACK HOLE ----------------
 const core = new THREE.Mesh(
-  new THREE.SphereGeometry(5, 32, 32),
-  new THREE.MeshBasicMaterial({ color: 0x000000 })
+  new THREE.SphereGeometry(5,32,32),
+  new THREE.MeshBasicMaterial({ color:0x000000 })
 );
 scene.add(core);
 
-const ring = new THREE.Mesh(
-  new THREE.RingGeometry(7, 12, 64),
-  new THREE.MeshBasicMaterial({
-    color: 0x00f5ff,
-    transparent: true,
-    opacity: 0.6,
-    side: THREE.DoubleSide
-  })
+// ---------------- PORTAL ----------------
+const portal = new THREE.Mesh(
+  new THREE.TorusGeometry(6,1.2,16,100),
+  new THREE.MeshStandardMaterial({ color:0x00f5ff })
 );
-ring.rotation.x = Math.PI / 2;
-scene.add(ring);
-
-// ---------------- PLAYER (kamera kontroller) ----------------
-const keys = {};
-
-document.addEventListener("keydown", e => keys[e.key.toLowerCase()] = true);
-document.addEventListener("keyup", e => keys[e.key.toLowerCase()] = false);
-
-// egér look
-let yaw = 0;
-let pitch = 0;
-
-document.body.addEventListener("click", () => {
-  document.body.requestPointerLock();
-});
-
-document.addEventListener("mousemove", (e) => {
-  if (document.pointerLockElement !== document.body) return;
-
-  yaw -= e.movementX * 0.002;
-  pitch -= e.movementY * 0.002;
-  pitch = Math.max(-1.5, Math.min(1.5, pitch));
-});
+portal.position.set(20,0,-20);
+scene.add(portal);
 
 // ---------------- OBJECTS ----------------
 let nodes = [];
+let inventory = [];
 
-function createNode(text) {
-  const node = new THREE.Mesh(
-    new THREE.IcosahedronGeometry(2.5, 0),
-    new THREE.MeshStandardMaterial({
-      color: 0x00f5ff,
-      emissive: 0x001133
-    })
+function createNode(text){
+  const m = new THREE.Mesh(
+    new THREE.IcosahedronGeometry(2.5,0),
+    new THREE.MeshStandardMaterial({ color:0x6c5ce7 })
   );
 
-  node.position.set(
-    (Math.random() - 0.5) * 80,
-    (Math.random() - 0.5) * 40,
-    (Math.random() - 0.5) * 80
+  m.position.set(
+    (Math.random()-0.5)*60,
+    (Math.random()-0.5)*30,
+    (Math.random()-0.5)*60
   );
 
-  node.userData.text = text;
+  m.userData.text = text;
 
-  scene.add(node);
-  nodes.push(node);
+  scene.add(m);
+  nodes.push(m);
 }
 
-// ---------------- FIREBASE ----------------
-function load() {
-  const dbRef = ref(db, "capsules");
-
-  onValue(dbRef, (snap) => {
-    const data = snap.val();
-
-    nodes.forEach(n => scene.remove(n));
-    nodes = [];
-
-    if (!data) return;
-
-    const now = Date.now();
-
-    for (let id in data) {
-      const item = data[id];
-
-      if (item && item.unlockTime <= now) {
-        createNode(item.text);
-      }
-    }
-  });
+function addToInventory(text){
+  inventory.push(text);
+  document.getElementById("invList").innerHTML =
+    inventory.map(i => "📦 " + i).join("<br>");
 }
 
-load();
-
-// ---------------- SEND ----------------
-window.send = function () {
-  const msg = document.getElementById("msg").value;
-  const date = document.getElementById("date").value;
-
-  const r = push(ref(db, "capsules"));
-
-  set(r, {
-    text: msg,
-    unlockTime: new Date(date).getTime()
-  });
+// ---------------- TELEPORT ----------------
+window.teleport = function(){
+  camera.position.set(
+    (Math.random()-0.5)*50,
+    10,
+    (Math.random()-0.5)*50
+  );
+  beep(880);
 };
 
-// ---------------- MOVEMENT ----------------
-const speed = 0.5;
+// ---------------- SEND ----------------
+window.send = function(){
+  const msg = document.getElementById("msg").value;
+  createNode(msg);
+  beep(440);
+};
 
-// ---------------- ANIMATE ----------------
-function animate() {
+// ---------------- CLICK PICKUP ----------------
+const ray = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+
+window.addEventListener("click",(e)=>{
+  mouse.x = (e.clientX/innerWidth)*2-1;
+  mouse.y = -(e.clientY/innerHeight)*2+1;
+
+  ray.setFromCamera(mouse,camera);
+
+  const hit = ray.intersectObjects(nodes);
+
+  if(hit.length){
+    const obj = hit[0].object;
+    addToInventory(obj.userData.text);
+    scene.remove(obj);
+    nodes = nodes.filter(n=>n!==obj);
+    beep(660);
+  }
+});
+
+// ---------------- BLACK HOLE PHYSICS ----------------
+const center = new THREE.Vector3();
+
+function animate(){
   requestAnimationFrame(animate);
 
-  // camera rotation
-  camera.rotation.order = "YXZ";
-  camera.rotation.y = yaw;
-  camera.rotation.x = pitch;
-
-  const forward = new THREE.Vector3(
-    Math.sin(yaw),
-    0,
-    Math.cos(yaw)
-  );
-
-  const right = new THREE.Vector3(
-    Math.sin(yaw + Math.PI/2),
-    0,
-    Math.cos(yaw + Math.PI/2)
-  );
-
-  if (keys["w"]) camera.position.add(forward.clone().multiplyScalar(speed));
-  if (keys["s"]) camera.position.add(forward.clone().multiplyScalar(-speed));
-  if (keys["a"]) camera.position.add(right.clone().multiplyScalar(-speed));
-  if (keys["d"]) camera.position.add(right.clone().multiplyScalar(speed));
-
-  // black hole gravity
-  const center = new THREE.Vector3(0,0,0);
-
-  nodes.forEach((n) => {
+  nodes.forEach(n=>{
     const dir = center.clone().sub(n.position);
     const dist = dir.length();
 
     dir.normalize();
 
-    const force = 0.01 / Math.max(dist, 0.2);
+    n.position.add(dir.multiplyScalar(0.02));
 
-    n.position.add(dir.multiplyScalar(force));
-
-    if (dist < 4.5) {
+    if(dist<4){
       scene.remove(n);
-      nodes = nodes.filter(x => x !== n);
+      nodes = nodes.filter(x=>x!==n);
     }
   });
 
-  ring.rotation.z += 0.01;
+  portal.rotation.y += 0.01;
 
-  renderer.render(scene, camera);
+  renderer.render(scene,camera);
 }
 
 animate();
 
 // resize
-window.addEventListener("resize", () => {
-  camera.aspect = innerWidth / innerHeight;
+window.addEventListener("resize",()=>{
+  camera.aspect = innerWidth/innerHeight;
   camera.updateProjectionMatrix();
-  renderer.setSize(innerWidth, innerHeight);
+  renderer.setSize(innerWidth,innerHeight);
 });
-
 </script>
 
 </body>
