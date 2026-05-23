@@ -2,14 +2,14 @@
 <html lang="hu">
 <head>
 <meta charset="UTF-8">
-<title>⏳ Cyberpunk TimeCapsule OS 5.0</title>
+<title>🌐 Cyberpunk OS 13.0</title>
 
 <style>
 body {
   margin: 0;
   overflow: hidden;
   font-family: Arial;
-  background: #000008;
+  background: black;
   color: white;
 }
 
@@ -17,13 +17,41 @@ body {
   position: absolute;
   top: 10px;
   left: 10px;
-  z-index: 10;
-  width: 280px;
+  width: 260px;
   padding: 10px;
+  z-index: 10;
   background: rgba(0,0,0,0.6);
   border: 1px solid rgba(0,255,255,0.3);
   border-radius: 10px;
   backdrop-filter: blur(10px);
+}
+
+#events {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 220px;
+  height: 300px;
+  overflow-y: auto;
+  z-index: 10;
+  background: rgba(0,0,0,0.5);
+  border: 1px solid rgba(255,0,255,0.3);
+  border-radius: 10px;
+  padding: 10px;
+}
+
+#inventory {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  width: 220px;
+  height: 40vh;
+  overflow-y: auto;
+  z-index: 10;
+  background: rgba(0,0,0,0.5);
+  border: 1px solid rgba(255,255,0,0.2);
+  border-radius: 10px;
+  padding: 10px;
 }
 
 input, button {
@@ -35,9 +63,15 @@ input, button {
 }
 
 button {
-  background: linear-gradient(90deg, #6c5ce7, #00f5ff);
+  background: linear-gradient(90deg,#6c5ce7,#00f5ff);
   color: white;
   cursor: pointer;
+}
+
+.msg {
+  font-size: 12px;
+  margin: 4px 0;
+  opacity: 0.9;
 }
 
 canvas { display:block; }
@@ -47,9 +81,16 @@ canvas { display:block; }
 <body>
 
 <div id="ui">
-  <input id="msg" placeholder="Üzenet..." />
-  <input id="date" type="datetime-local" />
-  <button onclick="send()">⏳ Időkapszula küldés</button>
+  <input id="msg" placeholder="Spawn kapszula..." />
+  <button onclick="spawn()">📦 Spawn</button>
+  <button onclick="triggerEvent()">⚡ Event</button>
+</div>
+
+<div id="events"></div>
+
+<div id="inventory">
+  <b>🎒 Inventory</b>
+  <div id="inv"></div>
 </div>
 
 <script type="module">
@@ -67,7 +108,7 @@ import {
 
 // ---------------- FIREBASE ----------------
 const firebaseConfig = {
-  apiKey: "AIzaSyBgbixws2rf6VdqjQATVwZsKg0lgiqy0xI",
+  apiKey: "AIzaSyBgbixws2rf6VdqjQATVvZsKg0lgiqy0xI",
   authDomain: "ordog-fizetes.firebaseapp.com",
   databaseURL: "https://ordog-fizetes-default-rtdb.europe-west1.firebasedatabase.app",
   projectId: "ordog-fizetes",
@@ -79,146 +120,158 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// ---------------- 3D WORLD ----------------
+// ---------------- SCENE ----------------
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x000010);
 
 const camera = new THREE.PerspectiveCamera(75, innerWidth/innerHeight, 0.1, 1000);
-camera.position.set(0, 15, 70);
+camera.position.set(0,10,50);
 
 const renderer = new THREE.WebGLRenderer({ antialias:true });
-renderer.setSize(innerWidth, innerHeight);
+renderer.setSize(innerWidth,innerHeight);
 document.body.appendChild(renderer.domElement);
 
-// ---------------- LIGHT ----------------
-scene.add(new THREE.AmbientLight(0xffffff, 1.2));
+scene.add(new THREE.AmbientLight(0xffffff,1));
 
-// ---------------- BLACK HOLE (VISUAL) ----------------
+// ---------------- WORLD CORE ----------------
 const core = new THREE.Mesh(
-  new THREE.SphereGeometry(6, 32, 32),
-  new THREE.MeshBasicMaterial({ color: 0x000000 })
+  new THREE.SphereGeometry(5,32,32),
+  new THREE.MeshBasicMaterial({ color:0x000000 })
 );
 scene.add(core);
 
-// ring
-const ring = new THREE.Mesh(
-  new THREE.RingGeometry(8, 14, 64),
-  new THREE.MeshBasicMaterial({
-    color: 0x00f5ff,
-    transparent: true,
-    opacity: 0.5,
-    side: THREE.DoubleSide
-  })
-);
-ring.rotation.x = Math.PI/2;
-scene.add(ring);
+// ---------------- STATE ----------------
+let capsules = [];
+let inventory = [];
+let players = {};
 
-// ---------------- CAPSULE OBJECTS ----------------
-let nodes = [];
-
-// kapszula state:
-function createCapsule(item, state){
-
-  const color = state === "locked" ? 0x444444 : 0x00f5ff;
-
-  const mesh = new THREE.Mesh(
-    new THREE.IcosahedronGeometry(3,0),
-    new THREE.MeshStandardMaterial({
-      color,
-      emissive: state === "unlocked" ? 0x001133 : 0x000000
-    })
-  );
-
-  mesh.position.set(
-    (Math.random()-0.5)*80,
-    (Math.random()-0.5)*40,
-    (Math.random()-0.5)*80
-  );
-
-  mesh.userData = item;
-  mesh.userData.state = state;
-
-  scene.add(mesh);
-  nodes.push(mesh);
+// ---------------- INVENTORY ----------------
+function updateInv(){
+  document.getElementById("inv").innerHTML =
+    inventory.map(i=>"📦 "+i).join("<br>");
 }
 
-// ---------------- FIREBASE LOAD ----------------
-function load(){
-
-  const dbRef = ref(db,"capsules");
-
-  onValue(dbRef,(snap)=>{
-
+// ---------------- CAPSULES ----------------
+function syncCapsules(){
+  onValue(ref(db,"world/capsules"),(snap)=>{
     const data = snap.val();
 
-    nodes.forEach(n=>scene.remove(n));
-    nodes = [];
+    capsules.forEach(c=>scene.remove(c));
+    capsules = [];
 
     if(!data) return;
 
-    const now = Date.now();
-
     for(let id in data){
+      const d = data[id];
 
-      const item = data[id];
-      if(!item) continue;
+      const m = new THREE.Mesh(
+        new THREE.IcosahedronGeometry(2.5,0),
+        new THREE.MeshStandardMaterial({
+          color:0x00f5ff,
+          emissive:0x001122
+        })
+      );
 
-      if(item.unlockTime > now){
-        // 🔒 LOCKED (glitch állapot)
-        createCapsule(item,"locked");
-      } else {
-        // 🔓 UNLOCKED (valódi üzenet)
-        createCapsule(item,"unlocked");
-      }
+      m.position.set(d.x,d.y,d.z);
+      m.userData.text = d.text;
+
+      scene.add(m);
+      capsules.push(m);
     }
   });
 }
 
-load();
+syncCapsules();
 
-// ---------------- SEND ----------------
-window.send = function(){
+// ---------------- SPAWN ----------------
+window.spawn = function(){
   const msg = document.getElementById("msg").value;
-  const date = document.getElementById("date").value;
 
-  const r = push(ref(db,"capsules"));
-
-  set(r,{
+  push(ref(db,"world/capsules"),{
     text: msg,
-    unlockTime: new Date(date).getTime()
+    x:(Math.random()-0.5)*80,
+    y:(Math.random()-0.5)*40,
+    z:(Math.random()-0.5)*80
   });
 };
 
-// ---------------- ANIMATION (CAPSULE PHYSICS) ----------------
+// ---------------- QUEST / EVENTS ----------------
+const eventBox = document.getElementById("events");
+
+function addEvent(text){
+  const div = document.createElement("div");
+  div.className = "msg";
+  div.innerText = "⚡ " + text;
+  eventBox.appendChild(div);
+}
+
+window.triggerEvent = function(){
+  const events = [
+    "Gravitáció növekedett!",
+    "Új kapszula hullám érkezik!",
+    "Black hole aktiválódott!",
+    "Universe glitch event!"
+  ];
+
+  const e = events[Math.floor(Math.random()*events.length)];
+
+  push(ref(db,"world/events"),{
+    text:e,
+    t:Date.now()
+  });
+};
+
+// ---------------- EVENT SYNC ----------------
+onValue(ref(db,"world/events"),(snap)=>{
+  const data = snap.val();
+  if(!data) return;
+
+  eventBox.innerHTML = "";
+
+  for(let id in data){
+    addEvent(data[id].text);
+  }
+});
+
+// ---------------- PICKUP ----------------
+const ray = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+
+window.addEventListener("click",(e)=>{
+
+  mouse.x = (e.clientX/innerWidth)*2-1;
+  mouse.y = -(e.clientY/innerHeight)*2+1;
+
+  ray.setFromCamera(mouse,camera);
+
+  const hits = ray.intersectObjects(capsules);
+
+  if(hits.length){
+    const obj = hits[0].object;
+
+    inventory.push(obj.userData.text);
+    updateInv();
+
+    scene.remove(obj);
+  }
+});
+
+// ---------------- BLACK HOLE ----------------
+const center = new THREE.Vector3();
+
 function animate(){
   requestAnimationFrame(animate);
 
-  const center = new THREE.Vector3(0,0,0);
-
-  nodes.forEach(n=>{
-
-    const dir = center.clone().sub(n.position);
-    const dist = dir.length();
-
-    dir.normalize();
-
-    // locked lassabb, unlocked gyorsabb reagálás
-    let force = n.userData.state === "locked"
-      ? 0.005
-      : 0.02;
-
-    force = force / Math.max(dist,0.2);
-
-    n.position.add(dir.multiplyScalar(force));
-
-    // fekete lyuk hatás
-    if(dist < 5){
-      scene.remove(n);
-      nodes = nodes.filter(x=>x!==n);
-    }
+  capsules.forEach(c=>{
+    const dir = center.clone().sub(c.position);
+    c.position.add(dir.normalize().multiplyScalar(0.008));
   });
 
-  ring.rotation.z += 0.008;
+  core.scale.set(
+    1 + Math.sin(Date.now()*0.001)*0.1,
+    1 + Math.sin(Date.now()*0.001)*0.1,
+    1 + Math.sin(Date.now()*0.001)*0.1
+  );
 
   renderer.render(scene,camera);
 }
