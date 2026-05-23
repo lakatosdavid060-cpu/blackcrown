@@ -1,144 +1,296 @@
 <!DOCTYPE html>
 <html lang="hu">
 <head>
-
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pro SaaS Számlázó</title>
 
-<title>Ultimate Discord System</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
-<link rel="stylesheet" href="style.css">
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  onSnapshot,
+  doc,
+  getDoc,
+  setDoc,
+  updateDoc
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-<link
-rel="stylesheet"
-href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
-/>
+/* 🔥 FIREBASE CONFIG */
+const firebaseConfig = {
+  apiKey: "AIzaSyBgbixws2rf6VdqjQATVwZsKg0lgiqy0xI",
+  authDomain: "ordog-fizetes.firebaseapp.com",
+  projectId: "ordog-fizetes",
+  storageBucket: "ordog-fizetes.firebasestorage.app",
+  messagingSenderId: "672089263660",
+  appId: "1:672089263660:web:3797a2fc935c63a0464b89"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+/* STATE */
+let invoices = [];
+let currentCompany = "ceg1";
+let chart;
+
+/* =========================
+   SZÁMLASZÁM GENERÁLÁS
+========================= */
+async function generateInvoiceNumber(series) {
+  const date = new Date();
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+
+  const counterId = `${currentCompany}_${year}_${month}_${series}`;
+
+  const ref = doc(db, "counters", counterId);
+  const snap = await getDoc(ref);
+
+  let last = snap.exists() ? snap.data().lastNumber : 0;
+
+  const next = last + 1;
+
+  await setDoc(ref, { lastNumber: next });
+
+  const prefix =
+    series === "ELŐLEG" ? "A" :
+    series === "VÉGSZÁMLA" ? "F" : "";
+
+  return `SZL-${year}-${month}-${String(next).padStart(6,"0")}${prefix ? "/" + prefix : ""}`;
+}
+
+/* =========================
+   SZÁMLA LÉTREHOZÁS
+========================= */
+window.createInvoice = async function () {
+  const customer = document.getElementById("customer").value;
+  const series = document.getElementById("series").value;
+  const qty = Number(document.getElementById("qty").value);
+  const price = Number(document.getElementById("price").value);
+
+  if (!customer || !qty || !price) return;
+
+  const net = qty * price;
+  const vat = net * 0.27;
+  const gross = net + vat;
+
+  const invoiceNumber = await generateInvoiceNumber(series);
+
+  await addDoc(collection(db, "invoices"), {
+    invoiceNumber,
+    series,
+    companyId: currentCompany,
+    locked: false,
+
+    customer: { name: customer },
+
+    items: [
+      { name: "Szolgáltatás", qty, price, vat: 0.27 }
+    ],
+
+    netTotal: net,
+    vatTotal: vat,
+    grossTotal: gross,
+
+    createdAt: new Date()
+  });
+
+  document.getElementById("customer").value = "";
+};
+
+/* =========================
+   REALTIME FIREBASE
+========================= */
+onSnapshot(collection(db, "invoices"), (snap) => {
+  invoices = snap.docs
+    .map(d => ({ id: d.id, ...d.data() }))
+    .filter(i => i.companyId === currentCompany);
+
+  render();
+  updateChart();
+});
+
+/* =========================
+   RENDER TABLE
+========================= */
+function render() {
+  const list = document.getElementById("list");
+  list.innerHTML = "";
+
+  let balance = 0;
+
+  invoices.forEach(inv => {
+
+    balance += inv.grossTotal;
+
+    const row = document.createElement("tr");
+
+    row.innerHTML = `
+      <td>${inv.invoiceNumber}</td>
+      <td>${inv.customer.name}</td>
+      <td>${inv.netTotal} Ft</td>
+      <td>${inv.vatTotal} Ft</td>
+      <td>${inv.grossTotal} Ft</td>
+      <td>${inv.locked ? "🔒" : ""}</td>
+      <td>
+        <button onclick="generatePDF('${inv.invoiceNumber}')">PDF</button>
+        <button onclick="lockInvoice('${inv.id}')">Lock</button>
+      </td>
+    `;
+
+    list.appendChild(row);
+  });
+
+  document.getElementById("balance").textContent = balance;
+}
+
+/* =========================
+   LOCK INVOICE
+========================= */
+window.lockInvoice = async function (id) {
+  await updateDoc(doc(db, "invoices", id), {
+    locked: true
+  });
+};
+
+/* =========================
+   PDF GENERÁLÁS
+========================= */
+window.generatePDF = function (invoiceNumber) {
+  const inv = invoices.find(i => i.invoiceNumber === invoiceNumber);
+  if (!inv) return;
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+
+  doc.text("SZÁMLA", 10, 10);
+  doc.text(`Számlaszám: ${inv.invoiceNumber}`, 10, 20);
+  doc.text(`Ügyfél: ${inv.customer.name}`, 10, 30);
+
+  let y = 40;
+
+  inv.items.forEach(i => {
+    doc.text(`${i.qty} x ${i.name} = ${i.price} Ft`, 10, y);
+    y += 10;
+  });
+
+  doc.text(`Nettó: ${inv.netTotal}`, 10, y + 10);
+  doc.text(`ÁFA: ${inv.vatTotal}`, 10, y + 20);
+  doc.text(`Bruttó: ${inv.grossTotal}`, 10, y + 30);
+
+  doc.save(inv.invoiceNumber + ".pdf");
+};
+
+/* =========================
+   CHART
+========================= */
+function updateChart() {
+  let total = invoices.reduce((s, i) => s + i.grossTotal, 0);
+
+  if (chart) chart.destroy();
+
+  chart = new Chart(document.getElementById("chart"), {
+    type: "doughnut",
+    data: {
+      labels: ["Bevétel"],
+      datasets: [{ data: [total] }]
+    }
+  });
+}
+
+/* =========================
+   VAT CALC
+========================= */
+window.calcVAT = function () {
+  const net = Number(document.getElementById("net").value);
+  const vat = net * 0.27;
+
+  document.getElementById("vat").textContent = vat;
+  document.getElementById("gross").textContent = net + vat;
+};
+
+</script>
+
+<style>
+body { margin:0; font-family:Arial; display:flex; background:#eef2f7; }
+.sidebar { width:220px; background:#1e2a38; color:white; padding:20px; height:100vh; }
+.main { flex:1; padding:20px; }
+.card { background:white; padding:15px; margin-bottom:15px; border-radius:10px; }
+input,select { width:100%; padding:10px; margin:5px 0; }
+button { padding:8px; margin:2px; }
+table { width:100%; border-collapse:collapse; }
+td,th { border-bottom:1px solid #ddd; padding:8px; }
+</style>
 
 </head>
 
 <body>
 
-<!-- APP (LOGIN KI VAN VÉVE) -->
-
-<div id="app" class="app">
-
-    <!-- SERVERS -->
-
-    <div class="sidebar">
-
-        <div class="server active">D</div>
-        <div class="server">R</div>
-        <div class="server">P</div>
-
-        <div class="separator"></div>
-
-        <div class="server plus">+</div>
-
-    </div>
-
-    <!-- CHANNELS -->
-
-    <div class="channels">
-
-        <div class="channel-header">
-            Discord Clone
-        </div>
-
-        <div class="channel active-channel">
-            # általános
-        </div>
-
-        <div class="channel">
-            # gaming
-        </div>
-
-        <div class="channel">
-            # memes
-        </div>
-
-        <div class="channel">
-            # music
-        </div>
-
-        <div class="online-users">
-
-            <h3>ONLINE</h3>
-
-            <div id="usersList"></div>
-
-        </div>
-
-    </div>
-
-    <!-- MAIN -->
-
-    <div class="main">
-
-        <!-- TOPBAR -->
-
-        <div class="topbar">
-
-            <div class="top-left">
-                <h2># általános</h2>
-            </div>
-
-            <div class="top-right">
-
-                <button id="voiceBtn">🎤</button>
-                <button id="videoBtn">📹</button>
-                <button id="screenBtn">🖥️</button>
-
-            </div>
-
-        </div>
-
-        <!-- VIDEOS -->
-
-        <div class="videos">
-
-            <video id="localVideo" autoplay muted></video>
-
-            <video id="remoteVideo" autoplay></video>
-
-        </div>
-
-        <!-- CHAT -->
-
-        <div id="messages" class="messages"></div>
-
-        <!-- TYPING -->
-
-        <div id="typing" class="typing"></div>
-
-        <!-- INPUT -->
-
-        <div class="bottom">
-
-            <label for="imageInput" class="upload-btn">
-                <i class="fa-solid fa-image"></i>
-            </label>
-
-            <input type="file" id="imageInput" hidden>
-
-            <button id="emojiBtn">😀</button>
-
-            <input
-                type="text"
-                id="messageInput"
-                placeholder="Üzenet küldése..."
-            >
-
-            <button id="sendBtn">
-                Küldés
-            </button>
-
-        </div>
-
-    </div>
-
+<div class="sidebar">
+  <h3>💼 PRO SaaS</h3>
 </div>
 
-<script type="module" src="app.js"></script>
+<div class="main">
+
+  <!-- CREATE INVOICE -->
+  <div class="card">
+    <h3>Új számla</h3>
+
+    <input id="customer" placeholder="Ügyfél">
+    <input id="qty" type="number" placeholder="Mennyiség">
+    <input id="price" type="number" placeholder="Egységár">
+
+    <select id="series">
+      <option value="NORMAL">Normál</option>
+      <option value="ELŐLEG">Előleg</option>
+      <option value="VÉGSZÁMLA">Végszámla</option>
+    </select>
+
+    <button onclick="createInvoice()">Létrehozás</button>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div class="card">
+    <h3>📊 Dashboard</h3>
+    <canvas id="chart"></canvas>
+    <h2>Egyenleg: <span id="balance">0</span> Ft</h2>
+  </div>
+
+  <!-- VAT -->
+  <div class="card">
+    <h3>💰 ÁFA</h3>
+    <input id="net" placeholder="Nettó">
+    <button onclick="calcVAT()">Számol</button>
+    <p>ÁFA: <span id="vat">0</span></p>
+    <p>Bruttó: <span id="gross">0</span></p>
+  </div>
+
+  <!-- INVOICES -->
+  <div class="card">
+    <h3>📄 Számlák</h3>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Számla</th>
+          <th>Ügyfél</th>
+          <th>Nettó</th>
+          <th>ÁFA</th>
+          <th>Bruttó</th>
+          <th>🔒</th>
+          <th>Művelet</th>
+        </tr>
+      </thead>
+      <tbody id="list"></tbody>
+    </table>
+  </div>
+
+</div>
 
 </body>
 </html>
