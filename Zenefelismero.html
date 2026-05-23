@@ -2,13 +2,13 @@
 <html lang="hu">
 <head>
 <meta charset="UTF-8">
-<title>🔥 IG CLONE V2 EMAIL</title>
+<title>🔥 IG CLONE V3</title>
 
 <style>
 body {
   margin: 0;
   font-family: Arial;
-  background: #0b0b14;
+  background: #0a0a12;
   color: white;
 }
 
@@ -20,7 +20,7 @@ header {
 }
 
 .box {
-  max-width: 500px;
+  max-width: 520px;
   margin: 10px auto;
   padding: 12px;
   background: rgba(255,255,255,0.05);
@@ -42,7 +42,7 @@ button {
 }
 
 .post {
-  max-width: 500px;
+  max-width: 520px;
   margin: 15px auto;
   background: #1a1a2a;
   border-radius: 10px;
@@ -58,38 +58,44 @@ button {
   padding: 10px;
 }
 
-.likeBtn {
-  background: #222;
-  margin-top: 10px;
+.small {
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.commentBox {
+  margin-top: 8px;
+  font-size: 13px;
+  opacity: 0.9;
 }
 </style>
 </head>
 
 <body>
 
-<header>🔥 IG CLONE V2 (EMAIL AUTH)</header>
+<header>🔥 IG CLONE V3</header>
 
 <!-- AUTH -->
 <div class="box" id="authBox">
-  <h3>🔐 Regisztráció / Login</h3>
-
-  <input id="email" placeholder="Email" />
-  <input id="password" type="password" placeholder="Jelszó" />
-
+  <h3>🔐 Login / Register</h3>
+  <input id="email" placeholder="Email">
+  <input id="pass" type="password" placeholder="Jelszó">
   <button onclick="register()">🆕 Regisztráció</button>
   <button onclick="login()">🔑 Belépés</button>
 </div>
 
-<!-- APP -->
-<div class="box" id="appBox" style="display:none;">
-  <h3>✔ Bejelentkezve</h3>
-  <button onclick="logout()">🚪 Kilépés</button>
+<!-- PROFILE -->
+<div class="box" id="profileBox" style="display:none;">
+  <h3>👤 Profil</h3>
+  <input id="username" placeholder="Username">
+  <input id="bio" placeholder="Bio">
+  <button onclick="saveProfile()">💾 Mentés</button>
 </div>
 
 <!-- POST -->
 <div class="box" id="postBox" style="display:none;">
-  <input id="img" placeholder="Kép URL (https://...)" />
-  <input id="text" placeholder="Szöveg..." />
+  <input id="img" placeholder="Kép URL">
+  <input id="text" placeholder="Caption">
   <button onclick="upload()">📤 Poszt</button>
 </div>
 
@@ -114,17 +120,19 @@ import {
   push,
   set,
   onValue,
-  update
+  update,
+  get
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_AUTH_DOMAIN",
-  databaseURL: "YOUR_DB_URL",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_STORAGE",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyBgbixws2rf6VdqjQATVwZsKg0lgiqy0xI",
+  authDomain: "ordog-fizetes.firebaseapp.com",
+  databaseURL: "https://ordog-fizetes-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "ordog-fizetes",
+  storageBucket: "ordog-fizetes.firebasestorage.app",
+  messagingSenderId: "672089263660",
+  appId: "1:672089263660:web:3797a2fc935c63a0464b89",
+  measurementId: "G-V9Z9LYT0KL"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -132,58 +140,61 @@ const auth = getAuth(app);
 const db = getDatabase(app);
 
 let user = null;
+let profile = {};
 
 //
-// 🔐 REG
+// 🔐 AUTH
 //
 window.register = async function () {
-  const email = emailInput();
-  const pass = passInput();
-
-  try {
-    await createUserWithEmailAndPassword(auth, email, pass);
-  } catch (e) {
-    alert("Reg hiba: " + e.message);
-  }
+  const email = emailVal();
+  const pass = passVal();
+  await createUserWithEmailAndPassword(auth, email, pass);
 };
 
-//
-// 🔑 LOGIN
-//
 window.login = async function () {
-  const email = emailInput();
-  const pass = passInput();
-
-  try {
-    await signInWithEmailAndPassword(auth, email, pass);
-  } catch (e) {
-    alert("Login hiba: " + e.message);
-  }
-};
-
-//
-// 🚪 LOGOUT
-//
-window.logout = function () {
-  signOut(auth);
+  const email = emailVal();
+  const pass = passVal();
+  await signInWithEmailAndPassword(auth, email, pass);
 };
 
 //
 // 👤 AUTH STATE
 //
-onAuthStateChanged(auth, (u) => {
+onAuthStateChanged(auth, async (u) => {
   user = u;
 
-  if (u) {
-    document.getElementById("authBox").style.display = "none";
-    document.getElementById("appBox").style.display = "block";
-    document.getElementById("postBox").style.display = "block";
-  } else {
-    document.getElementById("authBox").style.display = "block";
-    document.getElementById("appBox").style.display = "none";
-    document.getElementById("postBox").style.display = "none";
-  }
+  if (!u) return;
+
+  document.getElementById("authBox").style.display = "none";
+  document.getElementById("profileBox").style.display = "block";
+  document.getElementById("postBox").style.display = "block";
+
+  loadProfile();
+  loadFeed();
 });
+
+//
+// 👤 PROFILE SAVE
+//
+window.saveProfile = function () {
+  const username = document.getElementById("username").value;
+  const bio = document.getElementById("bio").value;
+
+  set(ref(db, "profiles/" + user.uid), {
+    username,
+    bio
+  });
+
+  alert("Profil mentve!");
+};
+
+//
+// 📥 LOAD PROFILE
+//
+async function loadProfile() {
+  const snap = await get(ref(db, "profiles/" + user.uid));
+  profile = snap.val() || {};
+}
 
 //
 // 📤 POST
@@ -192,14 +203,12 @@ window.upload = function () {
   const img = document.getElementById("img").value;
   const text = document.getElementById("text").value;
 
-  if (!img || !text) return;
-
   const newRef = push(ref(db, "posts"));
 
   set(newRef, {
     img,
     text,
-    user: user.email,
+    uid: user.uid,
     likes: 0,
     time: Date.now()
   });
@@ -215,44 +224,91 @@ window.like = function (id, likes) {
 };
 
 //
+// 💬 COMMENT
+//
+window.comment = function (id) {
+  const text = prompt("Komment:");
+  if (!text) return;
+
+  const cRef = push(ref(db, "comments/" + id));
+
+  set(cRef, {
+    text,
+    uid: user.uid,
+    time: Date.now()
+  });
+};
+
+//
 // 🌍 FEED
 //
-onValue(ref(db, "posts"), (snap) => {
-  const data = snap.val();
-  const feed = document.getElementById("feed");
+function loadFeed() {
+  onValue(ref(db, "posts"), (snap) => {
+    const data = snap.val();
+    const feed = document.getElementById("feed");
 
-  feed.innerHTML = "";
+    feed.innerHTML = "";
 
-  const posts = Object.entries(data || {}).reverse();
+    const posts = Object.entries(data || {}).reverse();
 
-  for (let [id, p] of posts) {
-    const div = document.createElement("div");
-    div.className = "post";
+    for (let [id, p] of posts) {
+      const div = document.createElement("div");
 
-    div.innerHTML = `
-      <img src="${p.img}" />
-      <div class="postContent">
-        <b>👤 ${p.user}</b><br>
-        ${p.text}
-        <button class="likeBtn" onclick="like('${id}', ${p.likes})">
-          ❤️ Like (${p.likes})
-        </button>
-      </div>
-    `;
+      div.className = "post";
 
-    feed.appendChild(div);
-  }
-});
+      div.innerHTML = `
+        <img src="${p.img}">
+        <div class="postContent">
+          <b>👤 ${p.uid}</b><br>
+          ${p.text}<br>
+
+          <button onclick="like('${id}', ${p.likes})">
+            ❤️ Like (${p.likes})
+          </button>
+
+          <button onclick="comment('${id}')">
+            💬 Comment
+          </button>
+
+          <div class="commentBox" id="c_${id}"></div>
+        </div>
+      `;
+
+      feed.appendChild(div);
+
+      loadComments(id);
+    }
+  });
+}
+
+//
+// 💬 COMMENTS LOAD
+//
+function loadComments(postId) {
+  onValue(ref(db, "comments/" + postId), (snap) => {
+    const box = document.getElementById("c_" + postId);
+    if (!box) return;
+
+    box.innerHTML = "";
+
+    const data = snap.val();
+    for (let id in data || {}) {
+      const c = data[id];
+      const div = document.createElement("div");
+      div.innerText = "💬 " + c.text;
+      box.appendChild(div);
+    }
+  });
+}
 
 //
 // helpers
 //
-function emailInput() {
+function emailVal() {
   return document.getElementById("email").value;
 }
-
-function passInput() {
-  return document.getElementById("password").value;
+function passVal() {
+  return document.getElementById("pass").value;
 }
 
 </script>
