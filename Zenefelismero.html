@@ -2,307 +2,322 @@
 <html lang="hu">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>Neon Shazam</title>
+<title>⏳ Időkapszula 3D + Fekete Lyuk</title>
 
 <style>
-
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
+body {
+  margin: 0;
+  font-family: Arial;
+  background: radial-gradient(circle at top, #0f0f1a, #050510);
+  color: white;
+  text-align: center;
+  overflow: hidden;
 }
 
-body{
-    background:#050505;
-    color:white;
-    font-family:Arial;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    min-height:100vh;
-    overflow:hidden;
+h1 {
+  margin-top: 20px;
+  text-shadow: 0 0 10px rgba(108,92,231,0.6);
+  position: relative;
+  z-index: 10;
 }
 
-.container{
-    width:95%;
-    max-width:420px;
-    background:#111;
-    padding:25px;
-    border-radius:30px;
-    box-shadow:0 0 40px #00ff9d55;
-    position:relative;
+.glass {
+  background: rgba(255,255,255,0.06);
+  backdrop-filter: blur(15px);
+  border-radius: 16px;
+  padding: 15px;
+  margin: 10px auto;
+  width: 90%;
+  max-width: 520px;
+  box-shadow: 0 0 25px rgba(0,0,0,0.6);
+  border: 1px solid rgba(255,255,255,0.1);
+  position: relative;
+  z-index: 10;
 }
 
-.title{
-    text-align:center;
-    font-size:32px;
-    color:#1db954;
-    margin-bottom:20px;
+input {
+  padding: 10px;
+  margin: 5px;
+  border-radius: 10px;
+  border: none;
+  width: 80%;
 }
 
-.cover{
-    width:220px;
-    height:220px;
-    border-radius:25px;
-    margin:auto;
-    background:url('https://i.scdn.co/image/ab67616d0000b273e0b60c608586d88252b8fbc4') center/cover;
-    animation:spin 8s linear infinite;
-    box-shadow:0 0 30px #1db95466;
+button {
+  padding: 10px 15px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  background: linear-gradient(135deg, #6c5ce7, #a29bfe);
+  color: white;
+  font-weight: bold;
+  transition: 0.2s;
 }
 
-@keyframes spin{
-    from{
-        transform:rotate(0deg);
-    }
-    to{
-        transform:rotate(360deg);
-    }
+button:hover {
+  transform: scale(1.05);
 }
 
-.song{
-    text-align:center;
-    margin-top:20px;
+.msg {
+  padding: 12px;
+  margin: 10px auto;
+  width: 85%;
+  background: rgba(255,255,255,0.08);
+  border-radius: 12px;
+  animation: pop 0.4s ease;
+  text-align: left;
 }
 
-.song h2{
-    font-size:26px;
+.small {
+  font-size: 12px;
+  opacity: 0.7;
 }
 
-.song p{
-    color:#aaa;
+@keyframes pop {
+  from { transform: scale(0.6); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
 }
 
-canvas{
-    width:100%;
-    height:120px;
-    margin-top:25px;
-    border-radius:15px;
-    background:#000;
+/* 3D canvas */
+canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 0;
 }
-
-button{
-    width:100%;
-    margin-top:15px;
-    padding:15px;
-    border:none;
-    border-radius:15px;
-    background:#1db954;
-    color:white;
-    font-size:17px;
-    cursor:pointer;
-}
-
-button:hover{
-    opacity:0.9;
-}
-
-select{
-    width:100%;
-    margin-top:15px;
-    padding:12px;
-    border-radius:12px;
-    background:#222;
-    color:white;
-    border:none;
-}
-
-.links a{
-    display:block;
-    text-align:center;
-    margin-top:12px;
-    color:#1db954;
-    text-decoration:none;
-}
-
-.wave{
-    position:absolute;
-    width:500px;
-    height:500px;
-    background:radial-gradient(#1db95433, transparent);
-    border-radius:50%;
-    animation:pulse 2s infinite;
-    z-index:-1;
-}
-
-@keyframes pulse{
-    0%{
-        transform:scale(0.8);
-        opacity:0.5;
-    }
-    100%{
-        transform:scale(1.4);
-        opacity:0;
-    }
-}
-
 </style>
 </head>
 
 <body>
 
-<div class="wave"></div>
+<h1>⏳ Időkapszula 3D + Fekete Lyuk</h1>
 
-<div class="container">
-
-    <div class="title">
-        🎵 Neon Shazam
-    </div>
-
-    <div class="cover" id="cover"></div>
-
-    <div class="song">
-        <h2 id="title">No song</h2>
-        <p id="artist">Unknown artist</p>
-    </div>
-
-    <canvas id="visualizer"></canvas>
-
-    <button onclick="startRecognition()">
-        🎤 Start Recognition
-    </button>
-
-    <button onclick="openYouTube()">
-        ▶️ Open YouTube
-    </button>
-
-    <select onchange="changeLanguage(this.value)">
-        <option value="hu">🇭🇺 Magyar</option>
-        <option value="en">🇬🇧 English</option>
-    </select>
-
+<div class="glass">
+  <input id="msg" placeholder="Üzenet..." /><br>
+  <input id="date" type="datetime-local" /><br>
+  <input id="pass" placeholder="Jelszó (opcionális)" /><br>
+  <button onclick="send()">🚀 Elmentés</button>
 </div>
 
-<script>
+<h2 style="position:relative;z-index:10;">🌍 Világ fal + 3D univerzum</h2>
+<div id="list" style="position:relative;z-index:10;"></div>
 
-let currentSong = "Faded";
-let currentArtist = "Alan Walker";
+<!-- THREE + FIREBASE -->
+<script type="module">
+import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.161/build/three.module.js";
 
-function openYouTube(){
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import {
+  getDatabase, ref, push, set, onValue
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-    const query = currentArtist + " " + currentSong;
+// ---------------- FIREBASE ----------------
+const firebaseConfig = {
+  apiKey: "AIzaSyBgbixws2rf6VdqjQATVwZsKg0lgiqy0xI",
+  authDomain: "ordog-fizetes.firebaseapp.com",
+  databaseURL: "https://ordog-fizetes-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "ordog-fizetes",
+  storageBucket: "ordog-fizetes.firebasestorage.app",
+  messagingSenderId: "672089263660",
+  appId: "1:672089263660:web:3797a2fc935c63a0464b89"
+};
 
-    window.open(
-        `https://www.youtube.com/results?search_query=${query}`,
-        "_blank"
-    );
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
 
+// ---------------- 3D SCENE ----------------
+const scene = new THREE.Scene();
+
+const camera = new THREE.PerspectiveCamera(
+  75,
+  innerWidth / innerHeight,
+  0.1,
+  1000
+);
+
+camera.position.z = 45;
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(innerWidth, innerHeight);
+document.body.appendChild(renderer.domElement);
+
+// fény
+const light = new THREE.PointLight(0xffffff, 2);
+light.position.set(20, 20, 20);
+scene.add(light);
+
+// ---------------- CSILLAGOK ----------------
+function stars() {
+  const geo = new THREE.BufferGeometry();
+  const arr = [];
+
+  for (let i = 0; i < 1200; i++) {
+    arr.push((Math.random() - 0.5) * 250);
+    arr.push((Math.random() - 0.5) * 250);
+    arr.push((Math.random() - 0.5) * 250);
+  }
+
+  geo.setAttribute("position", new THREE.Float32BufferAttribute(arr, 3));
+
+  const mat = new THREE.PointsMaterial({ color: 0xffffff, size: 0.6 });
+
+  const points = new THREE.Points(geo, mat);
+  scene.add(points);
+}
+stars();
+
+// ---------------- FEKETE LYUK 🕳 ----------------
+const holeGeo = new THREE.SphereGeometry(4, 32, 32);
+const holeMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
+const blackHole = new THREE.Mesh(holeGeo, holeMat);
+scene.add(blackHole);
+
+// gyűrű glow
+const ringGeo = new THREE.RingGeometry(6, 9, 64);
+const ringMat = new THREE.MeshBasicMaterial({
+  color: 0x6c5ce7,
+  side: THREE.DoubleSide,
+  transparent: true,
+  opacity: 0.5
+});
+const ring = new THREE.Mesh(ringGeo, ringMat);
+ring.rotation.x = Math.PI / 2;
+scene.add(ring);
+
+// ---------------- KOCKÁK ----------------
+let cubes = [];
+
+function createCube(text) {
+  const geo = new THREE.BoxGeometry(3, 3, 3);
+  const mat = new THREE.MeshStandardMaterial({
+    color: 0x6c5ce7,
+    emissive: 0x120a2a
+  });
+
+  const cube = new THREE.Mesh(geo, mat);
+
+  cube.position.x = (Math.random() - 0.5) * 70;
+  cube.position.y = (Math.random() - 0.5) * 40;
+  cube.position.z = (Math.random() - 0.5) * 70;
+
+  cube.userData.text = text;
+
+  scene.add(cube);
+  cubes.push(cube);
 }
 
-async function startRecognition(){
+// ---------------- FIREBASE SEND ----------------
+window.send = function () {
+  const msg = document.getElementById("msg").value;
+  const date = document.getElementById("date").value;
+  const pass = document.getElementById("pass").value;
 
-    try{
+  const newRef = push(ref(db, "capsules"));
 
-        const stream =
-            await navigator.mediaDevices.getUserMedia({
-                audio:true
-            });
+  set(newRef, {
+    text: msg,
+    unlockTime: new Date(date).getTime(),
+    password: pass || null
+  });
 
-        alert("🎤 Listening...");
+  alert("🚀 Elmentve az időbe!");
+};
 
-        // AUDIO VISUALIZER
+// ---------------- LOAD ----------------
+const list = document.getElementById("list");
 
-        const audioContext = new AudioContext();
+function load() {
+  const dbRef = ref(db, "capsules");
 
-        const analyser =
-            audioContext.createAnalyser();
+  onValue(dbRef, (snap) => {
+    const data = snap.val();
 
-        const microphone =
-            audioContext.createMediaStreamSource(stream);
+    list.innerHTML = "";
 
-        microphone.connect(analyser);
+    cubes.forEach(c => scene.remove(c));
+    cubes = [];
 
-        analyser.fftSize = 256;
+    if (!data) return;
 
-        const canvas =
-            document.getElementById("visualizer");
+    const now = Date.now();
 
-        const ctx = canvas.getContext("2d");
+    for (let id in data) {
+      const item = data[id];
 
-        const bufferLength =
-            analyser.frequencyBinCount;
+      if (item.unlockTime <= now) {
 
-        const dataArray =
-            new Uint8Array(bufferLength);
+        const div = document.createElement("div");
+        div.className = "msg";
+        div.innerHTML = "📩 " + item.text;
+        list.appendChild(div);
 
-        function animate(){
-
-            requestAnimationFrame(animate);
-
-            analyser.getByteFrequencyData(dataArray);
-
-            ctx.clearRect(0,0,canvas.width,canvas.height);
-
-            let barWidth =
-                (canvas.width / bufferLength) * 2.5;
-
-            let x = 0;
-
-            for(let i=0;i<bufferLength;i++){
-
-                let barHeight = dataArray[i];
-
-                ctx.fillStyle =
-                    `rgb(${barHeight+100},255,180)`;
-
-                ctx.fillRect(
-                    x,
-                    canvas.height-barHeight/2,
-                    barWidth,
-                    barHeight
-                );
-
-                x += barWidth + 1;
-            }
-
-        }
-
-        animate();
-
-        // DEMO SHAZAM RESULT
-
-        setTimeout(()=>{
-
-            currentSong = "Faded";
-            currentArtist = "Alan Walker";
-
-            document.getElementById("title")
-                .innerText = currentSong;
-
-            document.getElementById("artist")
-                .innerText = currentArtist;
-
-            document.getElementById("cover")
-                .style.backgroundImage =
-                "url('https://i.scdn.co/image/ab67616d0000b273e0b60c608586d88252b8fbc4')";
-
-        },3000);
-
-    }catch(err){
-
-        alert("Microphone error!");
-
+        createCube(item.text);
+      }
     }
-
+  });
 }
 
-function changeLanguage(lang){
+load();
 
-    if(lang === "hu"){
+// ---------------- CLICK ----------------
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
 
-        document.querySelector("button")
-            .innerText = "🎤 Felismerés indítása";
+window.addEventListener("click", (e) => {
+  mouse.x = (e.clientX / innerWidth) * 2 - 1;
+  mouse.y = -(e.clientY / innerHeight) * 2 + 1;
 
-    }else{
+  raycaster.setFromCamera(mouse, camera);
 
-        document.querySelector("button")
-            .innerText = "🎤 Start Recognition";
+  const hits = raycaster.intersectObjects(cubes);
 
+  if (hits.length > 0) {
+    alert("📩 Üzenet:\n\n" + hits[0].object.userData.text);
+  }
+});
+
+// ---------------- ANIMATION (BLACK HOLE PHYSICS) ----------------
+function animate() {
+  requestAnimationFrame(animate);
+
+  const center = new THREE.Vector3(0, 0, 0);
+
+  cubes.forEach((c, i) => {
+
+    c.rotation.x += 0.01;
+    c.rotation.y += 0.01;
+
+    const dir = center.clone().sub(c.position);
+    const dist = dir.length();
+
+    dir.normalize();
+
+    const force = 0.03 / Math.max(dist * 0.4, 0.2);
+
+    c.position.add(dir.multiplyScalar(force));
+
+    c.position.x += Math.sin(Date.now() * 0.001 + i) * 0.01;
+    c.position.z += Math.cos(Date.now() * 0.001 + i) * 0.01;
+
+    if (dist < 4.5) {
+      scene.remove(c);
+      cubes = cubes.filter(x => x !== c);
     }
+  });
 
+  ring.rotation.z += 0.01;
+
+  renderer.render(scene, camera);
 }
 
+animate();
+
+// resize
+window.addEventListener("resize", () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
 </script>
 
 </body>
