@@ -2,7 +2,7 @@
 <html lang="hu">
 <head>
 <meta charset="UTF-8">
-<title>IG CLEAN V3 FIX</title>
+<title>IG STARTER FIX</title>
 
 <style>
 body {
@@ -19,7 +19,7 @@ header {
   border-bottom: 1px solid #333;
 }
 
-#authBox {
+#auth {
   max-width: 400px;
   margin: 50px auto;
   padding: 15px;
@@ -73,10 +73,9 @@ button {
 
 <body>
 
-<header>🔥 IG CLEAN V3 FIX</header>
+<header>🔥 IG STARTER FIX</header>
 
-<!-- AUTH -->
-<div id="authBox">
+<div id="auth">
   <input id="email" placeholder="Email">
   <input id="pass" type="password" placeholder="Password">
 
@@ -86,7 +85,6 @@ button {
   <p id="status"></p>
 </div>
 
-<!-- APP -->
 <div id="app">
 
   <div class="postBox">
@@ -118,7 +116,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBgbixws2rf6VdqjQATVwZsKg0lgiqy0x",
+  apiKey: "AIzaSyBgbixws2rf6VdqjQATVwZsKg0lgiqy0xI",
   authDomain: "ordog-fizetes.firebaseapp.com",
   databaseURL: "https://ordog-fizetes-default-rtdb.europe-west1.firebasedatabase.app",
   projectId: "ordog-fizetes",
@@ -140,11 +138,11 @@ document.getElementById("regBtn").onclick = async () => {
   try {
     await createUserWithEmailAndPassword(
       auth,
-      document.getElementById("email").value,
-      document.getElementById("pass").value
+      email.value,
+      pass.value
     );
   } catch (e) {
-    document.getElementById("status").innerText = e.message;
+    status.innerText = e.message;
   }
 };
 
@@ -155,11 +153,11 @@ document.getElementById("loginBtn").onclick = async () => {
   try {
     await signInWithEmailAndPassword(
       auth,
-      document.getElementById("email").value,
-      document.getElementById("pass").value
+      email.value,
+      pass.value
     );
   } catch (e) {
-    document.getElementById("status").innerText = e.message;
+    status.innerText = e.message;
   }
 };
 
@@ -170,13 +168,13 @@ onAuthStateChanged(auth, (u) => {
   user = u;
 
   if (user) {
-    document.getElementById("authBox").style.display = "none";
-    document.getElementById("app").style.display = "block";
+    auth.style.display = "none";
+    app.style.display = "block";
 
     loadFeed();
   } else {
-    document.getElementById("authBox").style.display = "block";
-    document.getElementById("app").style.display = "none";
+    auth.style.display = "block";
+    app.style.display = "none";
   }
 });
 
@@ -184,14 +182,11 @@ onAuthStateChanged(auth, (u) => {
 // 📤 POST
 //
 document.getElementById("postBtn").onclick = () => {
-  const img = document.getElementById("img").value;
-  const text = document.getElementById("text").value;
-
   const postRef = push(ref(db, "posts"));
 
   set(postRef, {
-    img,
-    text,
+    img: img.value,
+    text: text.value,
     user: user.email,
     time: Date.now()
   });
