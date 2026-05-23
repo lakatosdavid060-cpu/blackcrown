@@ -4,35 +4,42 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Family Locator PRO FIX</title>
+<title>Family Locator PRO MAX</title>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 
 <style>
 
-/* ===== MAP ===== */
+body{
+    margin:0;
+    font-family:Arial;
+    background:#050505;
+    overflow:hidden;
+}
+
+/* MAP */
 #map{
-    height:100vh;
-    width:100%;
     position:fixed;
     top:0;
     left:0;
+    width:100%;
+    height:100vh;
     z-index:1;
     filter:brightness(0.85) contrast(1.1);
 }
 
-/* ===== UI LAYER (IMPORTANT FIX) ===== */
+/* UI LAYER */
 .ui-layer{
     position:fixed;
     top:0;
     left:0;
-    z-index:999999;
     width:100%;
     height:100%;
+    z-index:999999;
     pointer-events:none;
 }
 
-/* ===== BUTTON ===== */
+/* FAB BUTTON */
 .fab{
     position:absolute;
     top:15px;
@@ -48,24 +55,19 @@
     pointer-events:auto;
 }
 
-/* ===== PANEL ===== */
+/* PANEL */
 .panel{
     position:absolute;
     top:80px;
     left:15px;
-    width:260px;
-
+    width:270px;
     background:rgba(20,20,20,0.92);
-    backdrop-filter: blur(15px);
-
+    backdrop-filter:blur(15px);
     padding:15px;
     border-radius:18px;
-
     box-shadow:0 0 25px rgba(0,255,153,0.2);
-
     transform:translateX(-120%);
-    transition:0.3s ease;
-
+    transition:0.3s;
     pointer-events:auto;
 }
 
@@ -87,8 +89,8 @@ button{
     margin-top:5px;
     border:none;
     border-radius:10px;
-    cursor:pointer;
     font-weight:bold;
+    cursor:pointer;
 }
 
 .start{background:#00ff99;}
@@ -102,8 +104,8 @@ button{
 
 .badge{
     font-size:12px;
-    margin-top:5px;
     color:#00ff99;
+    margin-top:5px;
 }
 
 /* SOS overlay */
@@ -159,6 +161,13 @@ import {
   onValue
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
+/* 🔔 (FCM optional – csak alap struktúra) */
+import {
+  getMessaging,
+  getToken
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js";
+
+/* FIREBASE */
 const firebaseConfig = {
   apiKey: "AIzaSyBgbixws2rf6VdqjQATVwZsKg0lgiqy0xI",
   authDomain: "ordog-fizetes.firebaseapp.com",
@@ -171,55 +180,81 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
+const messaging = getMessaging(app);
 
-/* ===== MAP (MODERN DARK) ===== */
-const map = L.map('map').setView([47.4979,19.0402], 12);
+/* MAP */
+const map = L.map('map').setView([47.4979,19.0402], 13);
 
 L.tileLayer(
-'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-{
-    attribution:'© CARTO'
+'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+).addTo(map);
+
+/* SAFE ZONE */
+const safeZone = {
+    lat: 47.4979,
+    lon: 19.0402,
+    radius: 150
+};
+
+L.circle([safeZone.lat, safeZone.lon], {
+    radius: safeZone.radius,
+    color:"#00ff99",
+    fillOpacity:0.1
 }).addTo(map);
 
+/* STATE */
 let username = "";
 let room = "";
 let lastPos = null;
 
 const markers = {};
 
-/* ===== UI TOGGLE ===== */
+/* UI */
 window.togglePanel = function(){
     document.getElementById("panel").classList.toggle("open");
 }
 
-/* ===== START ===== */
+/* SAFE CHECK */
+function checkZone(lat,lon){
+    const d = map.distance([lat,lon],[safeZone.lat,safeZone.lon]);
+    return d < safeZone.radius ? "inside" : "outside";
+}
+
+/* START */
 window.start = function(){
 
     username = document.getElementById("name").value;
     room = document.getElementById("room").value;
 
     if(!username || !room){
-        alert("Adj meg adatokat!");
+        alert("Adj meg adatokat");
         return;
     }
 
     document.getElementById("status").innerText = "Online 🟢";
 
     /* BATTERY */
-    navigator.getBattery?.().then(battery => {
+    navigator.getBattery?.().then(b => {
 
         setInterval(()=>{
 
             document.getElementById("battery").innerText =
-                "🔋 " + Math.round(battery.level*100) + "%";
-
-            update(ref(db, `rooms/${room}/users/${username}`),{
-                battery: battery.level*100
-            });
+                "🔋 " + Math.round(b.level*100) + "%";
 
         },5000);
 
     });
+
+    /* PUSH TOKEN (optional) */
+    getToken(messaging, {
+        vapidKey: "VAPID_KEY_HERE"
+    }).then(token => {
+
+        set(ref(db, `rooms/${room}/tokens/${username}`),{
+            token
+        });
+
+    }).catch(()=>{});
 
     /* GPS */
     navigator.geolocation.watchPosition(pos => {
@@ -230,10 +265,13 @@ window.start = function(){
 
         lastPos = {lat, lon};
 
+        const zone = checkZone(lat,lon);
+
         set(ref(db, `rooms/${room}/users/${username}`),{
             lat,
             lon,
             speed,
+            zone,
             online:true,
             lastSeen:Date.now(),
             sos:false
@@ -245,8 +283,8 @@ window.start = function(){
 
 };
 
-/* ===== REALTIME USERS ===== */
-onValue(ref(db, "rooms"), snap => {
+/* REALTIME MAP */
+onValue(ref(db,"rooms"), snap => {
 
     const rooms = snap.val();
     if(!rooms) return;
@@ -263,10 +301,8 @@ onValue(ref(db, "rooms"), snap => {
             if(!d.lat || !d.lon) return;
 
             if(markers[key]){
-
                 markers[key].setLatLng([d.lat,d.lon]);
-
-            }else{
+            } else {
 
                 markers[key] = L.circleMarker([d.lat,d.lon],{
                     radius:8,
@@ -275,10 +311,9 @@ onValue(ref(db, "rooms"), snap => {
                 .bindPopup(`
                     <b>${u}</b><br>
                     🚗 ${d.speed?.toFixed(1) || 0} km/h<br>
-                    🔋 ${d.battery || "--"}%<br>
+                    🏠 ${d.zone || "?"}<br>
                     ${d.sos ? "🚨 SOS" : ""}
                 `);
-
             }
 
             if(d.sos){
@@ -291,7 +326,7 @@ onValue(ref(db, "rooms"), snap => {
 
 });
 
-/* ===== SOS ===== */
+/* SOS */
 window.sos = function(){
 
     if(!username || !room) return;
