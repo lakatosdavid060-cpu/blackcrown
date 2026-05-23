@@ -4,46 +4,48 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Family Locator PRO MAX</title>
+<title>Family Locator PRO FIX</title>
 
-<link rel="manifest" href="manifest.json">
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 
 <style>
 
-/* ===== BASE ===== */
-body{
-    margin:0;
-    font-family:Arial;
-    background:#050505;
-    overflow:hidden;
-}
-
-/* ===== MAP DARK MODE ===== */
+/* ===== MAP ===== */
 #map{
     height:100vh;
     width:100%;
+    position:fixed;
+    top:0;
+    left:0;
+    z-index:1;
     filter:brightness(0.85) contrast(1.1);
 }
 
-/* ===== FLOAT BUTTON ===== */
+/* ===== UI LAYER (IMPORTANT FIX) ===== */
+.ui-layer{
+    position:fixed;
+    top:0;
+    left:0;
+    z-index:999999;
+    width:100%;
+    height:100%;
+    pointer-events:none;
+}
+
+/* ===== BUTTON ===== */
 .fab{
     position:absolute;
     top:15px;
     left:15px;
-    z-index:1001;
-
     width:55px;
     height:55px;
     border-radius:50%;
     border:none;
-
     background:#00ff99;
-    color:black;
     font-size:22px;
-
     box-shadow:0 0 20px #00ff99aa;
     cursor:pointer;
+    pointer-events:auto;
 }
 
 /* ===== PANEL ===== */
@@ -51,19 +53,20 @@ body{
     position:absolute;
     top:80px;
     left:15px;
-    z-index:1000;
-
     width:260px;
-    padding:15px;
 
-    background:rgba(20,20,20,0.9);
+    background:rgba(20,20,20,0.92);
     backdrop-filter: blur(15px);
 
+    padding:15px;
     border-radius:18px;
+
     box-shadow:0 0 25px rgba(0,255,153,0.2);
 
     transform:translateX(-120%);
     transition:0.3s ease;
+
+    pointer-events:auto;
 }
 
 .panel.open{
@@ -105,14 +108,14 @@ button{
 
 /* SOS overlay */
 .sos-alert{
-    position:absolute;
+    position:fixed;
     top:0;
     left:0;
     width:100%;
     height:100%;
-    background:rgba(255,0,0,0.3);
+    background:rgba(255,0,0,0.25);
     display:none;
-    z-index:2000;
+    z-index:1000000;
 }
 
 </style>
@@ -122,18 +125,22 @@ button{
 
 <div class="sos-alert" id="sosAlert"></div>
 
-<button class="fab" onclick="togglePanel()">☰</button>
+<div class="ui-layer">
 
-<div class="panel" id="panel">
+    <button class="fab" onclick="togglePanel()">☰</button>
 
-    <input id="name" placeholder="Név">
-    <input id="room" placeholder="Család ID">
+    <div class="panel" id="panel">
 
-    <button class="start" onclick="start()">Start tracking</button>
-    <button class="sos" onclick="sos()">🚨 SOS</button>
+        <input id="name" placeholder="Név">
+        <input id="room" placeholder="Család ID">
 
-    <div class="status" id="status">Offline</div>
-    <div class="badge" id="battery">🔋 --%</div>
+        <button class="start" onclick="start()">Start tracking</button>
+        <button class="sos" onclick="sos()">🚨 SOS</button>
+
+        <div class="status" id="status">Offline</div>
+        <div class="badge" id="battery">🔋 --%</div>
+
+    </div>
 
 </div>
 
@@ -165,10 +172,8 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-/* ===== MODERN MAP ===== */
-const map = L.map('map', {
-    zoomControl:false
-}).setView([47.4979, 19.0402], 13);
+/* ===== MAP (MODERN DARK) ===== */
+const map = L.map('map').setView([47.4979,19.0402], 12);
 
 L.tileLayer(
 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
@@ -182,19 +187,20 @@ let lastPos = null;
 
 const markers = {};
 
-/* ===== PANEL TOGGLE ===== */
+/* ===== UI TOGGLE ===== */
 window.togglePanel = function(){
     document.getElementById("panel").classList.toggle("open");
 }
 
-/* ===== START TRACKING ===== */
+/* ===== START ===== */
 window.start = function(){
 
     username = document.getElementById("name").value;
     room = document.getElementById("room").value;
 
     if(!username || !room){
-        return alert("Add meg az adatokat!");
+        alert("Adj meg adatokat!");
+        return;
     }
 
     document.getElementById("status").innerText = "Online 🟢";
@@ -215,7 +221,7 @@ window.start = function(){
 
     });
 
-    /* GPS TRACKING */
+    /* GPS */
     navigator.geolocation.watchPosition(pos => {
 
         const lat = pos.coords.latitude;
@@ -230,7 +236,6 @@ window.start = function(){
             speed,
             online:true,
             lastSeen:Date.now(),
-            route:true,
             sos:false
         });
 
@@ -238,9 +243,9 @@ window.start = function(){
         enableHighAccuracy:true
     });
 
-}
+};
 
-/* ===== REALTIME MAP ===== */
+/* ===== REALTIME USERS ===== */
 onValue(ref(db, "rooms"), snap => {
 
     const rooms = snap.val();
@@ -271,12 +276,11 @@ onValue(ref(db, "rooms"), snap => {
                     <b>${u}</b><br>
                     🚗 ${d.speed?.toFixed(1) || 0} km/h<br>
                     🔋 ${d.battery || "--"}%<br>
-                    ${d.sos ? "🚨 SOS ACTIVE" : ""}
+                    ${d.sos ? "🚨 SOS" : ""}
                 `);
 
             }
 
-            /* SOS VISUAL */
             if(d.sos){
                 document.getElementById("sosAlert").style.display="block";
             }
@@ -298,7 +302,7 @@ window.sos = function(){
     });
 
     alert("🚨 SOS elküldve!");
-}
+};
 
 </script>
 
