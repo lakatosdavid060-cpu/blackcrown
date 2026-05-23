@@ -2,107 +2,113 @@
 <html lang="hu">
 <head>
 <meta charset="UTF-8">
-<title>🌌 Cyberpunk OS 16.0</title>
+<title>🔥 Pro Insta</title>
 
 <style>
 body {
   margin: 0;
-  overflow: hidden;
   font-family: Arial;
-  background: black;
+  background: #0f0f1a;
   color: white;
 }
 
-#ui {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  width: 260px;
-  padding: 10px;
-  z-index: 10;
-  background: rgba(0,0,0,0.6);
-  border: 1px solid rgba(0,255,255,0.3);
-  border-radius: 10px;
+header {
+  padding: 15px;
+  text-align: center;
+  background: #111;
+  border-bottom: 1px solid #333;
 }
 
-#log {
-  position: absolute;
-  bottom: 10px;
-  left: 10px;
-  width: 300px;
-  height: 180px;
-  overflow-y: auto;
-  z-index: 10;
-  background: rgba(0,0,0,0.5);
-  border: 1px solid rgba(0,255,255,0.3);
+#loginBox, #uploadBox {
+  max-width: 500px;
+  margin: 15px auto;
+  padding: 15px;
+  background: rgba(255,255,255,0.05);
   border-radius: 10px;
-  padding: 10px;
-  font-size: 12px;
-}
-
-#inventory {
-  position: absolute;
-  right: 10px;
-  top: 10px;
-  width: 220px;
-  height: 90vh;
-  overflow-y: auto;
-  z-index: 10;
-  background: rgba(0,0,0,0.5);
-  border: 1px solid rgba(255,0,255,0.3);
-  border-radius: 10px;
-  padding: 10px;
 }
 
 input, button {
   width: 100%;
-  margin: 5px 0;
-  padding: 8px;
-  border-radius: 6px;
+  padding: 10px;
+  margin-top: 8px;
+  border-radius: 8px;
   border: none;
 }
 
 button {
-  background: linear-gradient(90deg,#6c5ce7,#00f5ff);
-  color: white;
   cursor: pointer;
+  background: #ff2d55;
+  color: white;
 }
 
-canvas { display:block; }
+.post {
+  max-width: 500px;
+  margin: 15px auto;
+  background: #1a1a2a;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid #333;
+}
+
+.post img {
+  width: 100%;
+}
+
+.postContent {
+  padding: 10px;
+}
+
+.likeBtn {
+  background: #222;
+  margin-top: 10px;
+}
 </style>
 </head>
 
 <body>
 
-<div id="ui">
-  <input id="msg" placeholder="Kapszula..." />
-  <button onclick="spawn()">📦 Spawn</button>
-  <button onclick="emitSound()">🔊 Ping</button>
+<header>🔥 PRO INSTA</header>
+
+<div id="loginBox">
+  <button onclick="login()">🔐 Login Google-fiókkal</button>
 </div>
 
-<div id="log"></div>
-
-<div id="inventory">
-  <b>🎒 Inventory</b>
-  <div id="inv"></div>
+<div id="uploadBox" style="display:none;">
+  <input type="file" id="file" />
+  <input id="text" placeholder="Írj valamit..." />
+  <button onclick="upload()">📤 Poszt</button>
 </div>
+
+<div id="feed"></div>
 
 <script type="module">
 
-import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.161/build/three.module.js";
-
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import {
+  getAuth,
+  GoogleAuthProvider,
+  signInWithPopup,
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
 import {
   getDatabase,
   ref,
   push,
   set,
-  onValue
+  onValue,
+  update
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-// ---------------- FIREBASE ----------------
+import {
+  getStorage,
+  ref as sRef,
+  uploadBytes,
+  getDownloadURL
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
+
 const firebaseConfig = {
-  apiKey: "AIzaSyBgbixws2rf6VdqjQATVvZsKg0lgiqy0xI",
+  apiKey: "AIzaSyB...",
   authDomain: "ordog-fizetes.firebaseapp.com",
   databaseURL: "https://ordog-fizetes-default-rtdb.europe-west1.firebasedatabase.app",
   projectId: "ordog-fizetes",
@@ -112,157 +118,87 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
 const db = getDatabase(app);
+const storage = getStorage(app);
 
-// ---------------- SCENE ----------------
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x000010);
+let user = null;
 
-const camera = new THREE.PerspectiveCamera(75, innerWidth/innerHeight, 0.1, 1000);
-camera.position.set(0,10,50);
-
-const renderer = new THREE.WebGLRenderer({ antialias:true });
-renderer.setSize(innerWidth,innerHeight);
-document.body.appendChild(renderer.domElement);
-
-scene.add(new THREE.AmbientLight(0xffffff,1));
-
-// ---------------- WORLD ----------------
-const core = new THREE.Mesh(
-  new THREE.SphereGeometry(5,32,32),
-  new THREE.MeshBasicMaterial({ color:0x000000 })
-);
-scene.add(core);
-
-// ---------------- STATE ----------------
-let capsules = [];
-let inventory = [];
-let players = {};
-
-// ---------------- UI ----------------
-function log(msg){
-  const l = document.getElementById("log");
-  const d = document.createElement("div");
-  d.innerText = "🔊 " + msg;
-  l.appendChild(d);
-  l.scrollTop = l.scrollHeight;
-}
-
-// ---------------- CAPSULES ----------------
-function syncCapsules(){
-  onValue(ref(db,"world/capsules"),(snap)=>{
-    const data = snap.val();
-
-    capsules.forEach(c=>scene.remove(c));
-    capsules = [];
-
-    if(!data) return;
-
-    for(let id in data){
-      const d = data[id];
-
-      const m = new THREE.Mesh(
-        new THREE.IcosahedronGeometry(2.5,0),
-        new THREE.MeshStandardMaterial({
-          color:0x00f5ff,
-          emissive:0x001122
-        })
-      );
-
-      m.position.set(d.x,d.y,d.z);
-      m.userData.text = d.text;
-
-      scene.add(m);
-      capsules.push(m);
-    }
-  });
-}
-
-syncCapsules();
-
-// ---------------- SPAWN ----------------
-window.spawn = function(){
-  const msg = document.getElementById("msg").value;
-
-  push(ref(db,"world/capsules"),{
-    text: msg,
-    x:(Math.random()-0.5)*80,
-    y:(Math.random()-0.5)*40,
-    z:(Math.random()-0.5)*80
-  });
-
-  log("Capsule spawned");
+// 🔐 LOGIN
+window.login = function () {
+  const provider = new GoogleAuthProvider();
+  signInWithPopup(auth, provider);
 };
 
-// ---------------- AUDIO SIM (PROXIMITY FEEL) ----------------
-function emitSound(){
-  log("PING event emitted (world-wide)");
-}
-
-// ---------------- PICKUP ----------------
-const ray = new THREE.Raycaster();
-const mouse = new THREE.Vector2();
-
-window.addEventListener("click",(e)=>{
-
-  mouse.x = (e.clientX/innerWidth)*2-1;
-  mouse.y = -(e.clientY/innerHeight)*2+1;
-
-  ray.setFromCamera(mouse,camera);
-
-  const hits = ray.intersectObjects(capsules);
-
-  if(hits.length){
-    const obj = hits[0].object;
-
-    inventory.push(obj.userData.text);
-    document.getElementById("inv").innerHTML =
-      inventory.map(i=>"📦 "+i).join("<br>");
-
-    log("Pickup: " + obj.userData.text);
-
-    scene.remove(obj);
+onAuthStateChanged(auth, (u) => {
+  if (u) {
+    user = u;
+    document.getElementById("uploadBox").style.display = "block";
+    document.getElementById("loginBox").style.display = "none";
   }
 });
 
-// ---------------- BLACK HOLE + SOUND ZONE ----------------
-const center = new THREE.Vector3();
+// 📤 UPLOAD POST
+window.upload = async function () {
+  const file = document.getElementById("file").files[0];
+  const text = document.getElementById("text").value;
 
-function animate(){
-  requestAnimationFrame(animate);
+  if (!file || !text) return;
 
-  capsules.forEach(c=>{
-    const dist = c.position.length();
+  const storageRef = sRef(storage, "posts/" + Date.now());
 
-    const dir = center.clone().sub(c.position);
-    c.position.add(dir.normalize().multiplyScalar(0.006));
+  await uploadBytes(storageRef, file);
+  const url = await getDownloadURL(storageRef);
 
-    // 🔊 proximity simulation
-    if(dist < 10){
-      c.material.emissiveIntensity = 2;
-    } else {
-      c.material.emissiveIntensity = 0.5;
-    }
+  const newRef = push(ref(db, "posts"));
+
+  set(newRef, {
+    img: url,
+    text,
+    likes: 0,
+    user: user.displayName,
+    time: Date.now()
   });
 
-  core.scale.set(
-    1 + Math.sin(Date.now()*0.001)*0.1,
-    1 + Math.sin(Date.now()*0.001)*0.1,
-    1 + Math.sin(Date.now()*0.001)*0.1
-  );
+  document.getElementById("text").value = "";
+};
 
-  renderer.render(scene,camera);
+// ❤️ LIKE
+window.like = function(id, likes) {
+  update(ref(db, "posts/" + id), {
+    likes: likes + 1
+  });
+};
+
+// 📡 FEED
+function render(data) {
+  const feed = document.getElementById("feed");
+  feed.innerHTML = "";
+
+  const posts = Object.entries(data || {}).reverse();
+
+  for (let [id, p] of posts) {
+    const div = document.createElement("div");
+    div.className = "post";
+
+    div.innerHTML = `
+      <img src="${p.img}" />
+      <div class="postContent">
+        <b>👤 ${p.user}</b><br>
+        ${p.text}
+        <button class="likeBtn" onclick="like('${id}', ${p.likes})">
+          ❤️ Like (${p.likes})
+        </button>
+      </div>
+    `;
+
+    feed.appendChild(div);
+  }
 }
 
-animate();
-
-// resize
-window.addEventListener("resize",()=>{
-  camera.aspect = innerWidth/innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(innerWidth,innerHeight);
+onValue(ref(db, "posts"), (snap) => {
+  render(snap.val());
 });
-
 </script>
 
 </body>
