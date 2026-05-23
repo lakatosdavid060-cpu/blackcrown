@@ -2,7 +2,7 @@
 <html lang="hu">
 <head>
 <meta charset="UTF-8">
-<title>🌐 Cyberpunk OS 13.0</title>
+<title>🌌 Cyberpunk OS 15.0</title>
 
 <style>
 body {
@@ -23,35 +23,31 @@ body {
   background: rgba(0,0,0,0.6);
   border: 1px solid rgba(0,255,255,0.3);
   border-radius: 10px;
-  backdrop-filter: blur(10px);
-}
-
-#events {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  width: 220px;
-  height: 300px;
-  overflow-y: auto;
-  z-index: 10;
-  background: rgba(0,0,0,0.5);
-  border: 1px solid rgba(255,0,255,0.3);
-  border-radius: 10px;
-  padding: 10px;
 }
 
 #inventory {
   position: absolute;
   right: 10px;
-  bottom: 10px;
+  top: 10px;
   width: 220px;
-  height: 40vh;
+  height: 90vh;
   overflow-y: auto;
+  padding: 10px;
   z-index: 10;
   background: rgba(0,0,0,0.5);
-  border: 1px solid rgba(255,255,0,0.2);
+  border: 1px solid rgba(255,0,255,0.3);
   border-radius: 10px;
+}
+
+#quest {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
   padding: 10px;
+  background: rgba(0,0,0,0.6);
+  border: 1px solid rgba(255,255,0,0.3);
+  border-radius: 10px;
+  z-index: 10;
 }
 
 input, button {
@@ -68,12 +64,6 @@ button {
   cursor: pointer;
 }
 
-.msg {
-  font-size: 12px;
-  margin: 4px 0;
-  opacity: 0.9;
-}
-
 canvas { display:block; }
 </style>
 </head>
@@ -81,16 +71,18 @@ canvas { display:block; }
 <body>
 
 <div id="ui">
-  <input id="msg" placeholder="Spawn kapszula..." />
+  <input id="msg" placeholder="Kapszula..." />
   <button onclick="spawn()">📦 Spawn</button>
-  <button onclick="triggerEvent()">⚡ Event</button>
+  <button onclick="teleport()">🪐 Dimenzió</button>
 </div>
-
-<div id="events"></div>
 
 <div id="inventory">
   <b>🎒 Inventory</b>
   <div id="inv"></div>
+</div>
+
+<div id="quest">
+  <b>📜 Quest:</b> <span id="qtext"></span>
 </div>
 
 <script type="module">
@@ -125,7 +117,13 @@ const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x000010);
 
 const camera = new THREE.PerspectiveCamera(75, innerWidth/innerHeight, 0.1, 1000);
-camera.position.set(0,10,50);
+
+// PLAYER (camera rig)
+const player = new THREE.Object3D();
+player.position.set(0,5,30);
+scene.add(player);
+
+player.add(camera);
 
 const renderer = new THREE.WebGLRenderer({ antialias:true });
 renderer.setSize(innerWidth,innerHeight);
@@ -133,7 +131,16 @@ document.body.appendChild(renderer.domElement);
 
 scene.add(new THREE.AmbientLight(0xffffff,1));
 
-// ---------------- WORLD CORE ----------------
+// ---------------- DIMENSIONS ----------------
+const dims = [
+  { x:0, color:0x00f5ff },
+  { x:160, color:0x6c5ce7 },
+  { x:-160, color:0xff00ff }
+];
+
+let dim = 0;
+
+// ---------------- BLACK HOLE ----------------
 const core = new THREE.Mesh(
   new THREE.SphereGeometry(5,32,32),
   new THREE.MeshBasicMaterial({ color:0x000000 })
@@ -143,12 +150,30 @@ scene.add(core);
 // ---------------- STATE ----------------
 let capsules = [];
 let inventory = [];
-let players = {};
+let keys = {};
+
+// ---------------- QUEST ----------------
+let questIndex = 0;
+const quests = [
+  "Gyűjts 1 kapszulát",
+  "Mozogj a világban",
+  "Gyűjts 3 kapszulát",
+  "Éld túl a fekete lyukat"
+];
+
+function updateQuest(){
+  document.getElementById("qtext").innerText = quests[questIndex];
+}
 
 // ---------------- INVENTORY ----------------
 function updateInv(){
   document.getElementById("inv").innerHTML =
     inventory.map(i=>"📦 "+i).join("<br>");
+
+  if(questIndex===0 && inventory.length>=1) questIndex++;
+  if(questIndex===2 && inventory.length>=3) questIndex++;
+
+  updateQuest();
 }
 
 // ---------------- CAPSULES ----------------
@@ -167,7 +192,7 @@ function syncCapsules(){
       const m = new THREE.Mesh(
         new THREE.IcosahedronGeometry(2.5,0),
         new THREE.MeshStandardMaterial({
-          color:0x00f5ff,
+          color:dims[dim].color,
           emissive:0x001122
         })
       );
@@ -195,43 +220,24 @@ window.spawn = function(){
   });
 };
 
-// ---------------- QUEST / EVENTS ----------------
-const eventBox = document.getElementById("events");
-
-function addEvent(text){
-  const div = document.createElement("div");
-  div.className = "msg";
-  div.innerText = "⚡ " + text;
-  eventBox.appendChild(div);
-}
-
-window.triggerEvent = function(){
-  const events = [
-    "Gravitáció növekedett!",
-    "Új kapszula hullám érkezik!",
-    "Black hole aktiválódott!",
-    "Universe glitch event!"
-  ];
-
-  const e = events[Math.floor(Math.random()*events.length)];
-
-  push(ref(db,"world/events"),{
-    text:e,
-    t:Date.now()
-  });
+// ---------------- DIMENSION SWITCH ----------------
+window.teleport = function(){
+  dim = (dim+1)%dims.length;
+  player.position.x = dims[dim].x;
 };
 
-// ---------------- EVENT SYNC ----------------
-onValue(ref(db,"world/events"),(snap)=>{
-  const data = snap.val();
-  if(!data) return;
+// ---------------- MOVEMENT ----------------
+window.addEventListener("keydown",(e)=>keys[e.key.toLowerCase()] = true);
+window.addEventListener("keyup",(e)=>keys[e.key.toLowerCase()] = false);
 
-  eventBox.innerHTML = "";
+function movePlayer(){
+  const speed = 0.6;
 
-  for(let id in data){
-    addEvent(data[id].text);
-  }
-});
+  if(keys["w"]) player.position.z -= speed;
+  if(keys["s"]) player.position.z += speed;
+  if(keys["a"]) player.position.x -= speed;
+  if(keys["d"]) player.position.x += speed;
+}
 
 // ---------------- PICKUP ----------------
 const ray = new THREE.Raycaster();
@@ -259,19 +265,27 @@ window.addEventListener("click",(e)=>{
 // ---------------- BLACK HOLE ----------------
 const center = new THREE.Vector3();
 
+function blackHole(){
+  capsules.forEach(c=>{
+    const dir = center.clone().sub(c.position);
+    c.position.add(dir.normalize().multiplyScalar(0.006));
+  });
+}
+
+// ---------------- LOOP ----------------
 function animate(){
   requestAnimationFrame(animate);
 
-  capsules.forEach(c=>{
-    const dir = center.clone().sub(c.position);
-    c.position.add(dir.normalize().multiplyScalar(0.008));
-  });
+  movePlayer();
+  blackHole();
 
   core.scale.set(
     1 + Math.sin(Date.now()*0.001)*0.1,
     1 + Math.sin(Date.now()*0.001)*0.1,
     1 + Math.sin(Date.now()*0.001)*0.1
   );
+
+  updateQuest();
 
   renderer.render(scene,camera);
 }
@@ -284,6 +298,8 @@ window.addEventListener("resize",()=>{
   camera.updateProjectionMatrix();
   renderer.setSize(innerWidth,innerHeight);
 });
+
+updateQuest();
 
 </script>
 
