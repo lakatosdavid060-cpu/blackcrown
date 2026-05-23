@@ -2,7 +2,7 @@
 <html lang="hu">
 <head>
 <meta charset="UTF-8">
-<title>⏳ Időkapszula 3D FIX</title>
+<title>⏳ Időkapszula PRO 3D</title>
 
 <style>
 body {
@@ -19,6 +19,8 @@ h1 {
   width: 100%;
   text-align: center;
   z-index: 10;
+  font-size: 18px;
+  opacity: 0.8;
 }
 
 canvas {
@@ -31,10 +33,31 @@ canvas {
 
 <body>
 
-<h1>⏳ Időkapszula 3D (FIX VERZIÓ)</h1>
+<h1>⏳ IDŐKAPSZULA PRO — 3D BLACK HOLE</h1>
 
 <script type="module">
 import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.161/build/three.module.js";
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import {
+  getDatabase,
+  ref,
+  onValue
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+// ---------------- FIREBASE ----------------
+const firebaseConfig = {
+  apiKey: "AIzaSyBgbixws2rf6VdqjQATVwZsKg0lgiqy0xI",
+  authDomain: "ordog-fizetes.firebaseapp.com",
+  databaseURL: "https://ordog-fizetes-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "ordog-fizetes",
+  storageBucket: "ordog-fizetes.firebasestorage.app",
+  messagingSenderId: "672089263660",
+  appId: "1:672089263660:web:3797a2fc935c63a0464b89"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
 
 // ---------------- SCENE ----------------
 const scene = new THREE.Scene();
@@ -64,7 +87,7 @@ const blackHole = new THREE.Mesh(
 );
 scene.add(blackHole);
 
-// glow ring
+// ring
 const ring = new THREE.Mesh(
   new THREE.RingGeometry(6, 9, 64),
   new THREE.MeshBasicMaterial({
@@ -77,7 +100,7 @@ const ring = new THREE.Mesh(
 ring.rotation.x = Math.PI / 2;
 scene.add(ring);
 
-// ---------------- CUBES ----------------
+// ---------------- OBJECTS ----------------
 let cubes = [];
 
 function createCube(text) {
@@ -91,60 +114,4 @@ function createCube(text) {
 
   cube.position.x = (Math.random() - 0.5) * 60;
   cube.position.y = (Math.random() - 0.5) * 40;
-  cube.position.z = (Math.random() - 0.5) * 60;
-
-  cube.userData.text = text;
-
-  scene.add(cube);
-  cubes.push(cube);
-}
-
-// ---------------- DEBUG (EZ FONTOS!) ----------------
-createCube("🚀 RENDSZER FUT");
-createCube("🧠 3D OK");
-createCube("🕳 BLACK HOLE AKTÍV");
-
-// ---------------- ANIMATION ----------------
-function animate() {
-  requestAnimationFrame(animate);
-
-  const center = new THREE.Vector3(0, 0, 0);
-
-  cubes.forEach((c) => {
-
-    c.rotation.x += 0.01;
-    c.rotation.y += 0.01;
-
-    const dir = center.clone().sub(c.position);
-    const dist = dir.length();
-
-    dir.normalize();
-
-    const force = 0.02 / Math.max(dist * 0.6, 0.2);
-
-    c.position.add(dir.multiplyScalar(force));
-
-    // ha beleér a fekete lyukba → eltűnik
-    if (dist < 4) {
-      scene.remove(c);
-      cubes = cubes.filter(x => x !== c);
-    }
-  });
-
-  ring.rotation.z += 0.008;
-
-  renderer.render(scene, camera);
-}
-
-animate();
-
-// ---------------- RESIZE FIX ----------------
-window.addEventListener("resize", () => {
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-});
-</script>
-
-</body>
-</html>
+  cube.position.z = (Math.random() - 0.5)
