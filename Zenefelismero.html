@@ -2,7 +2,7 @@
 <html lang="hu">
 <head>
 <meta charset="UTF-8">
-<title>🔥 IG CLONE V2</title>
+<title>🔥 IG CLONE V2 EMAIL</title>
 
 <style>
 body {
@@ -19,7 +19,7 @@ header {
   border-bottom: 1px solid #333;
 }
 
-#auth, #uploadBox, #profile {
+.box {
   max-width: 500px;
   margin: 10px auto;
   padding: 12px;
@@ -58,43 +58,42 @@ button {
   padding: 10px;
 }
 
-.small {
-  font-size: 12px;
-  opacity: 0.7;
-}
-
-.likeBtn, .followBtn {
+.likeBtn {
   background: #222;
-  margin-top: 8px;
-}
-
-.comment {
-  font-size: 13px;
-  margin-top: 5px;
-  opacity: 0.9;
+  margin-top: 10px;
 }
 </style>
 </head>
 
 <body>
 
-<header>🔥 IG CLONE V2</header>
+<header>🔥 IG CLONE V2 (EMAIL AUTH)</header>
 
-<div id="auth">
-  <button onclick="login()">🔐 Google Login</button>
+<!-- AUTH -->
+<div class="box" id="authBox">
+  <h3>🔐 Regisztráció / Login</h3>
+
+  <input id="email" placeholder="Email" />
+  <input id="password" type="password" placeholder="Jelszó" />
+
+  <button onclick="register()">🆕 Regisztráció</button>
+  <button onclick="login()">🔑 Belépés</button>
 </div>
 
-<div id="profile" style="display:none;">
-  <div id="userInfo"></div>
-  <button onclick="toggleFollowMode()">👥 Follow mód</button>
+<!-- APP -->
+<div class="box" id="appBox" style="display:none;">
+  <h3>✔ Bejelentkezve</h3>
+  <button onclick="logout()">🚪 Kilépés</button>
 </div>
 
-<div id="uploadBox" style="display:none;">
-  <input type="file" id="file" />
-  <input id="text" placeholder="Caption..." />
-  <button onclick="upload()">📤 Post</button>
+<!-- POST -->
+<div class="box" id="postBox" style="display:none;">
+  <input id="img" placeholder="Kép URL (https://...)" />
+  <input id="text" placeholder="Szöveg..." />
+  <button onclick="upload()">📤 Poszt</button>
 </div>
 
+<!-- FEED -->
 <div id="feed"></div>
 
 <script type="module">
@@ -103,8 +102,9 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebas
 
 import {
   getAuth,
-  GoogleAuthProvider,
-  signInWithPopup,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut,
   onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
@@ -114,87 +114,95 @@ import {
   push,
   set,
   onValue,
-  update,
-  get
+  update
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-import {
-  getStorage,
-  ref as sRef,
-  uploadBytes,
-  getDownloadURL
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
-
 const firebaseConfig = {
-  apiKey: "AIzaSyBgbixws2rf6VdqjQATVvZsKg0lgiqy0xI",
-  authDomain: "ordog-fizetes.firebaseapp.com",
-  databaseURL: "https://ordog-fizetes-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "ordog-fizetes",
-  storageBucket: "ordog-fizetes.firebasestorage.app",
-  messagingSenderId: "672089263660",
-  appId: "1:672089263660:web:3797a2fc935c63a0464b89"
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_AUTH_DOMAIN",
+  databaseURL: "YOUR_DB_URL",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_STORAGE",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
 };
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getDatabase(app);
-const storage = getStorage(app);
 
 let user = null;
-let followMode = false;
 
 //
-// 🔐 LOGIN
+// 🔐 REG
 //
-window.login = async function () {
-  const provider = new GoogleAuthProvider();
-  await signInWithPopup(auth, provider);
+window.register = async function () {
+  const email = emailInput();
+  const pass = passInput();
+
+  try {
+    await createUserWithEmailAndPassword(auth, email, pass);
+  } catch (e) {
+    alert("Reg hiba: " + e.message);
+  }
 };
 
 //
-// 👤 AUTH
+// 🔑 LOGIN
+//
+window.login = async function () {
+  const email = emailInput();
+  const pass = passInput();
+
+  try {
+    await signInWithEmailAndPassword(auth, email, pass);
+  } catch (e) {
+    alert("Login hiba: " + e.message);
+  }
+};
+
+//
+// 🚪 LOGOUT
+//
+window.logout = function () {
+  signOut(auth);
+};
+
+//
+// 👤 AUTH STATE
 //
 onAuthStateChanged(auth, (u) => {
-  if (!u) return;
-
   user = u;
 
-  document.getElementById("auth").style.display = "none";
-  document.getElementById("uploadBox").style.display = "block";
-  document.getElementById("profile").style.display = "block";
-
-  document.getElementById("userInfo").innerHTML =
-    "👤 " + u.displayName;
-
-  loadFeed();
+  if (u) {
+    document.getElementById("authBox").style.display = "none";
+    document.getElementById("appBox").style.display = "block";
+    document.getElementById("postBox").style.display = "block";
+  } else {
+    document.getElementById("authBox").style.display = "block";
+    document.getElementById("appBox").style.display = "none";
+    document.getElementById("postBox").style.display = "none";
+  }
 });
 
 //
 // 📤 POST
 //
-window.upload = async function () {
-  const file = document.getElementById("file").files[0];
+window.upload = function () {
+  const img = document.getElementById("img").value;
   const text = document.getElementById("text").value;
 
-  if (!file || !text) return;
-
-  const storageRef = sRef(storage, "posts/" + Date.now());
-  await uploadBytes(storageRef, file);
-
-  const url = await getDownloadURL(storageRef);
+  if (!img || !text) return;
 
   const newRef = push(ref(db, "posts"));
 
   set(newRef, {
-    img: url,
+    img,
     text,
-    user: user.uid,
-    name: user.displayName,
+    user: user.email,
     likes: 0,
     time: Date.now()
   });
-
-  document.getElementById("text").value = "";
 };
 
 //
@@ -207,66 +215,46 @@ window.like = function (id, likes) {
 };
 
 //
-// 👥 FOLLOW SYSTEM (simple)
-//
-window.toggleFollowMode = function () {
-  followMode = !followMode;
-  loadFeed();
-};
-
-window.follow = function (uid) {
-  set(ref(db, "follows/" + user.uid + "/" + uid), true);
-};
-
-async function isFollowing(uid) {
-  const snap = await get(ref(db, "follows/" + user.uid + "/" + uid));
-  return snap.exists();
-}
-
-//
 // 🌍 FEED
 //
-function loadFeed() {
-  onValue(ref(db, "posts"), async (snap) => {
-    const data = snap.val();
-    const feed = document.getElementById("feed");
-    feed.innerHTML = "";
+onValue(ref(db, "posts"), (snap) => {
+  const data = snap.val();
+  const feed = document.getElementById("feed");
 
-    if (!data) return;
+  feed.innerHTML = "";
 
-    const posts = Object.entries(data).reverse();
+  const posts = Object.entries(data || {}).reverse();
 
-    for (let [id, p] of posts) {
+  for (let [id, p] of posts) {
+    const div = document.createElement("div");
+    div.className = "post";
 
-      if (followMode && p.user !== user.uid) continue;
+    div.innerHTML = `
+      <img src="${p.img}" />
+      <div class="postContent">
+        <b>👤 ${p.user}</b><br>
+        ${p.text}
+        <button class="likeBtn" onclick="like('${id}', ${p.likes})">
+          ❤️ Like (${p.likes})
+        </button>
+      </div>
+    `;
 
-      const following = await isFollowing(p.user);
+    feed.appendChild(div);
+  }
+});
 
-      const div = document.createElement("div");
-      div.className = "post";
-
-      div.innerHTML = `
-        <img src="${p.img}" />
-        <div class="postContent">
-          <b>👤 ${p.name}</b><br>
-          ${p.text}<br>
-
-          <button class="likeBtn" onclick="like('${id}', ${p.likes})">
-            ❤️ Like (${p.likes})
-          </button>
-
-          <button class="followBtn" onclick="follow('${p.user}')">
-            ${following ? "✅ Following" : "➕ Follow"}
-          </button>
-
-          <div class="small">UID: ${p.user}</div>
-        </div>
-      `;
-
-      feed.appendChild(div);
-    }
-  });
+//
+// helpers
+//
+function emailInput() {
+  return document.getElementById("email").value;
 }
+
+function passInput() {
+  return document.getElementById("password").value;
+}
+
 </script>
 
 </body>
