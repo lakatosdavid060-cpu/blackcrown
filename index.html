@@ -2,7 +2,7 @@
 <html lang="hu">
 <head>
 <meta charset="UTF-8">
-<title>Pro SaaS Számlázó</title>
+<title>SaaS Billing Dashboard</title>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -20,7 +20,7 @@ import {
   updateDoc
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-/* 🔥 FIREBASE CONFIG */
+/* 🔥 FIREBASE */
 const firebaseConfig = {
   apiKey: "AIzaSyBgbixws2rf6VdqjQATVwZsKg0lgiqy0xI",
   authDomain: "ordog-fizetes.firebaseapp.com",
@@ -39,192 +39,207 @@ let currentCompany = "ceg1";
 let chart;
 
 /* =========================
-   SZÁMLASZÁM GENERÁLÁS
+   INVOICE NUMBER
 ========================= */
-async function generateInvoiceNumber(series) {
+async function getInvoiceNumber() {
   const date = new Date();
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const y = date.getFullYear();
+  const m = String(date.getMonth()+1).padStart(2,"0");
 
-  const counterId = `${currentCompany}_${year}_${month}_${series}`;
-
-  const ref = doc(db, "counters", counterId);
+  const id = `${currentCompany}_${y}_${m}`;
+  const ref = doc(db,"counters",id);
   const snap = await getDoc(ref);
 
-  let last = snap.exists() ? snap.data().lastNumber : 0;
+  let last = snap.exists()?snap.data().last:0;
+  last++;
 
-  const next = last + 1;
+  await setDoc(ref,{last});
 
-  await setDoc(ref, { lastNumber: next });
-
-  const prefix =
-    series === "ELŐLEG" ? "A" :
-    series === "VÉGSZÁMLA" ? "F" : "";
-
-  return `SZL-${year}-${month}-${String(next).padStart(6,"0")}${prefix ? "/" + prefix : ""}`;
+  return `INV-${y}-${m}-${String(last).padStart(5,"0")}`;
 }
 
 /* =========================
-   SZÁMLA LÉTREHOZÁS
+   CREATE INVOICE
 ========================= */
-window.createInvoice = async function () {
+window.createInvoice = async function() {
   const customer = document.getElementById("customer").value;
-  const series = document.getElementById("series").value;
   const qty = Number(document.getElementById("qty").value);
   const price = Number(document.getElementById("price").value);
 
-  if (!customer || !qty || !price) return;
+  if(!customer||!qty||!price) return;
 
-  const net = qty * price;
-  const vat = net * 0.27;
-  const gross = net + vat;
+  const net = qty*price;
+  const vat = net*0.27;
+  const gross = net+vat;
 
-  const invoiceNumber = await generateInvoiceNumber(series);
+  const number = await getInvoiceNumber();
 
-  await addDoc(collection(db, "invoices"), {
-    invoiceNumber,
-    series,
-    companyId: currentCompany,
-    locked: false,
-
-    customer: { name: customer },
-
-    items: [
-      { name: "Szolgáltatás", qty, price, vat: 0.27 }
-    ],
-
-    netTotal: net,
-    vatTotal: vat,
-    grossTotal: gross,
-
-    createdAt: new Date()
+  await addDoc(collection(db,"invoices"),{
+    invoiceNumber:number,
+    companyId:currentCompany,
+    customer,
+    qty,
+    price,
+    net,
+    vat,
+    gross,
+    locked:false,
+    status:"draft",
+    createdAt:new Date()
   });
 
-  document.getElementById("customer").value = "";
+  document.getElementById("customer").value="";
 };
 
 /* =========================
-   REALTIME FIREBASE
+   REALTIME
 ========================= */
-onSnapshot(collection(db, "invoices"), (snap) => {
-  invoices = snap.docs
-    .map(d => ({ id: d.id, ...d.data() }))
-    .filter(i => i.companyId === currentCompany);
+onSnapshot(collection(db,"invoices"),(snap)=>{
+  invoices = snap.docs.map(d=>({id:d.id,...d.data()}))
+    .filter(i=>i.companyId===currentCompany);
 
   render();
-  updateChart();
+  renderChart();
 });
 
 /* =========================
-   RENDER TABLE
+   RENDER UI
 ========================= */
-function render() {
-  const list = document.getElementById("list");
-  list.innerHTML = "";
+function render(){
+  const list=document.getElementById("list");
+  list.innerHTML="";
 
-  let balance = 0;
+  let total=0;
 
-  invoices.forEach(inv => {
+  invoices.forEach(i=>{
+    total+=i.gross;
 
-    balance += inv.grossTotal;
+    const row=document.createElement("div");
+    row.className="row";
 
-    const row = document.createElement("tr");
-
-    row.innerHTML = `
-      <td>${inv.invoiceNumber}</td>
-      <td>${inv.customer.name}</td>
-      <td>${inv.netTotal} Ft</td>
-      <td>${inv.vatTotal} Ft</td>
-      <td>${inv.grossTotal} Ft</td>
-      <td>${inv.locked ? "🔒" : ""}</td>
-      <td>
-        <button onclick="generatePDF('${inv.invoiceNumber}')">PDF</button>
-        <button onclick="lockInvoice('${inv.id}')">Lock</button>
-      </td>
+    row.innerHTML=`
+      <div>${i.invoiceNumber}</div>
+      <div>${i.customer}</div>
+      <div>${i.net.toFixed(0)} Ft</div>
+      <div>${i.vat.toFixed(0)} Ft</div>
+      <div><b>${i.gross.toFixed(0)} Ft</b></div>
+      <div>${i.locked?"🔒":"🟢"}</div>
+      <div class="actions">
+        <button onclick="pdf('${i.invoiceNumber}')">PDF</button>
+        <button onclick="lock('${i.id}')">Lock</button>
+      </div>
     `;
-
     list.appendChild(row);
   });
 
-  document.getElementById("balance").textContent = balance;
+  document.getElementById("total").innerText=total.toFixed(0);
 }
 
 /* =========================
-   LOCK INVOICE
+   LOCK
 ========================= */
-window.lockInvoice = async function (id) {
-  await updateDoc(doc(db, "invoices", id), {
-    locked: true
+window.lock = async function(id){
+  await updateDoc(doc(db,"invoices",id),{
+    locked:true,
+    status:"issued"
   });
 };
 
 /* =========================
-   PDF GENERÁLÁS
+   PDF
 ========================= */
-window.generatePDF = function (invoiceNumber) {
-  const inv = invoices.find(i => i.invoiceNumber === invoiceNumber);
-  if (!inv) return;
+window.pdf = function(num){
+  const i=invoices.find(x=>x.invoiceNumber===num);
+  const {jsPDF}=window.jspdf;
+  const d=new jsPDF();
 
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
+  d.setFontSize(16);
+  d.text("INVOICE",10,10);
 
-  doc.text("SZÁMLA", 10, 10);
-  doc.text(`Számlaszám: ${inv.invoiceNumber}`, 10, 20);
-  doc.text(`Ügyfél: ${inv.customer.name}`, 10, 30);
+  d.setFontSize(10);
+  d.text(`Number: ${i.invoiceNumber}`,10,20);
+  d.text(`Customer: ${i.customer}`,10,30);
 
-  let y = 40;
+  d.text(`Net: ${i.net}`,10,50);
+  d.text(`VAT: ${i.vat}`,10,60);
+  d.text(`Gross: ${i.gross}`,10,70);
 
-  inv.items.forEach(i => {
-    doc.text(`${i.qty} x ${i.name} = ${i.price} Ft`, 10, y);
-    y += 10;
-  });
-
-  doc.text(`Nettó: ${inv.netTotal}`, 10, y + 10);
-  doc.text(`ÁFA: ${inv.vatTotal}`, 10, y + 20);
-  doc.text(`Bruttó: ${inv.grossTotal}`, 10, y + 30);
-
-  doc.save(inv.invoiceNumber + ".pdf");
+  d.save(i.invoiceNumber+".pdf");
 };
 
 /* =========================
    CHART
 ========================= */
-function updateChart() {
-  let total = invoices.reduce((s, i) => s + i.grossTotal, 0);
+function renderChart(){
+  const sum=invoices.reduce((a,b)=>a+b.gross,0);
 
-  if (chart) chart.destroy();
+  if(chart)chart.destroy();
 
-  chart = new Chart(document.getElementById("chart"), {
-    type: "doughnut",
-    data: {
-      labels: ["Bevétel"],
-      datasets: [{ data: [total] }]
+  chart=new Chart(document.getElementById("chart"),{
+    type:"doughnut",
+    data:{
+      labels:["Revenue"],
+      datasets:[{data:[sum]}]
     }
   });
 }
-
-/* =========================
-   VAT CALC
-========================= */
-window.calcVAT = function () {
-  const net = Number(document.getElementById("net").value);
-  const vat = net * 0.27;
-
-  document.getElementById("vat").textContent = vat;
-  document.getElementById("gross").textContent = net + vat;
-};
-
 </script>
 
 <style>
-body { margin:0; font-family:Arial; display:flex; background:#eef2f7; }
-.sidebar { width:220px; background:#1e2a38; color:white; padding:20px; height:100vh; }
-.main { flex:1; padding:20px; }
-.card { background:white; padding:15px; margin-bottom:15px; border-radius:10px; }
-input,select { width:100%; padding:10px; margin:5px 0; }
-button { padding:8px; margin:2px; }
-table { width:100%; border-collapse:collapse; }
-td,th { border-bottom:1px solid #ddd; padding:8px; }
+body{
+  margin:0;
+  font-family:Arial;
+  background:#0f172a;
+  color:white;
+  display:flex;
+}
+
+.sidebar{
+  width:220px;
+  background:#111827;
+  padding:20px;
+  height:100vh;
+}
+
+.main{
+  flex:1;
+  padding:20px;
+}
+
+.card{
+  background:#1f2937;
+  padding:15px;
+  border-radius:10px;
+  margin-bottom:15px;
+}
+
+input{
+  width:100%;
+  padding:10px;
+  margin:5px 0;
+  border-radius:6px;
+  border:none;
+}
+
+button{
+  padding:8px;
+  border:none;
+  border-radius:6px;
+  cursor:pointer;
+}
+
+.row{
+  display:grid;
+  grid-template-columns:1fr 1fr 1fr 1fr 1fr 1fr 1fr;
+  gap:10px;
+  padding:10px;
+  border-bottom:1px solid #374151;
+  font-size:12px;
+}
+
+.actions button{
+  margin-right:5px;
+}
 </style>
 
 </head>
@@ -232,62 +247,29 @@ td,th { border-bottom:1px solid #ddd; padding:8px; }
 <body>
 
 <div class="sidebar">
-  <h3>💼 PRO SaaS</h3>
+  <h3>💼 SaaS Billing</h3>
 </div>
 
 <div class="main">
 
-  <!-- CREATE INVOICE -->
   <div class="card">
     <h3>Új számla</h3>
-
     <input id="customer" placeholder="Ügyfél">
     <input id="qty" type="number" placeholder="Mennyiség">
-    <input id="price" type="number" placeholder="Egységár">
-
-    <select id="series">
-      <option value="NORMAL">Normál</option>
-      <option value="ELŐLEG">Előleg</option>
-      <option value="VÉGSZÁMLA">Végszámla</option>
-    </select>
+    <input id="price" type="number" placeholder="Ár">
 
     <button onclick="createInvoice()">Létrehozás</button>
   </div>
 
-  <!-- DASHBOARD -->
   <div class="card">
     <h3>📊 Dashboard</h3>
     <canvas id="chart"></canvas>
-    <h2>Egyenleg: <span id="balance">0</span> Ft</h2>
+    <h2>Total: <span id="total">0</span> Ft</h2>
   </div>
 
-  <!-- VAT -->
-  <div class="card">
-    <h3>💰 ÁFA</h3>
-    <input id="net" placeholder="Nettó">
-    <button onclick="calcVAT()">Számol</button>
-    <p>ÁFA: <span id="vat">0</span></p>
-    <p>Bruttó: <span id="gross">0</span></p>
-  </div>
-
-  <!-- INVOICES -->
   <div class="card">
     <h3>📄 Számlák</h3>
-
-    <table>
-      <thead>
-        <tr>
-          <th>Számla</th>
-          <th>Ügyfél</th>
-          <th>Nettó</th>
-          <th>ÁFA</th>
-          <th>Bruttó</th>
-          <th>🔒</th>
-          <th>Művelet</th>
-        </tr>
-      </thead>
-      <tbody id="list"></tbody>
-    </table>
+    <div id="list"></div>
   </div>
 
 </div>
