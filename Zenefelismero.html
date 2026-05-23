@@ -2,7 +2,7 @@
 <html lang="hu">
 <head>
 <meta charset="UTF-8">
-<title>🔥 PRO INSTA FIX</title>
+<title>🔥 PRO INSTA</title>
 
 <style>
 body {
@@ -67,7 +67,7 @@ button {
 
 <body>
 
-<header>🔥 PRO INSTA FIX</header>
+<header>🔥 PRO INSTA</header>
 
 <div id="loginBox">
   <button onclick="login()">🔐 Google Login</button>
@@ -82,6 +82,7 @@ button {
 <div id="feed"></div>
 
 <script type="module">
+
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 
 import {
@@ -107,14 +108,18 @@ import {
   getDownloadURL
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
+//
+// 🔥 YOUR FIREBASE CONFIG (BEÉPÍTVE)
+//
 const firebaseConfig = {
-  apiKey: "AIzaSyBgbixws2rf6VdqjQATVwZsKg0lgiqy0x",
+  apiKey: "AIzaSyBgbixws2rf6VdqjQATVvZsKg0lgiqy0xI",
   authDomain: "ordog-fizetes.firebaseapp.com",
   databaseURL: "https://ordog-fizetes-default-rtdb.europe-west1.firebasedatabase.app",
   projectId: "ordog-fizetes",
   storageBucket: "ordog-fizetes.firebasestorage.app",
   messagingSenderId: "672089263660",
-  appId: "1:672089263660:web:3797a2fc935c63a0464b89"
+  appId: "1:672089263660:web:3797a2fc935c63a0464b89",
+  measurementId: "G-V9Z9LYT0KL"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -125,7 +130,7 @@ const storage = getStorage(app);
 let user = null;
 
 //
-// 🔐 LOGIN (FIXED)
+// 🔐 LOGIN
 //
 window.login = async function () {
   try {
@@ -146,14 +151,10 @@ window.login = async function () {
 onAuthStateChanged(auth, (u) => {
   if (u) {
     user = u;
-
-    console.log("Bejelentkezve:", u.displayName);
-
     document.getElementById("uploadBox").style.display = "block";
     document.getElementById("loginBox").style.display = "none";
   } else {
     user = null;
-
     document.getElementById("uploadBox").style.display = "none";
     document.getElementById("loginBox").style.display = "block";
   }
@@ -235,6 +236,7 @@ function render(data) {
 onValue(ref(db, "posts"), (snap) => {
   render(snap.val());
 });
+
 </script>
 
 </body>
