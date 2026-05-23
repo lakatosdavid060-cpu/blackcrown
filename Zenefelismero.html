@@ -2,13 +2,13 @@
 <html lang="hu">
 <head>
 <meta charset="UTF-8">
-<title>🔥 IG CLONE V3</title>
+<title>🔥 IG CLONE V5</title>
 
 <style>
 body {
   margin: 0;
   font-family: Arial;
-  background: #0a0a12;
+  background: #070711;
   color: white;
 }
 
@@ -36,9 +36,21 @@ input, button {
 }
 
 button {
-  cursor: pointer;
   background: #ff2d55;
   color: white;
+  cursor: pointer;
+}
+
+.switch {
+  display: flex;
+  max-width: 520px;
+  margin: 10px auto;
+  gap: 10px;
+}
+
+.switch button {
+  flex: 1;
+  background: #222;
 }
 
 .post {
@@ -58,48 +70,60 @@ button {
   padding: 10px;
 }
 
-.small {
-  font-size: 12px;
-  opacity: 0.7;
-}
-
-.commentBox {
-  margin-top: 8px;
+.comment {
   font-size: 13px;
   opacity: 0.9;
+  margin-top: 5px;
+}
+
+.storyBar {
+  display: flex;
+  overflow-x: auto;
+  max-width: 520px;
+  margin: 10px auto;
+  gap: 8px;
+}
+
+.story {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: linear-gradient(45deg, #ff2d55, #6c5ce7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
 }
 </style>
 </head>
 
 <body>
 
-<header>🔥 IG CLONE V3</header>
+<header>🔥 IG CLONE V5</header>
 
-<!-- AUTH -->
 <div class="box" id="authBox">
-  <h3>🔐 Login / Register</h3>
   <input id="email" placeholder="Email">
   <input id="pass" type="password" placeholder="Jelszó">
-  <button onclick="register()">🆕 Regisztráció</button>
-  <button onclick="login()">🔑 Belépés</button>
+  <button onclick="register()">Reg</button>
+  <button onclick="login()">Login</button>
 </div>
 
-<!-- PROFILE -->
-<div class="box" id="profileBox" style="display:none;">
-  <h3>👤 Profil</h3>
-  <input id="username" placeholder="Username">
-  <input id="bio" placeholder="Bio">
-  <button onclick="saveProfile()">💾 Mentés</button>
-</div>
-
-<!-- POST -->
 <div class="box" id="postBox" style="display:none;">
-  <input id="img" placeholder="Kép URL">
+  <input id="img" placeholder="Image URL">
   <input id="text" placeholder="Caption">
-  <button onclick="upload()">📤 Poszt</button>
+  <button onclick="uploadPost()">Post</button>
+
+  <input id="storyImg" placeholder="Story URL">
+  <button onclick="uploadStory()">Story</button>
 </div>
 
-<!-- FEED -->
+<div class="switch" id="switchBox" style="display:none;">
+  <button onclick="setFeed('following')">👥 Following</button>
+  <button onclick="setFeed('foryou')">🔥 For You</button>
+</div>
+
+<div class="storyBar" id="storyBar"></div>
+
 <div id="feed"></div>
 
 <script type="module">
@@ -110,7 +134,6 @@ import {
   getAuth,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
-  signOut,
   onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
@@ -120,7 +143,6 @@ import {
   push,
   set,
   onValue,
-  update,
   get
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
@@ -131,8 +153,7 @@ const firebaseConfig = {
   projectId: "ordog-fizetes",
   storageBucket: "ordog-fizetes.firebasestorage.app",
   messagingSenderId: "672089263660",
-  appId: "1:672089263660:web:3797a2fc935c63a0464b89",
-  measurementId: "G-V9Z9LYT0KL"
+  appId: "1:672089263660:web:3797a2fc935c63a0464b89"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -140,74 +161,59 @@ const auth = getAuth(app);
 const db = getDatabase(app);
 
 let user = null;
-let profile = {};
+let feedMode = "foryou";
 
 //
 // 🔐 AUTH
 //
-window.register = async function () {
-  const email = emailVal();
-  const pass = passVal();
-  await createUserWithEmailAndPassword(auth, email, pass);
-};
+window.register = () =>
+  createUserWithEmailAndPassword(auth, email.value, pass.value);
 
-window.login = async function () {
-  const email = emailVal();
-  const pass = passVal();
-  await signInWithEmailAndPassword(auth, email, pass);
-};
+window.login = () =>
+  signInWithEmailAndPassword(auth, email.value, pass.value);
 
-//
-// 👤 AUTH STATE
-//
-onAuthStateChanged(auth, async (u) => {
+onAuthStateChanged(auth, (u) => {
   user = u;
 
   if (!u) return;
 
-  document.getElementById("authBox").style.display = "none";
-  document.getElementById("profileBox").style.display = "block";
-  document.getElementById("postBox").style.display = "block";
+  authBox.style.display = "none";
+  postBox.style.display = "block";
+  switchBox.style.display = "flex";
 
-  loadProfile();
+  loadStories();
   loadFeed();
 });
 
 //
-// 👤 PROFILE SAVE
+// 👥 FOLLOW
 //
-window.saveProfile = function () {
-  const username = document.getElementById("username").value;
-  const bio = document.getElementById("bio").value;
-
-  set(ref(db, "profiles/" + user.uid), {
-    username,
-    bio
-  });
-
-  alert("Profil mentve!");
+window.follow = (uid) => {
+  set(ref(db, "follows/" + user.uid + "/" + uid), true);
 };
 
-//
-// 📥 LOAD PROFILE
-//
-async function loadProfile() {
-  const snap = await get(ref(db, "profiles/" + user.uid));
-  profile = snap.val() || {};
+async function isFollowing(uid) {
+  const snap = await get(ref(db, "follows/" + user.uid + "/" + uid));
+  return snap.exists();
 }
 
 //
-// 📤 POST
+// 🔁 FEED MODE
 //
-window.upload = function () {
-  const img = document.getElementById("img").value;
-  const text = document.getElementById("text").value;
+window.setFeed = (mode) => {
+  feedMode = mode;
+  loadFeed();
+};
 
-  const newRef = push(ref(db, "posts"));
+//
+// 📸 POST
+//
+window.uploadPost = () => {
+  const postRef = push(ref(db, "posts"));
 
-  set(newRef, {
-    img,
-    text,
+  set(postRef, {
+    img: img.value,
+    text: text.value,
     uid: user.uid,
     likes: 0,
     time: Date.now()
@@ -215,22 +221,14 @@ window.upload = function () {
 };
 
 //
-// ❤️ LIKE
-//
-window.like = function (id, likes) {
-  update(ref(db, "posts/" + id), {
-    likes: likes + 1
-  });
-};
-
-//
 // 💬 COMMENT
 //
-window.comment = function (id) {
+window.comment = (postId) => {
   const text = prompt("Komment:");
+
   if (!text) return;
 
-  const cRef = push(ref(db, "comments/" + id));
+  const cRef = push(ref(db, "comments/" + postId));
 
   set(cRef, {
     text,
@@ -240,37 +238,66 @@ window.comment = function (id) {
 };
 
 //
-// 🌍 FEED
+// ❤️ LIKE
+//
+window.like = (id, likes) => {
+  set(ref(db, "posts/" + id + "/likes"), likes + 1);
+};
+
+//
+// 📱 STORIES
+//
+window.uploadStory = () => {
+  push(ref(db, "stories/" + user.uid), {
+    img: storyImg.value,
+    time: Date.now()
+  });
+};
+
+function loadStories() {
+  onValue(ref(db, "stories"), (snap) => {
+    const data = snap.val();
+    storyBar.innerHTML = "";
+
+    for (let uid in data || {}) {
+      const div = document.createElement("div");
+      div.className = "story";
+      div.innerText = uid.slice(0, 4);
+      storyBar.appendChild(div);
+    }
+  });
+}
+
+//
+// 🌍 FEED (FOLLOW + FOR YOU)
 //
 function loadFeed() {
-  onValue(ref(db, "posts"), (snap) => {
+  onValue(ref(db, "posts"), async (snap) => {
     const data = snap.val();
-    const feed = document.getElementById("feed");
-
     feed.innerHTML = "";
 
-    const posts = Object.entries(data || {}).reverse();
+    for (let id in data || {}) {
+      const p = data[id];
 
-    for (let [id, p] of posts) {
+      const following = await isFollowing(p.uid);
+
+      if (feedMode === "following" && p.uid !== user.uid && !following) continue;
+
       const div = document.createElement("div");
-
       div.className = "post";
 
       div.innerHTML = `
         <img src="${p.img}">
         <div class="postContent">
-          <b>👤 ${p.uid}</b><br>
+          <b>${p.uid}</b><br>
           ${p.text}<br>
 
           <button onclick="like('${id}', ${p.likes})">
-            ❤️ Like (${p.likes})
+            ❤️ ${p.likes}
           </button>
 
-          <button onclick="comment('${id}')">
-            💬 Comment
-          </button>
-
-          <div class="commentBox" id="c_${id}"></div>
+          <button onclick="follow('${p.uid}')">➕ Follow</button>
+          <button onclick="comment('${id}')">💬 Comment</button>
         </div>
       `;
 
@@ -282,33 +309,25 @@ function loadFeed() {
 }
 
 //
-// 💬 COMMENTS LOAD
+// 💬 COMMENTS
 //
 function loadComments(postId) {
   onValue(ref(db, "comments/" + postId), (snap) => {
-    const box = document.getElementById("c_" + postId);
-    if (!box) return;
-
-    box.innerHTML = "";
-
     const data = snap.val();
-    for (let id in data || {}) {
-      const c = data[id];
-      const div = document.createElement("div");
-      div.innerText = "💬 " + c.text;
-      box.appendChild(div);
-    }
-  });
-}
+    if (!data) return;
 
-//
-// helpers
-//
-function emailVal() {
-  return document.getElementById("email").value;
-}
-function passVal() {
-  return document.getElementById("pass").value;
+    const el = document.createElement("div");
+
+    for (let id in data) {
+      const c = data[id];
+      const d = document.createElement("div");
+      d.className = "comment";
+      d.innerText = "💬 " + c.text;
+      el.appendChild(d);
+    }
+
+    const post = document.querySelector(`[onclick*="${postId}"]`);
+  });
 }
 
 </script>
