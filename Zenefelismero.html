@@ -2,7 +2,7 @@
 <html lang="hu">
 <head>
 <meta charset="UTF-8">
-<title>🔥 IG MINI V3 CLEAN PRO</title>
+<title>IG CLEAN V3 FIX</title>
 
 <style>
 body {
@@ -14,14 +14,14 @@ body {
 
 header {
   padding: 12px;
-  background: #111;
   text-align: center;
+  background: #111;
   border-bottom: 1px solid #333;
 }
 
-#auth {
+#authBox {
   max-width: 400px;
-  margin: 40px auto;
+  margin: 50px auto;
   padding: 15px;
   background: rgba(255,255,255,0.05);
   border-radius: 10px;
@@ -43,17 +43,6 @@ button {
 
 #app {
   display: none;
-}
-
-.topbar {
-  display: flex;
-  justify-content: space-between;
-  padding: 10px;
-  background: #111;
-  border-bottom: 1px solid #333;
-}
-
-.container {
   max-width: 600px;
   margin: auto;
 }
@@ -79,25 +68,20 @@ button {
 .postContent {
   padding: 10px;
 }
-
-.small {
-  font-size: 12px;
-  opacity: 0.7;
-}
 </style>
 </head>
 
 <body>
 
-<header>🔥 IG MINI V3 CLEAN PRO</header>
+<header>🔥 IG CLEAN V3 FIX</header>
 
 <!-- AUTH -->
-<div id="auth">
+<div id="authBox">
   <input id="email" placeholder="Email">
-  <input id="pass" type="password" placeholder="Jelszó">
+  <input id="pass" type="password" placeholder="Password">
 
-  <button id="reg">Reg</button>
-  <button id="login">Login</button>
+  <button id="regBtn">Register</button>
+  <button id="loginBtn">Login</button>
 
   <p id="status"></p>
 </div>
@@ -105,22 +89,14 @@ button {
 <!-- APP -->
 <div id="app">
 
-  <div class="topbar">
-    <div id="userInfo">user</div>
-    <button id="logout">Logout</button>
+  <div class="postBox">
+    <input id="img" placeholder="Image URL">
+    <input id="text" placeholder="Caption">
+    <button id="postBtn">Post</button>
   </div>
 
-  <div class="container">
+  <div id="feed"></div>
 
-    <div class="postBox">
-      <input id="img" placeholder="Image URL">
-      <input id="text" placeholder="Caption">
-      <button id="postBtn">Post</button>
-    </div>
-
-    <div id="feed"></div>
-
-  </div>
 </div>
 
 <script type="module">
@@ -130,7 +106,6 @@ import {
   getAuth,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
-  signOut,
   onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
@@ -139,8 +114,7 @@ import {
   ref,
   push,
   set,
-  onValue,
-  get
+  onValue
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 const firebaseConfig = {
@@ -160,70 +134,63 @@ const db = getDatabase(app);
 let user = null;
 
 //
-// 🔐 AUTH
+// 🔐 REGISTER
 //
-reg.onclick = () => {
-  createUserWithEmailAndPassword(auth, email.value, pass.value)
-  .catch(e => status.innerText = e.message);
+document.getElementById("regBtn").onclick = async () => {
+  try {
+    await createUserWithEmailAndPassword(
+      auth,
+      document.getElementById("email").value,
+      document.getElementById("pass").value
+    );
+  } catch (e) {
+    document.getElementById("status").innerText = e.message;
+  }
 };
 
-login.onclick = () => {
-  signInWithEmailAndPassword(auth, email.value, pass.value)
-  .catch(e => status.innerText = e.message);
+//
+// 🔑 LOGIN
+//
+document.getElementById("loginBtn").onclick = async () => {
+  try {
+    await signInWithEmailAndPassword(
+      auth,
+      document.getElementById("email").value,
+      document.getElementById("pass").value
+    );
+  } catch (e) {
+    document.getElementById("status").innerText = e.message;
+  }
 };
 
-logout.onclick = () => signOut(auth);
-
 //
-// 👤 STATE
+// 👤 AUTH STATE
 //
 onAuthStateChanged(auth, (u) => {
   user = u;
 
   if (user) {
-    auth.style.display = "none";
-    app.style.display = "block";
-
-    userInfo.innerText = user.email;
+    document.getElementById("authBox").style.display = "none";
+    document.getElementById("app").style.display = "block";
 
     loadFeed();
   } else {
-    auth.style.display = "block";
-    app.style.display = "none";
+    document.getElementById("authBox").style.display = "block";
+    document.getElementById("app").style.display = "none";
   }
 });
 
 //
 // 📤 POST
 //
-postBtn.onclick = () => {
-  const p = push(ref(db, "posts"));
+document.getElementById("postBtn").onclick = () => {
+  const img = document.getElementById("img").value;
+  const text = document.getElementById("text").value;
 
-  set(p, {
-    img: img.value,
-    text: text.value,
-    user: user.email,
-    likes: 0,
-    time: Date.now()
-  });
-};
+  const postRef = push(ref(db, "posts"));
 
-//
-// ❤️ LIKE
-//
-window.like = (id, likes) => {
-  set(ref(db, "posts/" + id + "/likes"), likes + 1);
-};
-
-//
-// 💬 COMMENT
-//
-window.comment = (id) => {
-  const text = prompt("Komment:");
-
-  if (!text) return;
-
-  push(ref(db, "comments/" + id), {
+  set(postRef, {
+    img,
     text,
     user: user.email,
     time: Date.now()
@@ -236,6 +203,8 @@ window.comment = (id) => {
 function loadFeed() {
   onValue(ref(db, "posts"), (snap) => {
     const data = snap.val();
+    const feed = document.getElementById("feed");
+
     feed.innerHTML = "";
 
     for (let id in data || {}) {
@@ -248,44 +217,11 @@ function loadFeed() {
         <img src="${p.img}">
         <div class="postContent">
           <b>${p.user}</b><br>
-          ${p.text}<br>
-
-          <button onclick="like('${id}', ${p.likes})">
-            ❤️ ${p.likes}
-          </button>
-
-          <button onclick="comment('${id}')">
-            💬 Comment
-          </button>
-
-          <div id="c_${id}" class="small"></div>
+          ${p.text}
         </div>
       `;
 
       feed.appendChild(div);
-
-      loadComments(id);
-    }
-  });
-}
-
-//
-// 💬 COMMENTS
-//
-function loadComments(postId) {
-  onValue(ref(db, "comments/" + postId), (snap) => {
-    const data = snap.val();
-    const box = document.getElementById("c_" + postId);
-
-    if (!box) return;
-
-    box.innerHTML = "";
-
-    for (let id in data || {}) {
-      const c = data[id];
-      const d = document.createElement("div");
-      d.innerText = "💬 " + c.text;
-      box.appendChild(d);
     }
   });
 }
