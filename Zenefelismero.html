@@ -19,7 +19,7 @@ h1 {
   width: 100%;
   text-align: center;
   z-index: 10;
-  font-size: 18px;
+  font-size: 16px;
   opacity: 0.8;
 }
 
@@ -36,6 +36,7 @@ canvas {
 <h1>⏳ IDŐKAPSZULA PRO — 3D BLACK HOLE</h1>
 
 <script type="module">
+
 import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.161/build/three.module.js";
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
@@ -61,6 +62,7 @@ const db = getDatabase(app);
 
 // ---------------- SCENE ----------------
 const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x050510); // FONTOS FIX
 
 const camera = new THREE.PerspectiveCamera(
   75,
@@ -69,38 +71,44 @@ const camera = new THREE.PerspectiveCamera(
   1000
 );
 
-camera.position.z = 55;
+camera.position.set(0, 10, 60); // stabil kamera
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
 // ---------------- LIGHT ----------------
-const light = new THREE.PointLight(0xffffff, 2);
-light.position.set(10, 10, 10);
-scene.add(light);
+const ambient = new THREE.AmbientLight(0xffffff, 1.2);
+scene.add(ambient);
+
+const point = new THREE.PointLight(0xffffff, 2);
+point.position.set(20, 20, 20);
+scene.add(point);
+
+// ---------------- GRID (DEBUG) ----------------
+const grid = new THREE.GridHelper(200, 50, 0x4444ff, 0x222244);
+scene.add(grid);
 
 // ---------------- BLACK HOLE ----------------
 const blackHole = new THREE.Mesh(
-  new THREE.SphereGeometry(4, 32, 32),
+  new THREE.SphereGeometry(5, 32, 32),
   new THREE.MeshBasicMaterial({ color: 0x000000 })
 );
 scene.add(blackHole);
 
-// ring
 const ring = new THREE.Mesh(
-  new THREE.RingGeometry(6, 9, 64),
+  new THREE.RingGeometry(7, 11, 64),
   new THREE.MeshBasicMaterial({
     color: 0x6c5ce7,
     side: THREE.DoubleSide,
     transparent: true,
-    opacity: 0.5
+    opacity: 0.6
   })
 );
 ring.rotation.x = Math.PI / 2;
 scene.add(ring);
 
-// ---------------- OBJECTS ----------------
+// ---------------- CUBES ----------------
 let cubes = [];
 
 function createCube(text) {
@@ -108,10 +116,93 @@ function createCube(text) {
     new THREE.BoxGeometry(3, 3, 3),
     new THREE.MeshStandardMaterial({
       color: 0x6c5ce7,
-      emissive: 0x1a0f3a
+      emissive: 0x111133
     })
   );
 
-  cube.position.x = (Math.random() - 0.5) * 60;
-  cube.position.y = (Math.random() - 0.5) * 40;
-  cube.position.z = (Math.random() - 0.5)
+  cube.position.x = (Math.random() - 0.5) * 50;
+  cube.position.y = (Math.random() - 0.5) * 30;
+  cube.position.z = (Math.random() - 0.5) * 50;
+
+  cube.userData.text = text;
+
+  scene.add(cube);
+  cubes.push(cube);
+}
+
+// ---------------- FIREBASE LOAD ----------------
+function load() {
+  const dbRef = ref(db, "capsules");
+
+  onValue(dbRef, (snap) => {
+    const data = snap.val();
+
+    // clear
+    cubes.forEach(c => scene.remove(c));
+    cubes = [];
+
+    const now = Date.now();
+
+    if (!data) {
+      console.log("no data → debug cubes");
+      for (let i = 0; i < 5; i++) createCube("DEBUG " + i);
+      return;
+    }
+
+    for (let id in data) {
+      const item = data[id];
+      if (!item) continue;
+
+      if (item.unlockTime <= now) {
+        createCube(item.text || "üzenet");
+      }
+    }
+  });
+}
+
+load();
+
+// ---------------- ANIMATION ----------------
+function animate() {
+  requestAnimationFrame(animate);
+
+  const center = new THREE.Vector3(0, 0, 0);
+
+  cubes.forEach((c) => {
+
+    c.rotation.x += 0.01;
+    c.rotation.y += 0.01;
+
+    const dir = center.clone().sub(c.position);
+    const dist = dir.length();
+
+    dir.normalize();
+
+    const force = 0.015 / Math.max(dist * 0.7, 0.3);
+
+    c.position.add(dir.multiplyScalar(force));
+
+    if (dist < 4.5) {
+      scene.remove(c);
+      cubes = cubes.filter(x => x !== c);
+    }
+  });
+
+  ring.rotation.z += 0.006;
+
+  renderer.render(scene, camera);
+}
+
+animate();
+
+// ---------------- RESIZE FIX ----------------
+window.addEventListener("resize", () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+</script>
+
+</body>
+</html>
