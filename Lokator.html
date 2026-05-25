@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
-  <title>Firebase Live Lokátor</title>
+  <title>Advanced Live Locator</title>
 
   <link
     rel="stylesheet"
@@ -15,6 +15,7 @@
     body {
       margin: 0;
       font-family: Arial, sans-serif;
+      overflow: hidden;
     }
 
     #map {
@@ -22,40 +23,82 @@
       height: 100vh;
     }
 
-    .topbar {
+    .panel {
       position: absolute;
       top: 10px;
       left: 10px;
       z-index: 9999;
+
       background: white;
-      padding: 10px;
-      border-radius: 10px;
-      display: flex;
-      gap: 10px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+      padding: 15px;
+      border-radius: 12px;
+
+      box-shadow: 0 0 15px rgba(0,0,0,0.2);
+
+      width: 260px;
+    }
+
+    .panel h2 {
+      margin-top: 0;
+      font-size: 18px;
     }
 
     input {
-      padding: 8px;
-      border-radius: 6px;
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 10px;
+
+      border-radius: 8px;
       border: 1px solid #ccc;
+      box-sizing: border-box;
     }
 
     button {
-      padding: 8px 12px;
+      width: 100%;
+      padding: 10px;
+
       border: none;
-      border-radius: 6px;
+      border-radius: 8px;
+
       background: #007bff;
       color: white;
+
       cursor: pointer;
+      font-size: 15px;
+    }
+
+    .users {
+      margin-top: 15px;
+      max-height: 250px;
+      overflow-y: auto;
+    }
+
+    .user {
+      padding: 8px;
+      border-bottom: 1px solid #eee;
+      font-size: 14px;
+    }
+
+    .online {
+      color: green;
+      font-weight: bold;
     }
   </style>
 </head>
 <body>
 
-<div class="topbar">
+<div class="panel">
+
+  <h2>🔥 Live Locator</h2>
+
   <input id="username" placeholder="Neved">
-  <button onclick="startTracking()">Start</button>
+
+  <button onclick="startTracking()">
+    Start Tracking
+  </button>
+
+  <div class="users" id="users"></div>
+
 </div>
 
 <div id="map"></div>
@@ -70,7 +113,8 @@ import {
   getDatabase,
   ref,
   set,
-  onValue
+  onValue,
+  onDisconnect
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
 
@@ -86,7 +130,7 @@ const firebaseConfig = {
 };
 
 
-// FIREBASE INIT
+// INIT
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
@@ -102,30 +146,75 @@ L.tileLayer(
 ).addTo(map);
 
 
-// MARKERS
+// STORAGE
 const markers = {};
+const trails = {};
 
-function createOrUpdateMarker(id, lat, lng, username) {
+let myId = null;
+
+
+// USER ICON
+function createUserIcon(name) {
+
+  return L.divIcon({
+    html: `
+      <div style="
+        background:#007bff;
+        color:white;
+        padding:6px 10px;
+        border-radius:20px;
+        font-size:12px;
+        white-space:nowrap;
+      ">
+        ${name}
+      </div>
+    `,
+    className: ""
+  });
+
+}
+
+
+// CREATE / UPDATE MARKER
+function updateMarker(id, lat, lng, username) {
 
   if (markers[id]) {
+
     markers[id].setLatLng([lat, lng]);
+
+    trails[id].addLatLng([lat, lng]);
+
     return;
   }
 
-  markers[id] = L.marker([lat, lng])
-    .addTo(map)
-    .bindPopup(username);
+  markers[id] = L.marker(
+    [lat, lng],
+    {
+      icon: createUserIcon(username)
+    }
+  ).addTo(map);
+
+  markers[id].bindPopup(username);
+
+  trails[id] = L.polyline(
+    [[lat, lng]],
+    {
+      weight: 4
+    }
+  ).addTo(map);
 
 }
 
 
 // START TRACKING
-window.startTracking = function () {
+window.startTracking = async function () {
 
   const username =
     document.getElementById("username").value || "anonymous";
 
-  const userId = crypto.randomUUID();
+  myId = crypto.randomUUID();
+
+  onDisconnect(ref(db, "locations/" + myId)).remove();
 
   navigator.geolocation.watchPosition(
 
@@ -133,28 +222,36 @@ window.startTracking = function () {
 
       const lat = position.coords.latitude;
       const lng = position.coords.longitude;
+      const speed = position.coords.speed || 0;
 
-      // SAVE TO FIREBASE
-      await set(ref(db, "locations/" + userId), {
-        username,
-        lat,
-        lng,
-        updatedAt: Date.now()
-      });
+      await set(
+        ref(db, "locations/" + myId),
+        {
+          username,
+          lat,
+          lng,
+          speed,
+          online: true,
+          updatedAt: Date.now()
+        }
+      );
 
-      // CENTER MAP
-      map.setView([lat, lng], 15);
+      map.setView([lat, lng], 16);
 
     },
 
     (error) => {
-      alert("GPS hiba: " + error.message);
+
+      alert(
+        "GPS hiba: " + error.message
+      );
+
     },
 
     {
       enableHighAccuracy: true,
-      maximumAge: 0,
-      timeout: 5000
+      timeout: 5000,
+      maximumAge: 0
     }
 
   );
@@ -162,23 +259,37 @@ window.startTracking = function () {
 };
 
 
-// REALTIME LISTENER
+// LIVE USERS
 onValue(ref(db, "locations"), (snapshot) => {
 
   const data = snapshot.val();
 
   if (!data) return;
 
+  const usersDiv =
+    document.getElementById("users");
+
+  usersDiv.innerHTML = "";
+
   Object.keys(data).forEach((id) => {
 
     const user = data[id];
 
-    createOrUpdateMarker(
+    updateMarker(
       id,
       user.lat,
       user.lng,
       user.username
     );
+
+    usersDiv.innerHTML += `
+      <div class="user">
+        <span class="online">●</span>
+        ${user.username}<br>
+        Speed:
+        ${Math.round(user.speed * 3.6 || 0)} km/h
+      </div>
+    `;
 
   });
 
