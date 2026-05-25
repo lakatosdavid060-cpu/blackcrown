@@ -2,342 +2,223 @@
 <html lang="hu">
 <head>
 <meta charset="UTF-8">
-<title>Windows 11 Hybrid OS</title>
-
+<title>FM 10.0 ULTRA WORLD</title>
 <style>
-body {
-    margin: 0;
-    font-family: Segoe UI, Arial;
-    overflow: hidden;
-    background: #0b1220;
-}
-
-/* DESKTOP */
-#desktop {
-    width: 100vw;
-    height: 100vh;
-    position: relative;
-    background: radial-gradient(circle at top, #1e3a8a, #0b1220);
-}
-
-/* ICON */
-.icon {
-    width: 80px;
-    text-align: center;
-    color: white;
-    position: absolute;
-    cursor: grab;
-}
-
-.icon img { width:48px; height:48px; }
-
-/* WINDOW */
-.window {
-    width: 420px;
-    height: 300px;
-    background: rgba(255,255,255,0.1);
-    backdrop-filter: blur(14px);
-    border: 1px solid rgba(255,255,255,0.2);
-    border-radius: 10px;
-    position: absolute;
-    overflow: hidden;
-    color: white;
-}
-
-.titlebar {
-    background: rgba(0,0,0,0.5);
-    padding: 6px;
-    display:flex;
-    justify-content: space-between;
-    cursor: move;
-}
-
-/* TASKBAR */
-#taskbar {
-    position: absolute;
-    bottom: 0;
-    width: 100%;
-    height: 48px;
-    background: rgba(20,20,20,0.85);
-    display:flex;
-    align-items:center;
-    gap:10px;
-    padding:0 10px;
-    color:white;
-}
-
-#startBtn {
-    background:#2563eb;
-    padding:6px 12px;
-    border-radius:6px;
-    cursor:pointer;
-}
-
-/* START MENU */
-#startMenu {
-    position: absolute;
-    bottom: 48px;
-    left: 10px;
-    width: 260px;
-    background: rgba(30,30,30,0.95);
-    border-radius: 10px;
-    padding: 10px;
-    display:none;
-}
-
-.start-item {
-    padding: 8px;
-    border-radius: 6px;
-    cursor: pointer;
-}
-
-.start-item:hover {
-    background:#2563eb;
-}
-
-/* STORE */
-.store-item {
-    padding: 8px;
-    margin: 5px 0;
-    background: rgba(255,255,255,0.05);
-    border-radius: 6px;
-    cursor: pointer;
-}
-
-/* TASK */
-.task {
-    background: rgba(255,255,255,0.1);
-    padding: 4px 8px;
-    border-radius: 6px;
-    cursor:pointer;
-}
+body{font-family:Arial;background:#050505;color:#fff;}
+.container{max-width:1200px;margin:auto;padding:20px;}
+.card{background:#1e1e1e;padding:15px;margin:10px 0;border-radius:10px;}
+button{padding:10px;margin:5px;cursor:pointer;}
+table{width:100%;border-collapse:collapse;}
+td,th{border:1px solid #444;padding:5px;}
 </style>
 </head>
-
 <body>
 
-<div id="desktop"></div>
+<div class="container">
 
-<div id="taskbar">
-    <div id="startBtn" onclick="toggleStart()">🪟 Start</div>
-    <div id="tasks"></div>
+<h1>⚽ FM 10.0 – ULTRA WORLD MANAGER</h1>
+
+<div class="card">
+<h2>📅 Szezon: <span id="season">1</span></h2>
+<h3>💰 Pénz: €<span id="money">600</span>M</h3>
 </div>
 
-<!-- START MENU -->
-<div id="startMenu">
-    <div class="start-item" onclick="openApp('store')">🛒 Store</div>
-    <div class="start-item" onclick="openApp('settings')">⚙ Settings</div>
-    <div class="start-item" onclick="openApp('browser')">🌐 Browser</div>
+<div class="card">
+<h2>🏆 Liga Tabella (24 CSAPAT!)</h2>
+<table>
+<thead><tr><th>Csapat</th><th>Pont</th></tr></thead>
+<tbody id="table"></tbody>
+</table>
+</div>
+
+<div class="card">
+<h2>⭐ Keret (15 játékos!)</h2>
+<ul id="squad"></ul>
+</div>
+
+<div class="card">
+<h2>⚽ Meccs</h2>
+<button onclick="match()">Következő meccs</button>
+<h3 id="result"></h3>
+</div>
+
+<div class="card">
+<h2>🛒 Átigazolás</h2>
+<button onclick="buy('Mbappé',200,97)">Mbappé</button>
+<button onclick="buy('Haaland',180,95)">Haaland</button>
+<button onclick="buy('Bellingham',140,90)">Bellingham</button>
+<button onclick="buy('De Bruyne',100,92)">De Bruyne</button>
+<button onclick="buy('Vinícius',120,91)">Vinícius</button>
+<button onclick="buy('Wirtz',120,90)">Wirtz</button>
+<button onclick="buy('Musiala',110,89)">Musiala</button>
+<button onclick="buy('Pedri',110,88)">Pedri</button>
+</div>
+
+<div class="card">
+<button onclick="nextSeason()">➡️ Szezon váltás</button>
+</div>
+
 </div>
 
 <script>
 
-/* =========================
-   STATE = OS DISK
-========================= */
+// ===== USER =====
+let season=1;
+let money=600;
+let matchIndex=0;
 
-let z=1;
-
-let state = {
-    apps: JSON.parse(localStorage.getItem("apps")||"[]"),
-    windows:{}
+let user={
+name:"Real Madrid",
+points:0,
+squad:[
+{name:"Ronaldo",ovr:95,form:1,inj:0},
+{name:"Messi",ovr:96,form:1,inj:0},
+{name:"Neymar",ovr:90,form:1,inj:0},
+{name:"Modrić",ovr:89,form:1,inj:0},
+{name:"Courtois",ovr:90,form:1,inj:0},
+{name:"Bellingham",ovr:90,form:1,inj:0},
+{name:"Vinícius",ovr:91,form:1,inj:0},
+{name:"Valverde",ovr:88,form:1,inj:0},
+{name:"Rüdiger",ovr:88,form:1,inj:0},
+{name:"Carvajal",ovr:86,form:1,inj:0},
+{name:"Camavinga",ovr:87,form:1,inj:0},
+{name:"Tchouaméni",ovr:87,form:1,inj:0},
+{name:"Rodrygo",ovr:88,form:1,inj:0},
+{name:"Alaba",ovr:86,form:1,inj:0},
+{name:"Endrick",ovr:84,form:1,inj:0}
+]
 };
 
-/* SAVE */
-function save(){
-    localStorage.setItem("apps",JSON.stringify(state.apps));
+// ===== 24 CSAPAT =====
+function team(name,players){
+return {name,points:0,squad:players};
 }
 
-/* =========================
-   WINDOW ENGINE
-========================= */
+let teams=[
 
-function openApp(type){
+team("Barcelona",Array(10).fill().map((_,i)=>({name:"Barca"+i,ovr:85+Math.random()*5})))),
+team("Bayern",Array(10).fill().map((_,i)=>({name:"Bayern"+i,ovr:85+Math.random()*5})))),
+team("City",Array(10).fill().map((_,i)=>({name:"City"+i,ovr:86+Math.random()*6})))),
+team("PSG",Array(10).fill().map((_,i)=>({name:"PSG"+i,ovr:86+Math.random()*6})))),
+team("Arsenal",Array(10).fill().map((_,i)=>({name:"Arsenal"+i,ovr:84+Math.random()*6})))),
+team("Liverpool",Array(10).fill().map((_,i)=>({name:"Liv"+i,ovr:85+Math.random()*6})))),
+team("Inter",Array(10).fill().map((_,i)=>({name:"Inter"+i,ovr:84+Math.random()*6})))),
+team("Chelsea",Array(10).fill().map((_,i)=>({name:"Chelsea"+i,ovr:83+Math.random()*6})))),
+team("Dortmund",Array(10).fill().map((_,i)=>({name:"BVB"+i,ovr:83+Math.random()*6})))),
+team("Atletico",Array(10).fill().map((_,i)=>({name:"ATM"+i,ovr:83+Math.random()*6})))),
+team("Napoli",Array(10).fill().map((_,i)=>({name:"Napoli"+i,ovr:84+Math.random()*6})))),
+team("Milan",Array(10).fill().map((_,i)=>({name:"Milan"+i,ovr:83+Math.random()*6})))),
+team("Sevilla",Array(10).fill().map((_,i)=>({name:"Sevilla"+i,ovr:82+Math.random()*6})))),
+team("Leverkusen",Array(10).fill().map((_,i)=>({name:"B04_"+i,ovr:84+Math.random()*6})))),
+team("Tottenham",Array(10).fill().map((_,i)=>({name:"TOT"+i,ovr:83+Math.random()*6})))),
+team("Newcastle",Array(10).fill().map((_,i)=>({name:"NEW"+i,ovr:84+Math.random()*6})))),
+team("Ajax",Array(10).fill().map((_,i)=>({name:"AJX"+i,ovr:83+Math.random()*6})))),
+team("Benfica",Array(10).fill().map((_,i)=>({name:"BEN"+i,ovr:83+Math.random()*6})))),
+team("Porto",Array(10).fill().map((_,i)=>({name:"POR"+i,ovr:83+Math.random()*6})))),
+team("Lazio",Array(10).fill().map((_,i)=>({name:"LAZ"+i,ovr:83+Math.random()*6})))),
+team("Roma",Array(10).fill().map((_,i)=>({name:"ROMA"+i,ovr:83+Math.random()*6})))),
+team("Real Sociedad",Array(10).fill().map((_,i)=>({name:"RSO"+i,ovr:83+Math.random()*6})))),
+team("RB Leipzig",Array(10).fill().map((_,i)=>({name:"RBL"+i,ovr:84+Math.random()*6}))))
+];
 
-    let name = type;
+// ===== UPDATE =====
+function update(){
 
-    if(state.windows[name]){
-        state.windows[name].style.display="block";
-        return;
-    }
+document.getElementById("season").innerText=season;
+document.getElementById("money").innerText=money;
 
-    let win=document.createElement("div");
-    win.className="window";
-    win.style.zIndex=++z;
-
-    win.innerHTML=`
-        <div class="titlebar">
-            <span>${name}</span>
-            <div>
-                <button onclick="minimize('${name}')">_</button>
-                <button onclick="closeW('${name}')">X</button>
-            </div>
-        </div>
-        <div class="content">
-            ${renderApp(type)}
-        </div>
-    `;
-
-    document.getElementById("desktop").appendChild(win);
-    state.windows[name]=win;
-
-    addTask(name);
-    drag(win);
-}
-
-/* =========================
-   APPS
-========================= */
-
-function renderApp(type){
-
-    /* STORE */
-    if(type==="store"){
-        return `
-            <h3>🛒 App Store</h3>
-            <div class="store-item" onclick="install('Notepad')">Install Notepad</div>
-            <div class="store-item" onclick="install('Game Launcher')">Install Game Launcher</div>
-            <div class="store-item" onclick="install('Terminal')">Install Terminal</div>
-        `;
-    }
-
-    /* SETTINGS */
-    if(type==="settings"){
-        return `
-            <h3>⚙ Settings</h3>
-            <label>Background</label>
-            <input type="color" onchange="setBG(this.value)">
-            <button onclick="reset()">Reset OS</button>
-        `;
-    }
-
-    /* BROWSER */
-    if(type==="browser"){
-        return `
-            <h3>🌐 Browser</h3>
-            <input id="url" placeholder="https://...">
-            <button onclick="go()">Go</button>
-            <iframe id="frame" style="width:100%;height:200px;border:none;"></iframe>
-        `;
-    }
-
-    if(type==="Notepad"){
-        return `<textarea style="width:100%;height:200px;"></textarea>`;
-    }
-
-    if(type==="Terminal"){
-        return `<p>fake terminal ready...</p>`;
-    }
-
-    return `<p>App running</p>`;
-}
-
-/* =========================
-   STORE INSTALL SYSTEM
-========================= */
-
-function install(app){
-    if(!state.apps.includes(app)){
-        state.apps.push(app);
-        save();
-        alert(app+" installed!");
-    }
-}
-
-/* =========================
-   BROWSER
-========================= */
-
-function go(){
-    let url=document.getElementById("url").value;
-    document.getElementById("frame").src=url;
-}
-
-/* =========================
-   TASKBAR
-========================= */
-
-function addTask(name){
-    let d=document.createElement("div");
-    d.className="task";
-    d.innerText=name;
-    d.onclick=()=>state.windows[name].style.display="block";
-    document.getElementById("tasks").appendChild(d);
-}
-
-/* =========================
-   WINDOW ACTIONS
-========================= */
-
-function minimize(name){
-    state.windows[name].style.display="none";
-}
-
-function closeW(name){
-    state.windows[name].remove();
-    delete state.windows[name];
-}
-
-/* =========================
-   START MENU
-========================= */
-
-function toggleStart(){
-    let m=document.getElementById("startMenu");
-    m.style.display = m.style.display==="block"?"none":"block";
-}
-
-document.addEventListener("click",(e)=>{
-    if(!e.target.closest("#startBtn") && !e.target.closest("#startMenu")){
-        document.getElementById("startMenu").style.display="none";
-    }
+// squad
+let ul=document.getElementById("squad");
+ul.innerHTML="";
+user.squad.forEach(p=>{
+let eff=(p.ovr+p.form)-(p.inj*10);
+let li=document.createElement("li");
+li.innerText=p.name+" OVR:"+p.ovr+" Eff:"+eff.toFixed(1);
+ul.appendChild(li);
 });
 
-/* =========================
-   SETTINGS
-========================= */
+// table
+let all=[user,...teams];
+all.sort((a,b)=>b.points-a.points);
 
-function setBG(c){
-    document.body.style.background=c;
-    localStorage.setItem("bg",c);
+let tb=document.getElementById("table");
+tb.innerHTML="";
+all.forEach(t=>{
+let tr=document.createElement("tr");
+tr.innerHTML="<td>"+t.name+"</td><td>"+t.points+"</td>";
+tb.appendChild(tr);
+});
 }
 
-function reset(){
-    localStorage.clear();
-    location.reload();
+// ===== POWER =====
+function power(team){
+let sum=0;
+team.squad.forEach(p=>{
+sum+=(p.ovr+(p.form||1)-(p.inj||0)*10);
+});
+return (sum/team.squad.length)+Math.random()*10;
 }
 
-/* =========================
-   DRAG WINDOWS
-========================= */
+// ===== MATCH =====
+function match(){
 
-function drag(el){
-    let down=false,ox,oy;
+let opp=teams[matchIndex%teams.length];
 
-    el.querySelector(".titlebar").addEventListener("mousedown",e=>{
-        down=true;
-        ox=e.clientX-el.offsetLeft;
-        oy=e.clientY-el.offsetTop;
-        el.style.zIndex=++z;
-    });
+user.squad.forEach(p=>{
+p.inj=Math.random()<0.05?1:0;
+p.form+=Math.random()*0.2-0.1;
+if(p.form<0.5)p.form=0.5;
+if(p.form>2)p.form=2;
+});
 
-    document.addEventListener("mousemove",e=>{
-        if(down){
-            el.style.left=(e.clientX-ox)+"px";
-            el.style.top=(e.clientY-oy)+"px";
-        }
-    });
+let u=power(user);
+let o=power(opp);
 
-    document.addEventListener("mouseup",()=>down=false);
+let g1=Math.round(u/25);
+let g2=Math.round(o/25);
+
+if(g1>g2) user.points+=3;
+else if(g1<g2) opp.points+=3;
+else{user.points+=1;opp.points+=1;}
+
+document.getElementById("result").innerText=
+"⚽ "+user.name+" "+g1+" - "+g2+" "+opp.name;
+
+matchIndex++;
+update();
 }
 
-/* =========================
-   INIT
-========================= */
-
-if(localStorage.getItem("bg")){
-    document.body.style.background=localStorage.getItem("bg");
+// ===== BUY =====
+function buy(name,price,ovr){
+if(money>=price){
+money-=price;
+user.squad.push({name,ovr,form:1,inj:0});
+alert(name+" leigazolva!");
 }
+update();
+}
+
+// ===== SEASON =====
+function nextSeason(){
+
+season++;
+money+=300;
+
+user.points=0;
+teams.forEach(t=>t.points=0);
+
+// AI growth
+teams.forEach(t=>{
+t.squad.forEach(p=>{
+if(Math.random()>0.7)p.ovr+=1;
+});
+});
+
+alert("Új szezon – ULTRA WORLD!");
+update();
+}
+
+update();
 
 </script>
 
