@@ -1,125 +1,250 @@
 <!DOCTYPE html>
 <html lang="hu">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
-  <title>Advanced Live Locator</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-  />
+<title>Family Locator Pro</title>
 
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      overflow: hidden;
-    }
+<link
+  rel="stylesheet"
+  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+/>
 
-    #map {
-      width: 100vw;
-      height: 100vh;
-    }
+<link
+  rel="manifest"
+  href="manifest.json"
+/>
 
-    .panel {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      z-index: 9999;
+<meta name="theme-color" content="#0f172a"/>
 
-      background: white;
-      padding: 15px;
-      border-radius: 12px;
+<style>
 
-      box-shadow: 0 0 15px rgba(0,0,0,0.2);
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+}
 
-      width: 260px;
-    }
+body{
+  font-family:Arial;
+  background:#0f172a;
+  color:white;
+  overflow:hidden;
+}
 
-    .panel h2 {
-      margin-top: 0;
-      font-size: 18px;
-    }
+#map{
+  width:100vw;
+  height:100vh;
+}
 
-    input {
-      width: 100%;
-      padding: 10px;
-      margin-bottom: 10px;
+.sidebar{
 
-      border-radius: 8px;
-      border: 1px solid #ccc;
-      box-sizing: border-box;
-    }
+  position:absolute;
+  top:0;
+  left:0;
 
-    button {
-      width: 100%;
-      padding: 10px;
+  width:320px;
+  height:100vh;
 
-      border: none;
-      border-radius: 8px;
+  background:#111827;
 
-      background: #007bff;
-      color: white;
+  z-index:9999;
 
-      cursor: pointer;
-      font-size: 15px;
-    }
+  padding:20px;
 
-    .users {
-      margin-top: 15px;
-      max-height: 250px;
-      overflow-y: auto;
-    }
+  overflow-y:auto;
 
-    .user {
-      padding: 8px;
-      border-bottom: 1px solid #eee;
-      font-size: 14px;
-    }
+  border-right:1px solid #1f2937;
+}
 
-    .online {
-      color: green;
-      font-weight: bold;
-    }
-  </style>
+.logo{
+  font-size:22px;
+  font-weight:bold;
+  margin-bottom:20px;
+}
+
+input{
+
+  width:100%;
+  padding:12px;
+
+  background:#1f2937;
+  color:white;
+
+  border:none;
+  border-radius:10px;
+
+  margin-bottom:10px;
+}
+
+button{
+
+  width:100%;
+  padding:12px;
+
+  border:none;
+  border-radius:10px;
+
+  background:#2563eb;
+  color:white;
+
+  cursor:pointer;
+
+  margin-bottom:10px;
+}
+
+button:hover{
+  opacity:0.9;
+}
+
+.card{
+
+  background:#1f2937;
+  padding:12px;
+
+  border-radius:12px;
+
+  margin-bottom:10px;
+}
+
+.speed{
+  color:#22c55e;
+}
+
+.sos{
+  background:#dc2626;
+}
+
+.chat{
+
+  position:absolute;
+  bottom:0;
+  left:320px;
+
+  width:400px;
+  height:250px;
+
+  background:#111827;
+
+  z-index:9999;
+
+  display:flex;
+  flex-direction:column;
+}
+
+.chat-messages{
+  flex:1;
+  overflow-y:auto;
+  padding:10px;
+}
+
+.chat-input{
+  display:flex;
+}
+
+.chat-input input{
+  border-radius:0;
+  margin:0;
+}
+
+.chat-input button{
+  width:100px;
+  margin:0;
+  border-radius:0;
+}
+
+.msg{
+  margin-bottom:10px;
+  padding:10px;
+  background:#1f2937;
+  border-radius:10px;
+}
+
+</style>
+
 </head>
+
 <body>
 
-<div class="panel">
+<div class="sidebar">
 
-  <h2>🔥 Live Locator</h2>
+  <div class="logo">
+    🔥 Family Locator Pro
+  </div>
 
-  <input id="username" placeholder="Neved">
+  <input
+    id="username"
+    placeholder="Neved"
+  />
+
+  <input
+    id="avatar"
+    placeholder="Profilkép URL"
+  />
 
   <button onclick="startTracking()">
     Start Tracking
   </button>
 
-  <div class="users" id="users"></div>
+  <button class="sos" onclick="sendSOS()">
+    🚨 SOS
+  </button>
+
+  <div id="battery"></div>
+
+  <hr style="margin:20px 0;border-color:#1f2937;">
+
+  <div id="users"></div>
 
 </div>
 
 <div id="map"></div>
 
+<div class="chat">
+
+  <div
+    class="chat-messages"
+    id="messages"
+  ></div>
+
+  <div class="chat-input">
+
+    <input
+      id="messageInput"
+      placeholder="Üzenet..."
+    />
+
+    <button onclick="sendMessage()">
+      Send
+    </button>
+
+  </div>
+
+</div>
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script type="module">
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { initializeApp }
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 
 import {
   getDatabase,
   ref,
   set,
+  push,
   onValue,
   onDisconnect
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+}
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
 
-// FIREBASE CONFIG
+// FIREBASE
 const firebaseConfig = {
+
   apiKey: "AIzaSyBgbixws2rf6VdqjQATVwZsKg0lgiqy0xI",
   authDomain: "ordog-fizetes.firebaseapp.com",
   databaseURL: "https://ordog-fizetes-default-rtdb.europe-west1.firebasedatabase.app",
@@ -127,21 +252,27 @@ const firebaseConfig = {
   storageBucket: "ordog-fizetes.firebasestorage.app",
   messagingSenderId: "672089263660",
   appId: "1:672089263660:web:70086de26402ceb3464b89"
+
 };
 
 
-// INIT
 const app = initializeApp(firebaseConfig);
+
 const db = getDatabase(app);
 
 
 // MAP
-const map = L.map('map').setView([47.4979, 19.0402], 13);
+const map = L.map('map').setView(
+  [47.4979, 19.0402],
+  13
+);
 
+
+// DARK MAP
 L.tileLayer(
-  'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+  'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
   {
-    attribution: '&copy; OpenStreetMap contributors'
+    attribution:'&copy; OpenStreetMap'
   }
 ).addTo(map);
 
@@ -151,107 +282,148 @@ const markers = {};
 const trails = {};
 
 let myId = null;
+let myName = "";
 
 
-// USER ICON
-function createUserIcon(name) {
+// PROFILE ICON
+function createAvatar(url,name){
 
   return L.divIcon({
-    html: `
+
+    html:`
+
       <div style="
-        background:#007bff;
-        color:white;
-        padding:6px 10px;
-        border-radius:20px;
-        font-size:12px;
-        white-space:nowrap;
+        display:flex;
+        flex-direction:column;
+        align-items:center;
       ">
-        ${name}
+
+        <img
+          src="${url}"
+          style="
+            width:50px;
+            height:50px;
+            border-radius:50%;
+            border:3px solid #2563eb;
+          "
+        />
+
+        <div style="
+          margin-top:5px;
+          background:#111827;
+          padding:3px 8px;
+          border-radius:10px;
+          font-size:12px;
+        ">
+          ${name}
+        </div>
+
       </div>
+
     `,
-    className: ""
+
+    className:""
+
   });
 
 }
 
 
-// CREATE / UPDATE MARKER
-function updateMarker(id, lat, lng, username) {
+// START
+window.startTracking = async function(){
 
-  if (markers[id]) {
+  myName =
+    document.getElementById("username").value
+    || "anonymous";
 
-    markers[id].setLatLng([lat, lng]);
-
-    trails[id].addLatLng([lat, lng]);
-
-    return;
-  }
-
-  markers[id] = L.marker(
-    [lat, lng],
-    {
-      icon: createUserIcon(username)
-    }
-  ).addTo(map);
-
-  markers[id].bindPopup(username);
-
-  trails[id] = L.polyline(
-    [[lat, lng]],
-    {
-      weight: 4
-    }
-  ).addTo(map);
-
-}
-
-
-// START TRACKING
-window.startTracking = async function () {
-
-  const username =
-    document.getElementById("username").value || "anonymous";
+  const avatar =
+    document.getElementById("avatar").value
+    || "https://i.pravatar.cc/100";
 
   myId = crypto.randomUUID();
 
-  onDisconnect(ref(db, "locations/" + myId)).remove();
+  onDisconnect(
+    ref(db,"users/"+myId)
+  ).remove();
 
+
+  // BATTERY
+  if(navigator.getBattery){
+
+    const battery =
+      await navigator.getBattery();
+
+    document.getElementById("battery")
+      .innerHTML =
+      `🔋 Battery:
+      ${Math.round(battery.level*100)}%`;
+
+  }
+
+
+  // GPS
   navigator.geolocation.watchPosition(
 
-    async (position) => {
+    async(position)=>{
 
-      const lat = position.coords.latitude;
-      const lng = position.coords.longitude;
-      const speed = position.coords.speed || 0;
+      const lat =
+        position.coords.latitude;
 
+      const lng =
+        position.coords.longitude;
+
+      const speed =
+        position.coords.speed || 0;
+
+      // SAVE
       await set(
-        ref(db, "locations/" + myId),
+        ref(db,"users/"+myId),
         {
-          username,
+          name:myName,
+          avatar,
           lat,
           lng,
           speed,
-          online: true,
-          updatedAt: Date.now()
+          updatedAt:Date.now()
         }
       );
 
-      map.setView([lat, lng], 16);
+
+      // PATH SAVE
+      await push(
+        ref(db,"routes/"+myId),
+        {
+          lat,
+          lng,
+          time:Date.now()
+        }
+      );
+
+
+      map.setView([lat,lng],16);
+
+
+      // GEOFENCE ALERT
+      if(speed*3.6 > 120){
+
+        alert(
+          "⚠️ Speed limit exceeded!"
+        );
+
+      }
 
     },
 
-    (error) => {
+    (err)=>{
 
-      alert(
-        "GPS hiba: " + error.message
-      );
+      alert(err.message);
 
     },
 
     {
-      enableHighAccuracy: true,
-      timeout: 5000,
-      maximumAge: 0
+      enableHighAccuracy:true,
+      timeout:5000,
+      maximumAge:0
     }
 
   );
@@ -260,40 +432,165 @@ window.startTracking = async function () {
 
 
 // LIVE USERS
-onValue(ref(db, "locations"), (snapshot) => {
+onValue(
+  ref(db,"users"),
+  (snapshot)=>{
 
-  const data = snapshot.val();
+    const data =
+      snapshot.val();
 
-  if (!data) return;
+    if(!data) return;
 
-  const usersDiv =
-    document.getElementById("users");
+    const users =
+      document.getElementById("users");
 
-  usersDiv.innerHTML = "";
+    users.innerHTML = "";
 
-  Object.keys(data).forEach((id) => {
+    Object.keys(data).forEach((id)=>{
 
-    const user = data[id];
+      const user = data[id];
 
-    updateMarker(
-      id,
-      user.lat,
-      user.lng,
-      user.username
-    );
+      // MARKER UPDATE
+      if(markers[id]){
 
-    usersDiv.innerHTML += `
-      <div class="user">
-        <span class="online">●</span>
-        ${user.username}<br>
-        Speed:
-        ${Math.round(user.speed * 3.6 || 0)} km/h
-      </div>
-    `;
+        markers[id].setLatLng(
+          [user.lat,user.lng]
+        );
 
-  });
+        trails[id].addLatLng(
+          [user.lat,user.lng]
+        );
 
-});
+      }else{
+
+        markers[id] = L.marker(
+          [user.lat,user.lng],
+          {
+            icon:createAvatar(
+              user.avatar,
+              user.name
+            )
+          }
+        ).addTo(map);
+
+        trails[id] = L.polyline(
+          [[user.lat,user.lng]],
+          {
+            weight:4
+          }
+        ).addTo(map);
+
+      }
+
+
+      // USER CARD
+      users.innerHTML += `
+
+        <div class="card">
+
+          <b>${user.name}</b><br>
+
+          <span class="speed">
+            🚗
+            ${Math.round(user.speed*3.6 || 0)}
+            km/h
+          </span>
+
+        </div>
+
+      `;
+
+    });
+
+  }
+);
+
+
+// CHAT
+window.sendMessage = async function(){
+
+  const input =
+    document.getElementById("messageInput");
+
+  const text =
+    input.value;
+
+  if(!text) return;
+
+  await push(
+    ref(db,"chat"),
+    {
+      user:myName,
+      text,
+      time:Date.now()
+    }
+  );
+
+  input.value = "";
+
+};
+
+
+// LIVE CHAT
+onValue(
+  ref(db,"chat"),
+  (snapshot)=>{
+
+    const data =
+      snapshot.val();
+
+    if(!data) return;
+
+    const messages =
+      document.getElementById("messages");
+
+    messages.innerHTML = "";
+
+    Object.values(data).forEach((msg)=>{
+
+      messages.innerHTML += `
+
+        <div class="msg">
+
+          <b>${msg.user}</b><br>
+
+          ${msg.text}
+
+        </div>
+
+      `;
+
+    });
+
+  }
+);
+
+
+// SOS
+window.sendSOS = async function(){
+
+  if(!myId) return;
+
+  await push(
+    ref(db,"alerts"),
+    {
+      user:myName,
+      type:"SOS",
+      time:Date.now()
+    }
+  );
+
+  alert("🚨 SOS elküldve!");
+
+};
+
+
+// PUSH NOTIFICATION
+if("Notification" in window){
+
+  Notification.requestPermission();
+
+}
 
 </script>
 
