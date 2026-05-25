@@ -1,120 +1,80 @@
 <!DOCTYPE html>
 <html lang="hu">
 <head>
-<meta charset="UTF-8">
-<title>IG STARTER FIX</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
-<style>
-body {
-  margin: 0;
-  font-family: Arial;
-  background: #0b0b14;
-  color: white;
-}
+  <title>Firebase Live Lokátor</title>
 
-header {
-  padding: 12px;
-  text-align: center;
-  background: #111;
-  border-bottom: 1px solid #333;
-}
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  />
 
-#auth {
-  max-width: 400px;
-  margin: 50px auto;
-  padding: 15px;
-  background: rgba(255,255,255,0.05);
-  border-radius: 10px;
-}
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+    }
 
-input, button {
-  width: 100%;
-  padding: 10px;
-  margin-top: 8px;
-  border-radius: 8px;
-  border: none;
-}
+    #map {
+      width: 100vw;
+      height: 100vh;
+    }
 
-button {
-  background: #ff2d55;
-  color: white;
-  cursor: pointer;
-}
+    .topbar {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      z-index: 9999;
+      background: white;
+      padding: 10px;
+      border-radius: 10px;
+      display: flex;
+      gap: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+    }
 
-#app {
-  display: none;
-  max-width: 600px;
-  margin: auto;
-}
+    input {
+      padding: 8px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
 
-.postBox {
-  margin: 10px;
-  padding: 10px;
-  background: rgba(255,255,255,0.05);
-  border-radius: 10px;
-}
-
-.post {
-  margin: 10px;
-  background: #1a1a2a;
-  border-radius: 10px;
-  overflow: hidden;
-}
-
-.post img {
-  width: 100%;
-}
-
-.postContent {
-  padding: 10px;
-}
-</style>
+    button {
+      padding: 8px 12px;
+      border: none;
+      border-radius: 6px;
+      background: #007bff;
+      color: white;
+      cursor: pointer;
+    }
+  </style>
 </head>
-
 <body>
 
-<header>🔥 IG STARTER FIX</header>
-
-<div id="auth">
-  <input id="email" placeholder="Email">
-  <input id="pass" type="password" placeholder="Password">
-
-  <button id="regBtn">Register</button>
-  <button id="loginBtn">Login</button>
-
-  <p id="status"></p>
+<div class="topbar">
+  <input id="username" placeholder="Neved">
+  <button onclick="startTracking()">Start</button>
 </div>
 
-<div id="app">
+<div id="map"></div>
 
-  <div class="postBox">
-    <input id="img" placeholder="Image URL">
-    <input id="text" placeholder="Caption">
-    <button id="postBtn">Post</button>
-  </div>
-
-  <div id="feed"></div>
-
-</div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script type="module">
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import {
-  getAuth,
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 
 import {
   getDatabase,
   ref,
-  push,
   set,
   onValue
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
+
+// FIREBASE CONFIG
 const firebaseConfig = {
   apiKey: "AIzaSyBgbixws2rf6VdqjQATVwZsKg0lgiqy0xI",
   authDomain: "ordog-fizetes.firebaseapp.com",
@@ -122,104 +82,107 @@ const firebaseConfig = {
   projectId: "ordog-fizetes",
   storageBucket: "ordog-fizetes.firebasestorage.app",
   messagingSenderId: "672089263660",
-  appId: "1:672089263660:web:3797a2fc935c63a0464b89"
+  appId: "1:672089263660:web:70086de26402ceb3464b89"
 };
 
+
+// FIREBASE INIT
 const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
 const db = getDatabase(app);
 
-let user = null;
 
-//
-// 🔐 REGISTER
-//
-document.getElementById("regBtn").onclick = async () => {
-  try {
-    await createUserWithEmailAndPassword(
-      auth,
-      email.value,
-      pass.value
-    );
-  } catch (e) {
-    status.innerText = e.message;
+// MAP
+const map = L.map('map').setView([47.4979, 19.0402], 13);
+
+L.tileLayer(
+  'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+  {
+    attribution: '&copy; OpenStreetMap contributors'
   }
-};
+).addTo(map);
 
-//
-// 🔑 LOGIN
-//
-document.getElementById("loginBtn").onclick = async () => {
-  try {
-    await signInWithEmailAndPassword(
-      auth,
-      email.value,
-      pass.value
-    );
-  } catch (e) {
-    status.innerText = e.message;
+
+// MARKERS
+const markers = {};
+
+function createOrUpdateMarker(id, lat, lng, username) {
+
+  if (markers[id]) {
+    markers[id].setLatLng([lat, lng]);
+    return;
   }
-};
 
-//
-// 👤 AUTH STATE
-//
-onAuthStateChanged(auth, (u) => {
-  user = u;
+  markers[id] = L.marker([lat, lng])
+    .addTo(map)
+    .bindPopup(username);
 
-  if (user) {
-    auth.style.display = "none";
-    app.style.display = "block";
-
-    loadFeed();
-  } else {
-    auth.style.display = "block";
-    app.style.display = "none";
-  }
-});
-
-//
-// 📤 POST
-//
-document.getElementById("postBtn").onclick = () => {
-  const postRef = push(ref(db, "posts"));
-
-  set(postRef, {
-    img: img.value,
-    text: text.value,
-    user: user.email,
-    time: Date.now()
-  });
-};
-
-//
-// 🌍 FEED
-//
-function loadFeed() {
-  onValue(ref(db, "posts"), (snap) => {
-    const data = snap.val();
-    const feed = document.getElementById("feed");
-
-    feed.innerHTML = "";
-
-    for (let id in data || {}) {
-      const p = data[id];
-
-      const div = document.createElement("div");
-      div.className = "post";
-
-      div.innerHTML = `
-        <img src="${p.img}">
-        <div class="postContent">
-          <b>${p.user}</b><br>
-          ${p.text}
-        </div>
-      `;
-
-      feed.appendChild(div);
-    }
-  });
 }
+
+
+// START TRACKING
+window.startTracking = function () {
+
+  const username =
+    document.getElementById("username").value || "anonymous";
+
+  const userId = crypto.randomUUID();
+
+  navigator.geolocation.watchPosition(
+
+    async (position) => {
+
+      const lat = position.coords.latitude;
+      const lng = position.coords.longitude;
+
+      // SAVE TO FIREBASE
+      await set(ref(db, "locations/" + userId), {
+        username,
+        lat,
+        lng,
+        updatedAt: Date.now()
+      });
+
+      // CENTER MAP
+      map.setView([lat, lng], 15);
+
+    },
+
+    (error) => {
+      alert("GPS hiba: " + error.message);
+    },
+
+    {
+      enableHighAccuracy: true,
+      maximumAge: 0,
+      timeout: 5000
+    }
+
+  );
+
+};
+
+
+// REALTIME LISTENER
+onValue(ref(db, "locations"), (snapshot) => {
+
+  const data = snapshot.val();
+
+  if (!data) return;
+
+  Object.keys(data).forEach((id) => {
+
+    const user = data[id];
+
+    createOrUpdateMarker(
+      id,
+      user.lat,
+      user.lng,
+      user.username
+    );
+
+  });
+
+});
 
 </script>
 
