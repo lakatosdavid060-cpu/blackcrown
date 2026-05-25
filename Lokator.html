@@ -7,17 +7,7 @@
 
 <title>Family Locator Pro</title>
 
-<link
-  rel="stylesheet"
-  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-/>
-
-<link
-  rel="manifest"
-  href="manifest.json"
-/>
-
-<meta name="theme-color" content="#0f172a"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
 <style>
 
@@ -25,64 +15,95 @@
   margin:0;
   padding:0;
   box-sizing:border-box;
+  font-family:Arial;
 }
 
 body{
-  font-family:Arial;
+  overflow:hidden;
   background:#0f172a;
   color:white;
-  overflow:hidden;
 }
 
+/* MAP */
 #map{
   width:100vw;
   height:100vh;
 }
 
-.sidebar{
+/* FLOAT BUTTON (MOBILE) */
+.fab{
+  position:absolute;
+  top:10px;
+  left:10px;
+  z-index:99999;
+
+  width:50px;
+  height:50px;
+
+  border-radius:50%;
+  border:none;
+
+  background:#2563eb;
+  color:white;
+  font-size:20px;
+}
+
+/* PANEL */
+.panel{
 
   position:absolute;
-  top:0;
+  bottom:-75%;
   left:0;
 
-  width:320px;
-  height:100vh;
+  width:100%;
+  height:75%;
 
   background:#111827;
 
-  z-index:9999;
+  z-index:99998;
 
-  padding:20px;
+  border-top-left-radius:20px;
+  border-top-right-radius:20px;
+
+  transition:0.3s;
+
+  padding:15px;
 
   overflow-y:auto;
-
-  border-right:1px solid #1f2937;
 }
 
-.logo{
-  font-size:22px;
-  font-weight:bold;
-  margin-bottom:20px;
+.panel.open{
+  bottom:0;
 }
 
+/* HANDLE */
+.handle{
+  width:60px;
+  height:6px;
+  background:#374151;
+  border-radius:10px;
+  margin:0 auto 10px auto;
+}
+
+/* INPUT */
 input{
-
   width:100%;
   padding:12px;
-
-  background:#1f2937;
-  color:white;
+  margin-bottom:10px;
 
   border:none;
   border-radius:10px;
 
-  margin-bottom:10px;
+  background:#1f2937;
+  color:white;
 }
 
+/* BUTTON */
 button{
-
   width:100%;
   padding:12px;
+
+  margin-bottom:10px;
 
   border:none;
   border-radius:10px;
@@ -91,75 +112,46 @@ button{
   color:white;
 
   cursor:pointer;
-
-  margin-bottom:10px;
-}
-
-button:hover{
-  opacity:0.9;
-}
-
-.card{
-
-  background:#1f2937;
-  padding:12px;
-
-  border-radius:12px;
-
-  margin-bottom:10px;
-}
-
-.speed{
-  color:#22c55e;
 }
 
 .sos{
   background:#dc2626;
 }
 
+/* USERS */
+.card{
+  background:#1f2937;
+  padding:10px;
+  border-radius:10px;
+  margin-bottom:8px;
+}
+
+/* CHAT */
 .chat{
-
   position:absolute;
+  right:0;
   bottom:0;
-  left:320px;
 
-  width:400px;
+  width:300px;
   height:250px;
 
   background:#111827;
 
-  z-index:9999;
+  z-index:99999;
 
   display:flex;
   flex-direction:column;
 }
 
-.chat-messages{
+.msgs{
   flex:1;
   overflow-y:auto;
   padding:10px;
 }
 
-.chat-input{
-  display:flex;
-}
-
-.chat-input input{
-  border-radius:0;
-  margin:0;
-}
-
-.chat-input button{
-  width:100px;
+.chat input{
   margin:0;
   border-radius:0;
-}
-
-.msg{
-  margin-bottom:10px;
-  padding:10px;
-  background:#1f2937;
-  border-radius:10px;
 }
 
 </style>
@@ -168,59 +160,37 @@ button:hover{
 
 <body>
 
-<div class="sidebar">
-
-  <div class="logo">
-    🔥 Family Locator Pro
-  </div>
-
-  <input
-    id="username"
-    placeholder="Neved"
-  />
-
-  <input
-    id="avatar"
-    placeholder="Profilkép URL"
-  />
-
-  <button onclick="startTracking()">
-    Start Tracking
-  </button>
-
-  <button class="sos" onclick="sendSOS()">
-    🚨 SOS
-  </button>
-
-  <div id="battery"></div>
-
-  <hr style="margin:20px 0;border-color:#1f2937;">
-
-  <div id="users"></div>
-
-</div>
+<button class="fab" onclick="togglePanel()">☰</button>
 
 <div id="map"></div>
 
+<!-- PANEL -->
+<div class="panel" id="panel">
+
+<div class="handle" onclick="togglePanel()"></div>
+
+<h3>🔥 Live Locator</h3>
+
+<input id="username" placeholder="Neved">
+<input id="avatar" placeholder="Profilkép URL">
+
+<button onclick="startTracking()">Start Tracking</button>
+<button class="sos" onclick="sendSOS()">🚨 SOS</button>
+
+<div id="battery"></div>
+
+<hr style="margin:10px 0;border-color:#1f2937;">
+
+<div id="users"></div>
+
+</div>
+
+<!-- CHAT -->
 <div class="chat">
 
-  <div
-    class="chat-messages"
-    id="messages"
-  ></div>
+<div class="msgs" id="msgs"></div>
 
-  <div class="chat-input">
-
-    <input
-      id="messageInput"
-      placeholder="Üzenet..."
-    />
-
-    <button onclick="sendMessage()">
-      Send
-    </button>
-
-  </div>
+<input id="msgInput" placeholder="Üzenet..." onkeydown="if(event.key==='Enter')sendMsg()"/>
 
 </div>
 
@@ -228,8 +198,7 @@ button:hover{
 
 <script type="module">
 
-import { initializeApp }
-from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 
 import {
   getDatabase,
@@ -238,13 +207,11 @@ import {
   push,
   onValue,
   onDisconnect
-}
-from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
 
-// FIREBASE
+// FIREBASE (IDE TEGYED A SAJÁTOT)
 const firebaseConfig = {
-
   apiKey: "AIzaSyBgbixws2rf6VdqjQATVwZsKg0lgiqy0xI",
   authDomain: "ordog-fizetes.firebaseapp.com",
   databaseURL: "https://ordog-fizetes-default-rtdb.europe-west1.firebasedatabase.app",
@@ -252,76 +219,62 @@ const firebaseConfig = {
   storageBucket: "ordog-fizetes.firebasestorage.app",
   messagingSenderId: "672089263660",
   appId: "1:672089263660:web:70086de26402ceb3464b89"
-
 };
 
-
 const app = initializeApp(firebaseConfig);
-
 const db = getDatabase(app);
 
 
-// MAP
-const map = L.map('map').setView(
-  [47.4979, 19.0402],
-  13
-);
+// MAP (DARK MODE)
+const map = L.map('map').setView([47.4979,19.0402],13);
 
-
-// DARK MAP
 L.tileLayer(
   'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-  {
-    attribution:'&copy; OpenStreetMap'
-  }
+  { attribution:'&copy; OpenStreetMap' }
 ).addTo(map);
 
 
-// STORAGE
-const markers = {};
-const trails = {};
-
+// DATA
 let myId = null;
 let myName = "";
+let myAvatar = "";
+
+const markers = {};
+const paths = {};
 
 
-// PROFILE ICON
-function createAvatar(url,name){
+// TOGGLE PANEL
+window.togglePanel = function(){
+  document.getElementById("panel")
+    .classList.toggle("open");
+};
+
+
+// ICON
+function icon(url,name){
 
   return L.divIcon({
 
     html:`
-
-      <div style="
-        display:flex;
-        flex-direction:column;
-        align-items:center;
-      ">
-
-        <img
-          src="${url}"
+      <div style="text-align:center">
+        <img src="${url}"
           style="
-            width:50px;
-            height:50px;
+            width:45px;
+            height:45px;
             border-radius:50%;
-            border:3px solid #2563eb;
-          "
-        />
+            border:2px solid #2563eb;
+          "/>
 
         <div style="
-          margin-top:5px;
           background:#111827;
-          padding:3px 8px;
-          border-radius:10px;
-          font-size:12px;
+          padding:2px 6px;
+          border-radius:8px;
+          font-size:11px;
         ">
           ${name}
         </div>
-
       </div>
-
     `,
-
     className:""
 
   });
@@ -330,99 +283,45 @@ function createAvatar(url,name){
 
 
 // START
-window.startTracking = async function(){
+window.startTracking = function(){
 
   myName =
-    document.getElementById("username").value
-    || "anonymous";
+    document.getElementById("username").value || "anon";
 
-  const avatar =
-    document.getElementById("avatar").value
-    || "https://i.pravatar.cc/100";
+  myAvatar =
+    document.getElementById("avatar").value ||
+    "https://i.pravatar.cc/100";
 
   myId = crypto.randomUUID();
 
-  onDisconnect(
-    ref(db,"users/"+myId)
-  ).remove();
+  onDisconnect(ref(db,"users/"+myId)).remove();
 
 
-  // BATTERY
-  if(navigator.getBattery){
-
-    const battery =
-      await navigator.getBattery();
-
-    document.getElementById("battery")
-      .innerHTML =
-      `🔋 Battery:
-      ${Math.round(battery.level*100)}%`;
-
-  }
-
-
-  // GPS
   navigator.geolocation.watchPosition(
 
-    async(position)=>{
+    async (pos)=>{
 
-      const lat =
-        position.coords.latitude;
+      const lat = pos.coords.latitude;
+      const lng = pos.coords.longitude;
+      const speed = pos.coords.speed || 0;
 
-      const lng =
-        position.coords.longitude;
-
-      const speed =
-        position.coords.speed || 0;
-
-      // SAVE
-      await set(
-        ref(db,"users/"+myId),
-        {
-          name:myName,
-          avatar,
-          lat,
-          lng,
-          speed,
-          updatedAt:Date.now()
-        }
-      );
-
-
-      // PATH SAVE
-      await push(
-        ref(db,"routes/"+myId),
-        {
-          lat,
-          lng,
-          time:Date.now()
-        }
-      );
-
+      await set(ref(db,"users/"+myId),{
+        name:myName,
+        avatar:myAvatar,
+        lat,
+        lng,
+        speed,
+        time:Date.now()
+      });
 
       map.setView([lat,lng],16);
 
-
-      // GEOFENCE ALERT
-      if(speed*3.6 > 120){
-
-        alert(
-          "⚠️ Speed limit exceeded!"
-        );
-
-      }
-
     },
 
-    (err)=>{
-
-      alert(err.message);
-
-    },
+    (err)=>alert(err.message),
 
     {
       enableHighAccuracy:true,
-      timeout:5000,
       maximumAge:0
     }
 
@@ -431,166 +330,98 @@ window.startTracking = async function(){
 };
 
 
-// LIVE USERS
-onValue(
-  ref(db,"users"),
-  (snapshot)=>{
+// USERS LIVE
+onValue(ref(db,"users"),(snap)=>{
 
-    const data =
-      snapshot.val();
+  const data = snap.val();
+  if(!data) return;
 
-    if(!data) return;
+  const usersDiv = document.getElementById("users");
+  usersDiv.innerHTML = "";
 
-    const users =
-      document.getElementById("users");
+  Object.keys(data).forEach(id=>{
 
-    users.innerHTML = "";
+    const u = data[id];
 
-    Object.keys(data).forEach((id)=>{
+    // marker
+    if(markers[id]){
+      markers[id].setLatLng([u.lat,u.lng]);
+      paths[id].addLatLng([u.lat,u.lng]);
+    }else{
 
-      const user = data[id];
+      markers[id] = L.marker([u.lat,u.lng],{
+        icon:icon(u.avatar,u.name)
+      }).addTo(map);
 
-      // MARKER UPDATE
-      if(markers[id]){
+      paths[id] = L.polyline([[u.lat,u.lng]],{
+        weight:4
+      }).addTo(map);
 
-        markers[id].setLatLng(
-          [user.lat,user.lng]
-        );
+    }
 
-        trails[id].addLatLng(
-          [user.lat,user.lng]
-        );
+    usersDiv.innerHTML += `
+      <div class="card">
+        <b>${u.name}</b><br>
+        🚗 ${Math.round(u.speed*3.6 || 0)} km/h
+      </div>
+    `;
 
-      }else{
+  });
 
-        markers[id] = L.marker(
-          [user.lat,user.lng],
-          {
-            icon:createAvatar(
-              user.avatar,
-              user.name
-            )
-          }
-        ).addTo(map);
-
-        trails[id] = L.polyline(
-          [[user.lat,user.lng]],
-          {
-            weight:4
-          }
-        ).addTo(map);
-
-      }
-
-
-      // USER CARD
-      users.innerHTML += `
-
-        <div class="card">
-
-          <b>${user.name}</b><br>
-
-          <span class="speed">
-            🚗
-            ${Math.round(user.speed*3.6 || 0)}
-            km/h
-          </span>
-
-        </div>
-
-      `;
-
-    });
-
-  }
-);
+});
 
 
 // CHAT
-window.sendMessage = async function(){
-
-  const input =
-    document.getElementById("messageInput");
+window.sendMsg = async function(){
 
   const text =
-    input.value;
+    document.getElementById("msgInput").value;
 
   if(!text) return;
 
-  await push(
-    ref(db,"chat"),
-    {
-      user:myName,
-      text,
-      time:Date.now()
-    }
-  );
+  await push(ref(db,"chat"),{
+    user:myName,
+    text,
+    time:Date.now()
+  });
 
-  input.value = "";
-
+  document.getElementById("msgInput").value="";
 };
 
 
 // LIVE CHAT
-onValue(
-  ref(db,"chat"),
-  (snapshot)=>{
+onValue(ref(db,"chat"),snap=>{
 
-    const data =
-      snapshot.val();
+  const data = snap.val();
+  if(!data) return;
 
-    if(!data) return;
+  const box = document.getElementById("msgs");
+  box.innerHTML = "";
 
-    const messages =
-      document.getElementById("messages");
+  Object.values(data).forEach(m=>{
 
-    messages.innerHTML = "";
+    box.innerHTML += `
+      <div style="margin-bottom:8px;">
+        <b>${m.user}</b><br>${m.text}
+      </div>
+    `;
 
-    Object.values(data).forEach((msg)=>{
+  });
 
-      messages.innerHTML += `
-
-        <div class="msg">
-
-          <b>${msg.user}</b><br>
-
-          ${msg.text}
-
-        </div>
-
-      `;
-
-    });
-
-  }
-);
+});
 
 
 // SOS
 window.sendSOS = async function(){
 
-  if(!myId) return;
-
-  await push(
-    ref(db,"alerts"),
-    {
-      user:myName,
-      type:"SOS",
-      time:Date.now()
-    }
-  );
+  await push(ref(db,"alerts"),{
+    user:myName,
+    time:Date.now()
+  });
 
   alert("🚨 SOS elküldve!");
 
 };
-
-
-// PUSH NOTIFICATION
-if("Notification" in window){
-
-  Notification.requestPermission();
-
-}
 
 </script>
 
