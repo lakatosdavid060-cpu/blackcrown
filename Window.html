@@ -2,41 +2,22 @@
 <html lang="hu">
 <head>
 <meta charset="UTF-8">
-<title>Windows 10 Ultimate Engine</title>
+<title>Windows 11 Hybrid OS</title>
 
 <style>
 body {
     margin: 0;
     font-family: Segoe UI, Arial;
     overflow: hidden;
-    background: black;
+    background: #0b1220;
 }
 
-/* LOGIN */
-#login {
-    position: absolute;
-    width: 100vw;
-    height: 100vh;
-    background: radial-gradient(circle, #1e3a8a, #0b1220);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-    color: white;
-}
-
+/* DESKTOP */
 #desktop {
-    display: none;
     width: 100vw;
     height: 100vh;
     position: relative;
-    background: linear-gradient(120deg,#1e3a8a,#0b1220);
-    animation: bgmove 10s infinite alternate;
-}
-
-@keyframes bgmove {
-    0%{filter: hue-rotate(0deg);}
-    100%{filter: hue-rotate(40deg);}
+    background: radial-gradient(circle at top, #1e3a8a, #0b1220);
 }
 
 /* ICON */
@@ -48,24 +29,23 @@ body {
     cursor: grab;
 }
 
-.icon img { width:48px;height:48px; }
+.icon img { width:48px; height:48px; }
 
 /* WINDOW */
 .window {
-    width: 380px;
-    height: 260px;
+    width: 420px;
+    height: 300px;
     background: rgba(255,255,255,0.1);
-    backdrop-filter: blur(12px);
-    border-radius: 8px;
+    backdrop-filter: blur(14px);
     border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 10px;
     position: absolute;
-    color: white;
     overflow: hidden;
-    transition: 0.2s;
+    color: white;
 }
 
 .titlebar {
-    background: rgba(0,0,0,0.4);
+    background: rgba(0,0,0,0.5);
     padding: 6px;
     display:flex;
     justify-content: space-between;
@@ -77,8 +57,8 @@ body {
     position: absolute;
     bottom: 0;
     width: 100%;
-    height: 45px;
-    background: rgba(20,20,20,0.9);
+    height: 48px;
+    background: rgba(20,20,20,0.85);
     display:flex;
     align-items:center;
     gap:10px;
@@ -89,107 +69,101 @@ body {
 #startBtn {
     background:#2563eb;
     padding:6px 12px;
-    border-radius:4px;
+    border-radius:6px;
     cursor:pointer;
+}
+
+/* START MENU */
+#startMenu {
+    position: absolute;
+    bottom: 48px;
+    left: 10px;
+    width: 260px;
+    background: rgba(30,30,30,0.95);
+    border-radius: 10px;
+    padding: 10px;
+    display:none;
+}
+
+.start-item {
+    padding: 8px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.start-item:hover {
+    background:#2563eb;
+}
+
+/* STORE */
+.store-item {
+    padding: 8px;
+    margin: 5px 0;
+    background: rgba(255,255,255,0.05);
+    border-radius: 6px;
+    cursor: pointer;
 }
 
 /* TASK */
 .task {
     background: rgba(255,255,255,0.1);
-    padding:4px 8px;
-    border-radius:6px;
+    padding: 4px 8px;
+    border-radius: 6px;
     cursor:pointer;
-}
-
-/* PROCESS */
-.proc {
-    padding:5px;
-    background: rgba(255,255,255,0.05);
-    margin:3px;
-    border-radius:5px;
-    cursor:pointer;
-}
-
-.file {
-    padding:6px;
-    margin:4px 0;
-    background: rgba(255,255,255,0.05);
-    border-radius:6px;
-    cursor:pointer;
-}
-
-.file:hover {
-    background: rgba(37,99,235,0.4);
 }
 </style>
 </head>
 
 <body>
 
-<!-- LOGIN -->
-<div id="login">
-    <h1>Windows 10 Ultimate</h1>
-    <input id="user" placeholder="Username">
-    <input id="pass" placeholder="Password" type="password">
-    <button onclick="login()">Login</button>
-</div>
-
-<!-- DESKTOP -->
 <div id="desktop"></div>
 
-<!-- TASKBAR -->
 <div id="taskbar">
-    <div id="startBtn" onclick="openWindow('Start','start')">🪟 Start</div>
+    <div id="startBtn" onclick="toggleStart()">🪟 Start</div>
     <div id="tasks"></div>
+</div>
+
+<!-- START MENU -->
+<div id="startMenu">
+    <div class="start-item" onclick="openApp('store')">🛒 Store</div>
+    <div class="start-item" onclick="openApp('settings')">⚙ Settings</div>
+    <div class="start-item" onclick="openApp('browser')">🌐 Browser</div>
 </div>
 
 <script>
 
 /* =========================
-   SOUND (simple fake)
-========================= */
-function beep(){
-    let a=new Audio("https://www.soundjay.com/buttons/sounds/button-16.mp3");
-    a.volume=0.2;
-    a.play();
-}
-
-/* =========================
-   LOGIN
-========================= */
-function login(){
-    beep();
-    document.getElementById("login").style.display="none";
-    document.getElementById("desktop").style.display="block";
-    init();
-}
-
-/* =========================
-   STATE
+   STATE = OS DISK
 ========================= */
 
 let z=1;
-let windows={};
-let processes={};
+
+let state = {
+    apps: JSON.parse(localStorage.getItem("apps")||"[]"),
+    windows:{}
+};
+
+/* SAVE */
+function save(){
+    localStorage.setItem("apps",JSON.stringify(state.apps));
+}
 
 /* =========================
-   WINDOWS
+   WINDOW ENGINE
 ========================= */
 
-function openWindow(name,type){
+function openApp(type){
 
-    beep();
+    let name = type;
 
-    if(windows[name]){
-        restore(name);
+    if(state.windows[name]){
+        state.windows[name].style.display="block";
         return;
     }
 
     let win=document.createElement("div");
     win.className="window";
     win.style.zIndex=++z;
-
-    processes[name]=true;
 
     win.innerHTML=`
         <div class="titlebar">
@@ -200,45 +174,83 @@ function openWindow(name,type){
             </div>
         </div>
         <div class="content">
-            ${render(type,name)}
+            ${renderApp(type)}
         </div>
     `;
 
     document.getElementById("desktop").appendChild(win);
-    windows[name]=win;
+    state.windows[name]=win;
 
     addTask(name);
     drag(win);
 }
 
 /* =========================
-   RENDER APPS
+   APPS
 ========================= */
 
-function render(type,name){
+function renderApp(type){
 
-    if(type==="start"){
+    /* STORE */
+    if(type==="store"){
         return `
-            <h3>Start Menu</h3>
-            <button onclick="openWindow('Task Manager','tm')">Task Manager</button>
-            <button onclick="openWindow('Explorer','explorer')">File Explorer</button>
+            <h3>🛒 App Store</h3>
+            <div class="store-item" onclick="install('Notepad')">Install Notepad</div>
+            <div class="store-item" onclick="install('Game Launcher')">Install Game Launcher</div>
+            <div class="store-item" onclick="install('Terminal')">Install Terminal</div>
         `;
     }
 
-    if(type==="tm"){
-        return Object.keys(processes).map(p=>
-            `<div class="proc" onclick="kill('${p}')">${p}</div>`
-        ).join("");
-    }
-
-    if(type==="explorer"){
+    /* SETTINGS */
+    if(type==="settings"){
         return `
-            <div class="file" draggable="true" ondragstart="dragFile(event,'Steam')">Steam</div>
-            <div class="file" ondragover="allow(event)" ondrop="drop(event,'FiveM')">📁 Drop area (FiveM folder)</div>
+            <h3>⚙ Settings</h3>
+            <label>Background</label>
+            <input type="color" onchange="setBG(this.value)">
+            <button onclick="reset()">Reset OS</button>
         `;
     }
 
-    return `<button onclick="window.open('https://fivem.net')">Open</button>`;
+    /* BROWSER */
+    if(type==="browser"){
+        return `
+            <h3>🌐 Browser</h3>
+            <input id="url" placeholder="https://...">
+            <button onclick="go()">Go</button>
+            <iframe id="frame" style="width:100%;height:200px;border:none;"></iframe>
+        `;
+    }
+
+    if(type==="Notepad"){
+        return `<textarea style="width:100%;height:200px;"></textarea>`;
+    }
+
+    if(type==="Terminal"){
+        return `<p>fake terminal ready...</p>`;
+    }
+
+    return `<p>App running</p>`;
+}
+
+/* =========================
+   STORE INSTALL SYSTEM
+========================= */
+
+function install(app){
+    if(!state.apps.includes(app)){
+        state.apps.push(app);
+        save();
+        alert(app+" installed!");
+    }
+}
+
+/* =========================
+   BROWSER
+========================= */
+
+function go(){
+    let url=document.getElementById("url").value;
+    document.getElementById("frame").src=url;
 }
 
 /* =========================
@@ -249,7 +261,7 @@ function addTask(name){
     let d=document.createElement("div");
     d.className="task";
     d.innerText=name;
-    d.onclick=()=>restore(name);
+    d.onclick=()=>state.windows[name].style.display="block";
     document.getElementById("tasks").appendChild(d);
 }
 
@@ -257,32 +269,46 @@ function addTask(name){
    WINDOW ACTIONS
 ========================= */
 
-function minimize(n){
-    windows[n].style.display="none";
+function minimize(name){
+    state.windows[name].style.display="none";
 }
 
-function restore(n){
-    windows[n].style.display="block";
-    windows[n].style.zIndex=++z;
-}
-
-function closeW(n){
-    beep();
-    windows[n].remove();
-    delete windows[n];
-    delete processes[n];
+function closeW(name){
+    state.windows[name].remove();
+    delete state.windows[name];
 }
 
 /* =========================
-   TASK KILLER
+   START MENU
 ========================= */
 
-function kill(name){
-    closeW(name);
+function toggleStart(){
+    let m=document.getElementById("startMenu");
+    m.style.display = m.style.display==="block"?"none":"block";
+}
+
+document.addEventListener("click",(e)=>{
+    if(!e.target.closest("#startBtn") && !e.target.closest("#startMenu")){
+        document.getElementById("startMenu").style.display="none";
+    }
+});
+
+/* =========================
+   SETTINGS
+========================= */
+
+function setBG(c){
+    document.body.style.background=c;
+    localStorage.setItem("bg",c);
+}
+
+function reset(){
+    localStorage.clear();
+    location.reload();
 }
 
 /* =========================
-   DRAG WINDOW
+   DRAG WINDOWS
 ========================= */
 
 function drag(el){
@@ -306,26 +332,11 @@ function drag(el){
 }
 
 /* =========================
-   FILE DRAG DROP (simple)
+   INIT
 ========================= */
 
-function allow(e){ e.preventDefault(); }
-
-function dragFile(e,name){
-    e.dataTransfer.setData("text",name);
-}
-
-function drop(e,target){
-    let file=e.dataTransfer.getData("text");
-    alert(file+" moved to "+target);
-}
-
-/* =========================
-   INIT DESKTOP ICONS
-========================= */
-
-function init(){
-    openWindow("Explorer","explorer");
+if(localStorage.getItem("bg")){
+    document.body.style.background=localStorage.getItem("bg");
 }
 
 </script>
