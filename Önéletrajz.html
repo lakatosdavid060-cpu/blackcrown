@@ -1,420 +1,1126 @@
 <!DOCTYPE html>
 <html lang="hu">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Önéletrajz Készítő</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<title>Modern Önéletrajz Készítő</title>
 
-  <style>
-    *{
-      margin:0;
-      padding:0;
-      box-sizing:border-box;
-      font-family: Arial, sans-serif;
-    }
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
-    body{
-      background:#f4f4f4;
-      padding:20px;
-    }
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
-    .container{
-      display:flex;
-      gap:20px;
-      align-items:flex-start;
-    }
+<style>
 
-    .form-section{
-      width:35%;
-      background:white;
-      padding:20px;
-      border-radius:12px;
-      box-shadow:0 2px 10px rgba(0,0,0,0.1);
-      position:sticky;
-      top:20px;
-    }
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+}
 
-    .preview-section{
-      width:65%;
-    }
+body{
+  font-family:'Inter',sans-serif;
+  background:#eef2f7;
+  color:#222;
+}
 
-    .cv{
-      background:white;
-      padding:40px;
-      border-radius:12px;
-      box-shadow:0 2px 10px rgba(0,0,0,0.1);
-    }
+.container{
+  display:flex;
+  min-height:100vh;
+}
 
-    h1{
-      margin-bottom:10px;
-      color:#222;
-    }
+/* SIDEBAR */
 
-    h2{
-      margin-top:25px;
-      margin-bottom:10px;
-      color:#444;
-      border-bottom:1px solid #ddd;
-      padding-bottom:5px;
-    }
+.sidebar{
+  width:420px;
+  background:white;
+  padding:25px;
+  overflow:auto;
+  border-right:1px solid #ddd;
+}
 
-    p{
-      margin-bottom:8px;
-      color:#333;
-    }
+.sidebar h1{
+  margin-bottom:20px;
+  font-size:28px;
+}
 
-    label{
-      display:block;
-      margin-top:15px;
-      margin-bottom:5px;
-      font-weight:bold;
-    }
+.section-title{
+  margin-top:30px;
+  margin-bottom:15px;
+  font-size:18px;
+  font-weight:700;
+}
 
-    input, textarea{
-      width:100%;
-      padding:10px;
-      border:1px solid #ccc;
-      border-radius:8px;
-      resize:vertical;
-    }
+input,
+textarea,
+select{
+  width:100%;
+  padding:14px;
+  border-radius:14px;
+  border:1px solid #d8dce2;
+  margin-top:8px;
+  margin-bottom:14px;
+  font-size:15px;
+  transition:0.2s;
+  background:#fafafa;
+}
 
-    textarea{
-      min-height:80px;
-    }
+input:focus,
+textarea:focus,
+select:focus{
+  outline:none;
+  border-color:#4f7cff;
+  background:white;
+}
 
-    button{
-      width:100%;
-      padding:12px;
-      border:none;
-      border-radius:8px;
-      background:#222;
-      color:white;
-      font-size:16px;
-      cursor:pointer;
-      margin-top:20px;
-      transition:0.3s;
-    }
+textarea{
+  min-height:100px;
+  resize:vertical;
+}
 
-    button:hover{
-      background:#444;
-    }
+.card{
+  background:#f8f9fc;
+  border:1px solid #e1e5eb;
+  border-radius:18px;
+  padding:15px;
+  margin-bottom:15px;
+}
 
-    .top{
-      display:flex;
-      gap:20px;
-      align-items:center;
-      margin-bottom:20px;
-    }
+button{
+  width:100%;
+  padding:14px;
+  border:none;
+  border-radius:14px;
+  font-size:15px;
+  cursor:pointer;
+  transition:0.2s;
+  font-weight:600;
+}
 
-    .profile-pic{
-      width:120px;
-      height:120px;
-      border-radius:50%;
-      object-fit:cover;
-      border:3px solid #ddd;
-    }
+.add-btn{
+  background:#4f7cff;
+  color:white;
+  margin-bottom:15px;
+}
 
-    .info{
-      flex:1;
-    }
+.add-btn:hover{
+  background:#3d67dd;
+}
 
-    ul{
-      padding-left:20px;
-    }
+.download-btn{
+  background:#111827;
+  color:white;
+  margin-top:20px;
+}
 
-    li{
-      margin-bottom:6px;
-    }
+.download-btn:hover{
+  background:#000;
+}
 
-    @media(max-width:900px){
+/* PREVIEW */
 
-      .container{
-        flex-direction:column;
-      }
+.preview-area{
+  flex:1;
+  padding:40px;
+  overflow:auto;
+}
 
-      .form-section,
-      .preview-section{
-        width:100%;
-      }
+.topbar{
+  display:flex;
+  justify-content:space-between;
+  margin-bottom:25px;
+}
 
-      .form-section{
-        position:relative;
-        top:0;
-      }
+.template-buttons{
+  display:flex;
+  gap:10px;
+}
 
-    }
-  </style>
+.template-btn{
+  width:auto;
+  padding:10px 18px;
+  background:white;
+  border:1px solid #ddd;
+}
+
+.template-btn:hover{
+  background:#f3f4f6;
+}
+
+/* CV */
+
+.cv{
+  width:210mm;
+  min-height:297mm;
+  margin:auto;
+  background:white;
+  border-radius:22px;
+  overflow:hidden;
+  box-shadow:0 10px 40px rgba(0,0,0,0.1);
+}
+
+/* TEMPLATE 1 */
+
+.template-modern{
+  display:flex;
+}
+
+.left{
+  width:32%;
+  background:#111827;
+  color:white;
+  padding:30px;
+}
+
+.right{
+  width:68%;
+  padding:40px;
+}
+
+.profile-pic{
+  width:140px;
+  height:140px;
+  border-radius:50%;
+  object-fit:cover;
+  display:block;
+  margin:auto;
+  border:5px solid white;
+}
+
+.name{
+  text-align:center;
+  margin-top:20px;
+  font-size:30px;
+  font-weight:700;
+}
+
+.contact{
+  margin-top:30px;
+}
+
+.contact p{
+  margin-bottom:10px;
+  font-size:14px;
+}
+
+.cv-section{
+  margin-top:30px;
+}
+
+.cv-section h2{
+  margin-bottom:15px;
+  font-size:20px;
+  color:#4f7cff;
+}
+
+.left .cv-section h2{
+  color:white;
+}
+
+.item{
+  margin-bottom:18px;
+}
+
+.item strong{
+  display:block;
+  margin-bottom:5px;
+}
+
+.skill{
+  display:inline-block;
+  background:#4f7cff;
+  color:white;
+  padding:7px 12px;
+  border-radius:30px;
+  margin:5px;
+  font-size:13px;
+}
+
+/* TEMPLATE 2 */
+
+.template-clean{
+  padding:50px;
+}
+
+.template-clean .header{
+  text-align:center;
+  margin-bottom:40px;
+}
+
+.template-clean .header img{
+  width:130px;
+  height:130px;
+  border-radius:50%;
+  object-fit:cover;
+  margin-bottom:20px;
+}
+
+.template-clean .header h1{
+  font-size:36px;
+}
+
+.template-clean h2{
+  margin-top:30px;
+  margin-bottom:10px;
+  border-bottom:2px solid #111827;
+  padding-bottom:6px;
+}
+
+/* MOBILE */
+
+@media(max-width:1200px){
+
+  .container{
+    flex-direction:column;
+  }
+
+  .sidebar{
+    width:100%;
+    border-right:none;
+    border-bottom:1px solid #ddd;
+  }
+
+  .preview-area{
+    padding:15px;
+  }
+
+  .cv{
+    width:100%;
+  }
+
+  .template-modern{
+    flex-direction:column;
+  }
+
+  .left,
+  .right{
+    width:100%;
+  }
+
+}
+
+</style>
 </head>
+
 <body>
 
 <div class="container">
 
-  <!-- FORM -->
-  <div class="form-section">
+<!-- SIDEBAR -->
 
-    <h1>Önéletrajz Készítő</h1>
+<div class="sidebar">
 
-    <label>Név</label>
-    <input type="text" id="name" placeholder="Pl.: Kiss Péter">
+<h1>Önéletrajz Készítő</h1>
 
-    <label>Email</label>
-    <input type="email" id="email" placeholder="pelda@email.com">
+<label>Név</label>
+<input type="text" id="name">
 
-    <label>Telefonszám</label>
-    <input type="text" id="phone" placeholder="+36...">
+<label>Email</label>
+<input type="email" id="email">
 
-    <label>Lakcím</label>
-    <input type="text" id="address" placeholder="Város, utca">
+<label>Telefon</label>
+<input type="text" id="phone">
 
-    <label>Profilkép</label>
-    <input type="file" id="imageInput" accept="image/*">
+<label>Cím</label>
+<input type="text" id="address">
 
-    <label>Bemutatkozás</label>
-    <textarea id="summary"></textarea>
+<label>Bemutatkozás</label>
+<textarea id="summary"></textarea>
 
-    <label>Munkatapasztalat</label>
-    <textarea id="experience" placeholder="Minden sort külön írj"></textarea>
+<label>Profilkép</label>
+<input type="file" id="imageInput">
 
-    <label>Tanulmányok</label>
-    <textarea id="education"></textarea>
+<div class="section-title">Munkatapasztalat</div>
 
-    <label>Készségek</label>
-    <textarea id="skills"></textarea>
+<div id="experienceContainer"></div>
 
-    <label>Nyelvtudás</label>
-    <textarea id="languages"></textarea>
+<button class="add-btn" onclick="addExperience()">
++ Munkatapasztalat
+</button>
 
-    <button onclick="downloadPDF()">PDF Letöltése</button>
+<div class="section-title">Tanulmányok</div>
 
-  </div>
+<div id="educationContainer"></div>
 
-  <!-- PREVIEW -->
-  <div class="preview-section">
+<button class="add-btn" onclick="addEducation()">
++ Tanulmány
+</button>
 
-    <div class="cv" id="cv">
+<div class="section-title">Nyelvtudás</div>
 
-      <div class="top">
+<div id="languageContainer"></div>
 
-        <img
-          src="https://via.placeholder.com/120"
-          class="profile-pic"
-          id="previewImage"
-        >
+<button class="add-btn" onclick="addLanguage()">
++ Nyelv
+</button>
 
-        <div class="info">
-          <h1 id="previewName">Név</h1>
-          <p id="previewEmail">email@email.com</p>
-          <p id="previewPhone">+36...</p>
-          <p id="previewAddress">Cím</p>
-        </div>
+<div class="section-title">Készségek</div>
 
-      </div>
+<div id="skillsContainer"></div>
 
-      <h2>Bemutatkozás</h2>
-      <p id="previewSummary"></p>
+<button class="add-btn" onclick="addSkill()">
++ Készség
+</button>
 
-      <h2>Munkatapasztalat</h2>
-      <ul id="previewExperience"></ul>
+<button class="download-btn" onclick="downloadPDF()">
+PDF Letöltése
+</button>
 
-      <h2>Tanulmányok</h2>
-      <ul id="previewEducation"></ul>
+</div>
 
-      <h2>Készségek</h2>
-      <ul id="previewSkills"></ul>
+<!-- PREVIEW -->
 
-      <h2>Nyelvtudás</h2>
-      <ul id="previewLanguages"></ul>
+<div class="preview-area">
 
-    </div>
+<div class="topbar">
 
-  </div>
+<h2>Sablon választó</h2>
+
+<div class="template-buttons">
+
+<button class="template-btn"
+onclick="setTemplate('modern')">
+Modern
+</button>
+
+<button class="template-btn"
+onclick="setTemplate('clean')">
+Minimal
+</button>
+
+</div>
+
+</div>
+
+<div class="cv template-modern" id="cv">
+
+<!-- TEMPLATE -->
+
+<div class="left">
+
+<img
+src="https://via.placeholder.com/150"
+id="previewImage"
+class="profile-pic"
+>
+
+<div class="name" id="previewName">
+Név
+</div>
+
+<div class="contact">
+
+<p id="previewEmail"></p>
+<p id="previewPhone"></p>
+<p id="previewAddress"></p>
+
+</div>
+
+<div class="cv-section">
+
+<h2>Nyelvtudás</h2>
+
+<div id="previewLanguages"></div>
+
+</div>
+
+<div class="cv-section">
+
+<h2>Készségek</h2>
+
+<div id="previewSkills"></div>
+
+</div>
+
+</div>
+
+<div class="right">
+
+<div class="cv-section">
+
+<h2>Bemutatkozás</h2>
+
+<p id="previewSummary"></p>
+
+</div>
+
+<div class="cv-section">
+
+<h2>Munkatapasztalat</h2>
+
+<div id="previewExperience"></div>
+
+</div>
+
+<div class="cv-section">
+
+<h2>Tanulmányok</h2>
+
+<div id="previewEducation"></div>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
 
 </div>
 
 <script>
 
-  const inputs = document.querySelectorAll("input, textarea");
+/* JOBS */
 
-  inputs.forEach(input => {
-    input.addEventListener("input", updateCV);
+const jobs = [
+
+"Frontend fejlesztő",
+"Backend fejlesztő",
+"Full Stack fejlesztő",
+"Webfejlesztő",
+"Mobil alkalmazás fejlesztő",
+"Szoftverfejlesztő",
+"Rendszergazda",
+"IT Support",
+"Hálózati mérnök",
+"Tesztelő",
+"UI/UX Designer",
+"Grafikus",
+
+"Adminisztrátor",
+"Irodai asszisztens",
+"HR munkatárs",
+"Projektmenedzser",
+"Marketinges",
+"Könyvelő",
+"Pénzügyi ügyintéző",
+"Recepciós",
+
+"Bolti eladó",
+"Pénztáros",
+"Árufeltöltő",
+"Raktáros",
+"Értékesítő",
+
+"Hegesztő",
+"CO hegesztő",
+"AWI hegesztő",
+"Lakatos",
+"CNC gépkezelő",
+"Villanyszerelő",
+"Karbantartó",
+
+"Targoncavezető",
+"Kamionsofőr",
+"Futár",
+
+"Autószerelő",
+"Autóvillamossági szerelő",
+"Gumiszervizes",
+
+"Kőműves",
+"Burkoló",
+"Festő",
+"Ács",
+
+"Szakács",
+"Pincér",
+"Bárpultos",
+
+"Ápoló",
+"Gondozó",
+
+"Fodrász",
+"Kozmetikus",
+
+"Tanár",
+"Edző",
+
+"Biztonsági őr"
+
+];
+
+/* LANGUAGES */
+
+const languages = [
+
+"Magyar",
+"Angol",
+"Német",
+"Francia",
+"Spanyol",
+"Olasz",
+"Orosz",
+"Román",
+"Szlovák",
+"Kínai",
+"Japán"
+
+];
+
+const levels = [
+
+"Kezdő",
+"Alapfok",
+"Középfok",
+"Felsőfok",
+"Folyékony",
+"Anyanyelvi"
+
+];
+
+/* BASIC */
+
+function updateBasic(){
+
+  previewName.innerText =
+    name.value || "Név";
+
+  previewEmail.innerText =
+    email.value;
+
+  previewPhone.innerText =
+    phone.value;
+
+  previewAddress.innerText =
+    address.value;
+
+  previewSummary.innerText =
+    summary.value;
+
+}
+
+document.querySelectorAll(
+"#name,#email,#phone,#address,#summary"
+).forEach(el=>{
+
+  el.addEventListener("input", updateBasic);
+
+});
+
+/* EXPERIENCE */
+
+function addExperience(){
+
+  const card =
+    document.createElement("div");
+
+  card.className = "card";
+
+  card.innerHTML = `
+
+    <input
+    type="text"
+    placeholder="Cégnév"
+    class="company">
+
+    <select class="job">
+
+      ${jobs.map(job=>`
+      <option>${job}</option>
+      `).join("")}
+
+    </select>
+
+    <label>Kezdés</label>
+
+    <input type="month"
+    class="start">
+
+    <label>Befejezés</label>
+
+    <input type="month"
+    class="end">
+
+  `;
+
+  experienceContainer.appendChild(card);
+
+  addListeners();
+
+}
+
+/* EDUCATION */
+
+function addEducation(){
+
+  const card =
+    document.createElement("div");
+
+  card.className = "card";
+
+  card.innerHTML = `
+
+    <input
+    type="text"
+    placeholder="Iskola neve"
+    class="school">
+
+    <input
+    type="text"
+    placeholder="Szak / Képzés"
+    class="degree">
+
+    <label>Kezdés</label>
+
+    <input
+    type="month"
+    class="eduStart">
+
+    <label>Befejezés</label>
+
+    <input
+    type="month"
+    class="eduEnd">
+
+  `;
+
+  educationContainer.appendChild(card);
+
+  addListeners();
+
+}
+
+/* LANGUAGE */
+
+function addLanguage(){
+
+  const card =
+    document.createElement("div");
+
+  card.className = "card";
+
+  card.innerHTML = `
+
+    <select class="language">
+
+      ${languages.map(lang=>`
+      <option>${lang}</option>
+      `).join("")}
+
+    </select>
+
+    <select class="level">
+
+      ${levels.map(level=>`
+      <option>${level}</option>
+      `).join("")}
+
+    </select>
+
+  `;
+
+  languageContainer.appendChild(card);
+
+  addListeners();
+
+}
+
+/* SKILL */
+
+function addSkill(){
+
+  const card =
+    document.createElement("div");
+
+  card.className = "card";
+
+  card.innerHTML = `
+
+    <input
+    type="text"
+    placeholder="Készség"
+    class="skillInput">
+
+  `;
+
+  skillsContainer.appendChild(card);
+
+  addListeners();
+
+}
+
+/* LISTENERS */
+
+function addListeners(){
+
+  document.querySelectorAll(
+  "input,select,textarea"
+  ).forEach(el=>{
+
+    el.oninput = updatePreview;
+
   });
 
-  function updateCV(){
+}
 
-    document.getElementById("previewName").innerText =
-      document.getElementById("name").value || "Név";
+/* UPDATE PREVIEW */
 
-    document.getElementById("previewEmail").innerText =
-      document.getElementById("email").value || "email@email.com";
+function updatePreview(){
 
-    document.getElementById("previewPhone").innerText =
-      document.getElementById("phone").value || "+36...";
+  updateBasic();
 
-    document.getElementById("previewAddress").innerText =
-      document.getElementById("address").value || "Cím";
+  /* EXPERIENCE */
 
-    document.getElementById("previewSummary").innerText =
-      document.getElementById("summary").value;
+  previewExperience.innerHTML = "";
 
-    createList("experience", "previewExperience");
-    createList("education", "previewEducation");
-    createList("skills", "previewSkills");
-    createList("languages", "previewLanguages");
+  document.querySelectorAll(
+  "#experienceContainer .card"
+  ).forEach(card=>{
 
-    saveData();
-  }
+    const company =
+      card.querySelector(".company").value;
 
-  function createList(inputId, previewId){
+    const job =
+      card.querySelector(".job").value;
 
-    const value = document.getElementById(inputId).value;
-    const lines = value.split("\n");
+    const start =
+      card.querySelector(".start").value;
 
-    const ul = document.getElementById(previewId);
+    const end =
+      card.querySelector(".end").value;
 
-    ul.innerHTML = "";
+    previewExperience.innerHTML += `
 
-    lines.forEach(line => {
+      <div class="item">
 
-      if(line.trim() !== ""){
+        <strong>${company}</strong>
 
-        const li = document.createElement("li");
-        li.innerText = line;
+        ${job}<br>
 
-        ul.appendChild(li);
+        ${start} - ${end}
 
-      }
+      </div>
 
-    });
+    `;
 
-  }
+  });
 
-  // KÉP FELTÖLTÉS
+  /* EDUCATION */
 
-  document.getElementById("imageInput")
-    .addEventListener("change", function(e){
+  previewEducation.innerHTML = "";
 
-      const file = e.target.files[0];
+  document.querySelectorAll(
+  "#educationContainer .card"
+  ).forEach(card=>{
 
-      if(file){
+    const school =
+      card.querySelector(".school").value;
 
-        const reader = new FileReader();
+    const degree =
+      card.querySelector(".degree").value;
 
-        reader.onload = function(event){
+    const start =
+      card.querySelector(".eduStart").value;
 
-          document.getElementById("previewImage")
-            .src = event.target.result;
+    const end =
+      card.querySelector(".eduEnd").value;
 
-          localStorage.setItem(
-            "profileImage",
-            event.target.result
-          );
+    previewEducation.innerHTML += `
 
-        };
+      <div class="item">
 
-        reader.readAsDataURL(file);
+        <strong>${school}</strong>
 
-      }
+        ${degree}<br>
 
-    });
+        ${start} - ${end}
 
-  // PDF EXPORT
+      </div>
 
-  function downloadPDF(){
+    `;
 
-    const element = document.getElementById("cv");
+  });
 
-    const options = {
-      margin: 0.5,
-      filename: 'oneletrajz.pdf',
-      image: { type: 'jpeg', quality: 1 },
-      html2canvas: { scale: 2 },
-      jsPDF: {
-        unit: 'in',
-        format: 'a4',
-        orientation: 'portrait'
-      }
-    };
+  /* LANGUAGES */
 
-    html2pdf().set(options).from(element).save();
+  previewLanguages.innerHTML = "";
 
-  }
+  document.querySelectorAll(
+  "#languageContainer .card"
+  ).forEach(card=>{
 
-  // LOCAL STORAGE
+    const language =
+      card.querySelector(".language").value;
 
-  function saveData(){
+    const level =
+      card.querySelector(".level").value;
 
-    const data = {
-      name: document.getElementById("name").value,
-      email: document.getElementById("email").value,
-      phone: document.getElementById("phone").value,
-      address: document.getElementById("address").value,
-      summary: document.getElementById("summary").value,
-      experience: document.getElementById("experience").value,
-      education: document.getElementById("education").value,
-      skills: document.getElementById("skills").value,
-      languages: document.getElementById("languages").value
-    };
+    previewLanguages.innerHTML += `
 
-    localStorage.setItem(
-      "cvData",
-      JSON.stringify(data)
-    );
+      <div class="item">
 
-  }
+        ${language}<br>
+        <strong>${level}</strong>
 
-  function loadData(){
+      </div>
 
-    const savedData =
-      JSON.parse(localStorage.getItem("cvData"));
+    `;
 
-    if(savedData){
+  });
 
-      document.getElementById("name").value =
-        savedData.name || "";
+  /* SKILLS */
 
-      document.getElementById("email").value =
-        savedData.email || "";
+  previewSkills.innerHTML = "";
 
-      document.getElementById("phone").value =
-        savedData.phone || "";
+  document.querySelectorAll(
+  "#skillsContainer .card"
+  ).forEach(card=>{
 
-      document.getElementById("address").value =
-        savedData.address || "";
+    const skill =
+      card.querySelector(".skillInput").value;
 
-      document.getElementById("summary").value =
-        savedData.summary || "";
+    if(skill){
 
-      document.getElementById("experience").value =
-        savedData.experience || "";
+      previewSkills.innerHTML += `
 
-      document.getElementById("education").value =
-        savedData.education || "";
+        <span class="skill">
+          ${skill}
+        </span>
 
-      document.getElementById("skills").value =
-        savedData.skills || "";
-
-      document.getElementById("languages").value =
-        savedData.languages || "";
+      `;
 
     }
 
-    const savedImage =
-      localStorage.getItem("profileImage");
+  });
 
-    if(savedImage){
+}
 
-      document.getElementById("previewImage")
-        .src = savedImage;
+/* IMAGE */
 
-    }
+imageInput.addEventListener(
+"change",
+function(e){
 
-    updateCV();
+  const file =
+    e.target.files[0];
+
+  const reader =
+    new FileReader();
+
+  reader.onload = function(event){
+
+    previewImage.src =
+      event.target.result;
 
   }
 
-  loadData();
+  reader.readAsDataURL(file);
+
+});
+
+/* TEMPLATE */
+
+function setTemplate(type){
+
+  const cv =
+    document.getElementById("cv");
+
+  if(type === "modern"){
+
+    cv.className =
+      "cv template-modern";
+
+    cv.innerHTML = `
+
+    <div class="left">
+
+      <img
+      src="${previewImage.src}"
+      id="previewImage"
+      class="profile-pic">
+
+      <div class="name"
+      id="previewName">
+      ${name.value || "Név"}
+      </div>
+
+      <div class="contact">
+
+      <p id="previewEmail">
+      ${email.value}
+      </p>
+
+      <p id="previewPhone">
+      ${phone.value}
+      </p>
+
+      <p id="previewAddress">
+      ${address.value}
+      </p>
+
+      </div>
+
+      <div class="cv-section">
+
+      <h2>Nyelvtudás</h2>
+
+      <div id="previewLanguages">
+      ${previewLanguages.innerHTML}
+      </div>
+
+      </div>
+
+      <div class="cv-section">
+
+      <h2>Készségek</h2>
+
+      <div id="previewSkills">
+      ${previewSkills.innerHTML}
+      </div>
+
+      </div>
+
+    </div>
+
+    <div class="right">
+
+      <div class="cv-section">
+
+      <h2>Bemutatkozás</h2>
+
+      <p id="previewSummary">
+      ${summary.value}
+      </p>
+
+      </div>
+
+      <div class="cv-section">
+
+      <h2>Munkatapasztalat</h2>
+
+      <div id="previewExperience">
+      ${previewExperience.innerHTML}
+      </div>
+
+      </div>
+
+      <div class="cv-section">
+
+      <h2>Tanulmányok</h2>
+
+      <div id="previewEducation">
+      ${previewEducation.innerHTML}
+      </div>
+
+      </div>
+
+    </div>
+
+    `;
+
+  }
+
+  if(type === "clean"){
+
+    cv.className =
+      "cv template-clean";
+
+    cv.innerHTML = `
+
+      <div class="header">
+
+      <img
+      src="${previewImage.src}"
+      id="previewImage">
+
+      <h1 id="previewName">
+      ${name.value || "Név"}
+      </h1>
+
+      <p id="previewEmail">
+      ${email.value}
+      </p>
+
+      <p id="previewPhone">
+      ${phone.value}
+      </p>
+
+      <p id="previewAddress">
+      ${address.value}
+      </p>
+
+      </div>
+
+      <h2>Bemutatkozás</h2>
+
+      <p id="previewSummary">
+      ${summary.value}
+      </p>
+
+      <h2>Munkatapasztalat</h2>
+
+      <div id="previewExperience">
+      ${previewExperience.innerHTML}
+      </div>
+
+      <h2>Tanulmányok</h2>
+
+      <div id="previewEducation">
+      ${previewEducation.innerHTML}
+      </div>
+
+      <h2>Nyelvtudás</h2>
+
+      <div id="previewLanguages">
+      ${previewLanguages.innerHTML}
+      </div>
+
+      <h2>Készségek</h2>
+
+      <div id="previewSkills">
+      ${previewSkills.innerHTML}
+      </div>
+
+    `;
+
+  }
+
+}
+
+/* PDF */
+
+function downloadPDF(){
+
+  const element =
+    document.getElementById("cv");
+
+  const options = {
+
+    margin:0,
+    filename:"oneletrajz.pdf",
+
+    image:{
+      type:"jpeg",
+      quality:1
+    },
+
+    html2canvas:{
+      scale:2
+    },
+
+    jsPDF:{
+      unit:"mm",
+      format:"a4",
+      orientation:"portrait"
+    }
+
+  };
+
+  html2pdf()
+  .set(options)
+  .from(element)
+  .save();
+
+}
+
+/* INIT */
+
+addExperience();
+addEducation();
+addLanguage();
+addSkill();
 
 </script>
 
