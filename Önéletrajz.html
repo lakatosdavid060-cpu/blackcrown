@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Önéletrajz Készítő</title>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+  <style>
+    *{
+      margin:0;
+      padding:0;
+      box-sizing:border-box;
+      font-family: Arial, sans-serif;
+    }
+
+    body{
+      background:#f4f4f4;
+      padding:20px;
+    }
+
+    .container{
+      display:flex;
+      gap:20px;
+      align-items:flex-start;
+    }
+
+    .form-section{
+      width:35%;
+      background:white;
+      padding:20px;
+      border-radius:12px;
+      box-shadow:0 2px 10px rgba(0,0,0,0.1);
+      position:sticky;
+      top:20px;
+    }
+
+    .preview-section{
+      width:65%;
+    }
+
+    .cv{
+      background:white;
+      padding:40px;
+      border-radius:12px;
+      box-shadow:0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    h1{
+      margin-bottom:10px;
+      color:#222;
+    }
+
+    h2{
+      margin-top:25px;
+      margin-bottom:10px;
+      color:#444;
+      border-bottom:1px solid #ddd;
+      padding-bottom:5px;
+    }
+
+    p{
+      margin-bottom:8px;
+      color:#333;
+    }
+
+    label{
+      display:block;
+      margin-top:15px;
+      margin-bottom:5px;
+      font-weight:bold;
+    }
+
+    input, textarea{
+      width:100%;
+      padding:10px;
+      border:1px solid #ccc;
+      border-radius:8px;
+      resize:vertical;
+    }
+
+    textarea{
+      min-height:80px;
+    }
+
+    button{
+      width:100%;
+      padding:12px;
+      border:none;
+      border-radius:8px;
+      background:#222;
+      color:white;
+      font-size:16px;
+      cursor:pointer;
+      margin-top:20px;
+      transition:0.3s;
+    }
+
+    button:hover{
+      background:#444;
+    }
+
+    .top{
+      display:flex;
+      gap:20px;
+      align-items:center;
+      margin-bottom:20px;
+    }
+
+    .profile-pic{
+      width:120px;
+      height:120px;
+      border-radius:50%;
+      object-fit:cover;
+      border:3px solid #ddd;
+    }
+
+    .info{
+      flex:1;
+    }
+
+    ul{
+      padding-left:20px;
+    }
+
+    li{
+      margin-bottom:6px;
+    }
+
+    @media(max-width:900px){
+
+      .container{
+        flex-direction:column;
+      }
+
+      .form-section,
+      .preview-section{
+        width:100%;
+      }
+
+      .form-section{
+        position:relative;
+        top:0;
+      }
+
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- FORM -->
+  <div class="form-section">
+
+    <h1>Önéletrajz Készítő</h1>
+
+    <label>Név</label>
+    <input type="text" id="name" placeholder="Pl.: Kiss Péter">
+
+    <label>Email</label>
+    <input type="email" id="email" placeholder="pelda@email.com">
+
+    <label>Telefonszám</label>
+    <input type="text" id="phone" placeholder="+36...">
+
+    <label>Lakcím</label>
+    <input type="text" id="address" placeholder="Város, utca">
+
+    <label>Profilkép</label>
+    <input type="file" id="imageInput" accept="image/*">
+
+    <label>Bemutatkozás</label>
+    <textarea id="summary"></textarea>
+
+    <label>Munkatapasztalat</label>
+    <textarea id="experience" placeholder="Minden sort külön írj"></textarea>
+
+    <label>Tanulmányok</label>
+    <textarea id="education"></textarea>
+
+    <label>Készségek</label>
+    <textarea id="skills"></textarea>
+
+    <label>Nyelvtudás</label>
+    <textarea id="languages"></textarea>
+
+    <button onclick="downloadPDF()">PDF Letöltése</button>
+
+  </div>
+
+  <!-- PREVIEW -->
+  <div class="preview-section">
+
+    <div class="cv" id="cv">
+
+      <div class="top">
+
+        <img
+          src="https://via.placeholder.com/120"
+          class="profile-pic"
+          id="previewImage"
+        >
+
+        <div class="info">
+          <h1 id="previewName">Név</h1>
+          <p id="previewEmail">email@email.com</p>
+          <p id="previewPhone">+36...</p>
+          <p id="previewAddress">Cím</p>
+        </div>
+
+      </div>
+
+      <h2>Bemutatkozás</h2>
+      <p id="previewSummary"></p>
+
+      <h2>Munkatapasztalat</h2>
+      <ul id="previewExperience"></ul>
+
+      <h2>Tanulmányok</h2>
+      <ul id="previewEducation"></ul>
+
+      <h2>Készségek</h2>
+      <ul id="previewSkills"></ul>
+
+      <h2>Nyelvtudás</h2>
+      <ul id="previewLanguages"></ul>
+
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+
+  const inputs = document.querySelectorAll("input, textarea");
+
+  inputs.forEach(input => {
+    input.addEventListener("input", updateCV);
+  });
+
+  function updateCV(){
+
+    document.getElementById("previewName").innerText =
+      document.getElementById("name").value || "Név";
+
+    document.getElementById("previewEmail").innerText =
+      document.getElementById("email").value || "email@email.com";
+
+    document.getElementById("previewPhone").innerText =
+      document.getElementById("phone").value || "+36...";
+
+    document.getElementById("previewAddress").innerText =
+      document.getElementById("address").value || "Cím";
+
+    document.getElementById("previewSummary").innerText =
+      document.getElementById("summary").value;
+
+    createList("experience", "previewExperience");
+    createList("education", "previewEducation");
+    createList("skills", "previewSkills");
+    createList("languages", "previewLanguages");
+
+    saveData();
+  }
+
+  function createList(inputId, previewId){
+
+    const value = document.getElementById(inputId).value;
+    const lines = value.split("\n");
+
+    const ul = document.getElementById(previewId);
+
+    ul.innerHTML = "";
+
+    lines.forEach(line => {
+
+      if(line.trim() !== ""){
+
+        const li = document.createElement("li");
+        li.innerText = line;
+
+        ul.appendChild(li);
+
+      }
+
+    });
+
+  }
+
+  // KÉP FELTÖLTÉS
+
+  document.getElementById("imageInput")
+    .addEventListener("change", function(e){
+
+      const file = e.target.files[0];
+
+      if(file){
+
+        const reader = new FileReader();
+
+        reader.onload = function(event){
+
+          document.getElementById("previewImage")
+            .src = event.target.result;
+
+          localStorage.setItem(
+            "profileImage",
+            event.target.result
+          );
+
+        };
+
+        reader.readAsDataURL(file);
+
+      }
+
+    });
+
+  // PDF EXPORT
+
+  function downloadPDF(){
+
+    const element = document.getElementById("cv");
+
+    const options = {
+      margin: 0.5,
+      filename: 'oneletrajz.pdf',
+      image: { type: 'jpeg', quality: 1 },
+      html2canvas: { scale: 2 },
+      jsPDF: {
+        unit: 'in',
+        format: 'a4',
+        orientation: 'portrait'
+      }
+    };
+
+    html2pdf().set(options).from(element).save();
+
+  }
+
+  // LOCAL STORAGE
+
+  function saveData(){
+
+    const data = {
+      name: document.getElementById("name").value,
+      email: document.getElementById("email").value,
+      phone: document.getElementById("phone").value,
+      address: document.getElementById("address").value,
+      summary: document.getElementById("summary").value,
+      experience: document.getElementById("experience").value,
+      education: document.getElementById("education").value,
+      skills: document.getElementById("skills").value,
+      languages: document.getElementById("languages").value
+    };
+
+    localStorage.setItem(
+      "cvData",
+      JSON.stringify(data)
+    );
+
+  }
+
+  function loadData(){
+
+    const savedData =
+      JSON.parse(localStorage.getItem("cvData"));
+
+    if(savedData){
+
+      document.getElementById("name").value =
+        savedData.name || "";
+
+      document.getElementById("email").value =
+        savedData.email || "";
+
+      document.getElementById("phone").value =
+        savedData.phone || "";
+
+      document.getElementById("address").value =
+        savedData.address || "";
+
+      document.getElementById("summary").value =
+        savedData.summary || "";
+
+      document.getElementById("experience").value =
+        savedData.experience || "";
+
+      document.getElementById("education").value =
+        savedData.education || "";
+
+      document.getElementById("skills").value =
+        savedData.skills || "";
+
+      document.getElementById("languages").value =
+        savedData.languages || "";
+
+    }
+
+    const savedImage =
+      localStorage.getItem("profileImage");
+
+    if(savedImage){
+
+      document.getElementById("previewImage")
+        .src = savedImage;
+
+    }
+
+    updateCV();
+
+  }
+
+  loadData();
+
+</script>
+
+</body>
+</html>
