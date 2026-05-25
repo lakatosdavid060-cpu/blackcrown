@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="hu">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <title>Modern Önéletrajz Készítő</title>
 
@@ -22,7 +22,7 @@
 body{
   font-family:'Inter',sans-serif;
   background:#eef2f7;
-  color:#222;
+  overflow-x:hidden;
 }
 
 .container{
@@ -36,7 +36,6 @@ body{
   width:420px;
   background:white;
   padding:25px;
-  overflow:auto;
   border-right:1px solid #ddd;
 }
 
@@ -115,7 +114,7 @@ button{
 }
 
 .download-btn:hover{
-  background:#000;
+  background:black;
 }
 
 /* PREVIEW */
@@ -123,12 +122,12 @@ button{
 .preview-area{
   flex:1;
   padding:40px;
-  overflow:auto;
 }
 
 .topbar{
   display:flex;
   justify-content:space-between;
+  align-items:center;
   margin-bottom:25px;
 }
 
@@ -139,9 +138,10 @@ button{
 
 .template-btn{
   width:auto;
-  padding:10px 18px;
   background:white;
   border:1px solid #ddd;
+  color:#111;
+  padding:10px 18px;
 }
 
 .template-btn:hover{
@@ -153,17 +153,18 @@ button{
 .cv{
   width:210mm;
   min-height:297mm;
+  background:white !important;
   margin:auto;
-  background:white;
-  border-radius:22px;
-  overflow:hidden;
-  box-shadow:0 10px 40px rgba(0,0,0,0.1);
+  border-radius:20px;
+  overflow:visible !important;
+  box-shadow:0 10px 40px rgba(0,0,0,0.12);
 }
 
-/* TEMPLATE 1 */
+/* MODERN TEMPLATE */
 
 .template-modern{
   display:flex;
+  width:100%;
 }
 
 .left{
@@ -171,11 +172,13 @@ button{
   background:#111827;
   color:white;
   padding:30px;
+  overflow:visible !important;
 }
 
 .right{
   width:68%;
   padding:40px;
+  overflow:visible !important;
 }
 
 .profile-pic{
@@ -201,7 +204,7 @@ button{
 
 .contact p{
   margin-bottom:10px;
-  font-size:14px;
+  word-break:break-word;
 }
 
 .cv-section{
@@ -210,7 +213,6 @@ button{
 
 .cv-section h2{
   margin-bottom:15px;
-  font-size:20px;
   color:#4f7cff;
 }
 
@@ -220,11 +222,7 @@ button{
 
 .item{
   margin-bottom:18px;
-}
-
-.item strong{
-  display:block;
-  margin-bottom:5px;
+  line-height:1.5;
 }
 
 .skill{
@@ -237,7 +235,7 @@ button{
   font-size:13px;
 }
 
-/* TEMPLATE 2 */
+/* CLEAN TEMPLATE */
 
 .template-clean{
   padding:50px;
@@ -256,8 +254,8 @@ button{
   margin-bottom:20px;
 }
 
-.template-clean .header h1{
-  font-size:36px;
+.template-clean h1{
+  margin-bottom:10px;
 }
 
 .template-clean h2{
@@ -395,8 +393,6 @@ Minimal
 
 <div class="cv template-modern" id="cv">
 
-<!-- TEMPLATE -->
-
 <div class="left">
 
 <img
@@ -475,98 +471,153 @@ Név
 
 const jobs = [
 
-"Frontend fejlesztő",
-"Backend fejlesztő",
-"Full Stack fejlesztő",
-"Webfejlesztő",
-"Mobil alkalmazás fejlesztő",
-"Szoftverfejlesztő",
-"Rendszergazda",
-"IT Support",
-"Hálózati mérnök",
-"Tesztelő",
-"UI/UX Designer",
-"Grafikus",
+  // Informatika
+  "Frontend fejlesztő",
+  "Backend fejlesztő",
+  "Full Stack fejlesztő",
+  "Webfejlesztő",
+  "Mobil alkalmazás fejlesztő",
+  "Szoftverfejlesztő",
+  "Rendszergazda",
+  "IT Support",
+  "Hálózati mérnök",
+  "Tesztelő",
+  "UI/UX Designer",
+  "Grafikus",
 
-"Adminisztrátor",
-"Irodai asszisztens",
-"HR munkatárs",
-"Projektmenedzser",
-"Marketinges",
-"Könyvelő",
-"Pénzügyi ügyintéző",
-"Recepciós",
+  // Iroda
+  "Adminisztrátor",
+  "Irodai asszisztens",
+  "HR munkatárs",
+  "Projektmenedzser",
+  "Marketinges",
+  "Könyvelő",
+  "Pénzügyi ügyintéző",
+  "Recepciós",
+  "Ügyfélszolgálati munkatárs",
 
-"Bolti eladó",
-"Pénztáros",
-"Árufeltöltő",
-"Raktáros",
-"Értékesítő",
+  // Kereskedelem
+  "Bolti eladó",
+  "Pénztáros",
+  "Árufeltöltő",
+  "Raktáros",
+  "Beszerző",
+  "Értékesítő",
 
-"Hegesztő",
-"CO hegesztő",
-"AWI hegesztő",
-"Lakatos",
-"CNC gépkezelő",
-"Villanyszerelő",
-"Karbantartó",
+  // Ipar
+  "Hegesztő",
+  "CO hegesztő",
+  "AWI hegesztő",
+  "Lakatos",
+  "Esztergályos",
+  "CNC gépkezelő",
+  "Forgácsoló",
+  "Villanyszerelő",
+  "Karbantartó",
+  "Gyártósori operátor",
+  "Minőségellenőr",
 
-"Targoncavezető",
-"Kamionsofőr",
-"Futár",
+  // Logisztika
+  "Targoncavezető",
+  "Raktári dolgozó",
+  "Kamionsofőr",
+  "Futár",
+  "Szállítmányozó",
 
-"Autószerelő",
-"Autóvillamossági szerelő",
-"Gumiszervizes",
+  // Autóipar
+  "Autószerelő",
+  "Autóvillamossági szerelő",
+  "Karosszérialakatos",
+  "Gumiszervizes",
+  "Motorszerelő",
 
-"Kőműves",
-"Burkoló",
-"Festő",
-"Ács",
+  // Építőipar
+  "Kőműves",
+  "Burkoló",
+  "Festő",
+  "Tetőfedő",
+  "Ács",
+  "Gipszkartonszerelő",
+  "Segédmunkás",
 
-"Szakács",
-"Pincér",
-"Bárpultos",
+  // Vendéglátás
+  "Szakács",
+  "Pincér",
+  "Pizza szakács",
+  "Bárpultos",
+  "Konyhai kisegítő",
+  "Cukrász",
 
-"Ápoló",
-"Gondozó",
+  // Egészségügy
+  "Ápoló",
+  "Gondozó",
+  "Orvosi asszisztens",
+  "Mentőápoló",
 
-"Fodrász",
-"Kozmetikus",
+  // Szépségipar
+  "Fodrász",
+  "Kozmetikus",
+  "Műkörmös",
+  "Masszőr",
 
-"Tanár",
-"Edző",
+  // Oktatás
+  "Tanár",
+  "Óvodapedagógus",
+  "Edző",
+  "Oktató",
 
-"Biztonsági őr"
+  // Biztonság
+  "Biztonsági őr",
+  "Portás",
+
+  // Mezőgazdaság
+  "Traktoros",
+  "Állatgondozó",
+  "Mezőgazdasági gépkezelő"
 
 ];
 
-/* LANGUAGES */
-
 const languages = [
 
-"Magyar",
-"Angol",
-"Német",
-"Francia",
-"Spanyol",
-"Olasz",
-"Orosz",
-"Román",
-"Szlovák",
-"Kínai",
-"Japán"
+  "Magyar",
+  "Angol",
+  "Német",
+  "Francia",
+  "Spanyol",
+  "Olasz",
+  "Orosz",
+  "Román",
+  "Szlovák",
+  "Ukrán",
+  "Lengyel",
+  "Kínai",
+  "Japán",
+  "Koreai",
+  "Arab",
+  "Török",
+  "Horvát",
+  "Szerb",
+  "Portugál",
+  "Holland",
+  "Finn",
+  "Svéd",
+  "Norvég",
+  "Dán",
+  "Cseh",
+  "Görög"
 
 ];
 
 const levels = [
 
-"Kezdő",
-"Alapfok",
-"Középfok",
-"Felsőfok",
-"Folyékony",
-"Anyanyelvi"
+  "Kezdő",
+  "Alapfok",
+  "Középfok",
+  "Felsőfok",
+  "Társalgási szint",
+  "Üzleti szint",
+  "Folyékony",
+  "Anyanyelvi"
 
 ];
 
@@ -574,19 +625,19 @@ const levels = [
 
 function updateBasic(){
 
-  previewName.innerText =
+  document.getElementById("previewName").innerText =
     name.value || "Név";
 
-  previewEmail.innerText =
+  document.getElementById("previewEmail").innerText =
     email.value;
 
-  previewPhone.innerText =
+  document.getElementById("previewPhone").innerText =
     phone.value;
 
-  previewAddress.innerText =
+  document.getElementById("previewAddress").innerText =
     address.value;
 
-  previewSummary.innerText =
+  document.getElementById("previewSummary").innerText =
     summary.value;
 
 }
@@ -603,8 +654,7 @@ document.querySelectorAll(
 
 function addExperience(){
 
-  const card =
-    document.createElement("div");
+  const card = document.createElement("div");
 
   card.className = "card";
 
@@ -645,8 +695,7 @@ function addExperience(){
 
 function addEducation(){
 
-  const card =
-    document.createElement("div");
+  const card = document.createElement("div");
 
   card.className = "card";
 
@@ -686,8 +735,7 @@ function addEducation(){
 
 function addLanguage(){
 
-  const card =
-    document.createElement("div");
+  const card = document.createElement("div");
 
   card.className = "card";
 
@@ -717,12 +765,11 @@ function addLanguage(){
 
 }
 
-/* SKILL */
+/* SKILLS */
 
 function addSkill(){
 
-  const card =
-    document.createElement("div");
+  const card = document.createElement("div");
 
   card.className = "card";
 
@@ -755,7 +802,7 @@ function addListeners(){
 
 }
 
-/* UPDATE PREVIEW */
+/* UPDATE */
 
 function updatePreview(){
 
@@ -852,6 +899,7 @@ function updatePreview(){
       <div class="item">
 
         ${language}<br>
+
         <strong>${level}</strong>
 
       </div>
@@ -893,20 +941,23 @@ imageInput.addEventListener(
 "change",
 function(e){
 
-  const file =
-    e.target.files[0];
+  const file = e.target.files[0];
 
-  const reader =
-    new FileReader();
+  if(file){
 
-  reader.onload = function(event){
+    const reader = new FileReader();
 
-    previewImage.src =
-      event.target.result;
+    reader.onload = function(event){
+
+      document.getElementById(
+      "previewImage"
+      ).src = event.target.result;
+
+    }
+
+    reader.readAsDataURL(file);
 
   }
-
-  reader.readAsDataURL(file);
 
 });
 
@@ -914,204 +965,66 @@ function(e){
 
 function setTemplate(type){
 
-  const cv =
-    document.getElementById("cv");
+  const cv = document.getElementById("cv");
 
   if(type === "modern"){
 
-    cv.className =
-      "cv template-modern";
-
-    cv.innerHTML = `
-
-    <div class="left">
-
-      <img
-      src="${previewImage.src}"
-      id="previewImage"
-      class="profile-pic">
-
-      <div class="name"
-      id="previewName">
-      ${name.value || "Név"}
-      </div>
-
-      <div class="contact">
-
-      <p id="previewEmail">
-      ${email.value}
-      </p>
-
-      <p id="previewPhone">
-      ${phone.value}
-      </p>
-
-      <p id="previewAddress">
-      ${address.value}
-      </p>
-
-      </div>
-
-      <div class="cv-section">
-
-      <h2>Nyelvtudás</h2>
-
-      <div id="previewLanguages">
-      ${previewLanguages.innerHTML}
-      </div>
-
-      </div>
-
-      <div class="cv-section">
-
-      <h2>Készségek</h2>
-
-      <div id="previewSkills">
-      ${previewSkills.innerHTML}
-      </div>
-
-      </div>
-
-    </div>
-
-    <div class="right">
-
-      <div class="cv-section">
-
-      <h2>Bemutatkozás</h2>
-
-      <p id="previewSummary">
-      ${summary.value}
-      </p>
-
-      </div>
-
-      <div class="cv-section">
-
-      <h2>Munkatapasztalat</h2>
-
-      <div id="previewExperience">
-      ${previewExperience.innerHTML}
-      </div>
-
-      </div>
-
-      <div class="cv-section">
-
-      <h2>Tanulmányok</h2>
-
-      <div id="previewEducation">
-      ${previewEducation.innerHTML}
-      </div>
-
-      </div>
-
-    </div>
-
-    `;
+    cv.className = "cv template-modern";
 
   }
 
   if(type === "clean"){
 
-    cv.className =
-      "cv template-clean";
-
-    cv.innerHTML = `
-
-      <div class="header">
-
-      <img
-      src="${previewImage.src}"
-      id="previewImage">
-
-      <h1 id="previewName">
-      ${name.value || "Név"}
-      </h1>
-
-      <p id="previewEmail">
-      ${email.value}
-      </p>
-
-      <p id="previewPhone">
-      ${phone.value}
-      </p>
-
-      <p id="previewAddress">
-      ${address.value}
-      </p>
-
-      </div>
-
-      <h2>Bemutatkozás</h2>
-
-      <p id="previewSummary">
-      ${summary.value}
-      </p>
-
-      <h2>Munkatapasztalat</h2>
-
-      <div id="previewExperience">
-      ${previewExperience.innerHTML}
-      </div>
-
-      <h2>Tanulmányok</h2>
-
-      <div id="previewEducation">
-      ${previewEducation.innerHTML}
-      </div>
-
-      <h2>Nyelvtudás</h2>
-
-      <div id="previewLanguages">
-      ${previewLanguages.innerHTML}
-      </div>
-
-      <h2>Készségek</h2>
-
-      <div id="previewSkills">
-      ${previewSkills.innerHTML}
-      </div>
-
-    `;
+    cv.className = "cv template-clean";
 
   }
 
 }
 
-/* PDF */
+/* PDF FIX */
 
-function downloadPDF(){
+async function downloadPDF(){
 
   const element =
     document.getElementById("cv");
 
-  const options = {
+  const opt = {
 
     margin:0,
-    filename:"oneletrajz.pdf",
+
+    filename:'oneletrajz.pdf',
 
     image:{
-      type:"jpeg",
+      type:'jpeg',
       quality:1
     },
 
     html2canvas:{
-      scale:2
+
+      scale:3,
+
+      useCORS:true,
+
+      scrollY:0
+
     },
 
     jsPDF:{
-      unit:"mm",
-      format:"a4",
-      orientation:"portrait"
+
+      unit:'mm',
+
+      format:'a4',
+
+      orientation:'portrait'
+
     }
 
   };
 
-  html2pdf()
-  .set(options)
-  .from(element)
-  .save();
+  await html2pdf()
+    .set(opt)
+    .from(element)
+    .save();
 
 }
 
