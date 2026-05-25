@@ -2,66 +2,74 @@
 <html lang="hu">
 <head>
 <meta charset="UTF-8">
-<title>Mini Windows OS</title>
+<title>Windows 10 Ultimate Engine</title>
 
 <style>
 body {
     margin: 0;
-    font-family: Arial;
-    background: #0b1220;
+    font-family: Segoe UI, Arial;
     overflow: hidden;
+    background: black;
 }
 
-/* DESKTOP */
+/* LOGIN */
+#login {
+    position: absolute;
+    width: 100vw;
+    height: 100vh;
+    background: radial-gradient(circle, #1e3a8a, #0b1220);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    color: white;
+}
+
 #desktop {
+    display: none;
     width: 100vw;
     height: 100vh;
     position: relative;
+    background: linear-gradient(120deg,#1e3a8a,#0b1220);
+    animation: bgmove 10s infinite alternate;
 }
 
-/* ICONS */
+@keyframes bgmove {
+    0%{filter: hue-rotate(0deg);}
+    100%{filter: hue-rotate(40deg);}
+}
+
+/* ICON */
 .icon {
     width: 80px;
     text-align: center;
     color: white;
     position: absolute;
-    cursor: pointer;
+    cursor: grab;
 }
 
-.icon img {
-    width: 50px;
-    height: 50px;
-}
+.icon img { width:48px;height:48px; }
 
 /* WINDOW */
 .window {
-    width: 300px;
-    height: 200px;
+    width: 380px;
+    height: 260px;
     background: rgba(255,255,255,0.1);
-    backdrop-filter: blur(10px);
+    backdrop-filter: blur(12px);
+    border-radius: 8px;
     border: 1px solid rgba(255,255,255,0.2);
-    border-radius: 10px;
     position: absolute;
-    top: 100px;
-    left: 100px;
     color: white;
     overflow: hidden;
+    transition: 0.2s;
 }
 
 .titlebar {
     background: rgba(0,0,0,0.4);
-    padding: 5px;
-    cursor: move;
-    display: flex;
+    padding: 6px;
+    display:flex;
     justify-content: space-between;
-}
-
-.content {
-    padding: 10px;
-}
-
-button {
-    cursor: pointer;
+    cursor: move;
 }
 
 /* TASKBAR */
@@ -69,83 +77,255 @@ button {
     position: absolute;
     bottom: 0;
     width: 100%;
-    height: 40px;
-    background: rgba(0,0,0,0.6);
-    display: flex;
-    align-items: center;
-    color: white;
-    padding-left: 10px;
+    height: 45px;
+    background: rgba(20,20,20,0.9);
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:0 10px;
+    color:white;
+}
+
+#startBtn {
+    background:#2563eb;
+    padding:6px 12px;
+    border-radius:4px;
+    cursor:pointer;
+}
+
+/* TASK */
+.task {
+    background: rgba(255,255,255,0.1);
+    padding:4px 8px;
+    border-radius:6px;
+    cursor:pointer;
+}
+
+/* PROCESS */
+.proc {
+    padding:5px;
+    background: rgba(255,255,255,0.05);
+    margin:3px;
+    border-radius:5px;
+    cursor:pointer;
+}
+
+.file {
+    padding:6px;
+    margin:4px 0;
+    background: rgba(255,255,255,0.05);
+    border-radius:6px;
+    cursor:pointer;
+}
+
+.file:hover {
+    background: rgba(37,99,235,0.4);
 }
 </style>
 </head>
 
 <body>
 
-<div id="desktop">
-
-    <!-- ICON -->
-    <div class="icon" style="top:20px;left:20px;" onclick="openWindow('Steam','steam://run')">
-        <img src="https://cdn-icons-png.flaticon.com/512/3670/3670147.png">
-        <div>Steam</div>
-    </div>
-
-    <div class="icon" style="top:120px;left:20px;" onclick="openWindow('FiveM','https://fivem.net')">
-        <img src="https://cdn-icons-png.flaticon.com/512/5968/5968350.png">
-        <div>FiveM</div>
-    </div>
-
+<!-- LOGIN -->
+<div id="login">
+    <h1>Windows 10 Ultimate</h1>
+    <input id="user" placeholder="Username">
+    <input id="pass" placeholder="Password" type="password">
+    <button onclick="login()">Login</button>
 </div>
 
-<div id="taskbar">🪟 Mini Windows OS</div>
+<!-- DESKTOP -->
+<div id="desktop"></div>
+
+<!-- TASKBAR -->
+<div id="taskbar">
+    <div id="startBtn" onclick="openWindow('Start','start')">🪟 Start</div>
+    <div id="tasks"></div>
+</div>
 
 <script>
 
-let z = 1;
+/* =========================
+   SOUND (simple fake)
+========================= */
+function beep(){
+    let a=new Audio("https://www.soundjay.com/buttons/sounds/button-16.mp3");
+    a.volume=0.2;
+    a.play();
+}
 
-/* WINDOW CREATION */
-function openWindow(title, url){
+/* =========================
+   LOGIN
+========================= */
+function login(){
+    beep();
+    document.getElementById("login").style.display="none";
+    document.getElementById("desktop").style.display="block";
+    init();
+}
 
-    let win = document.createElement("div");
-    win.className = "window";
-    win.style.zIndex = ++z;
+/* =========================
+   STATE
+========================= */
 
-    win.innerHTML = `
+let z=1;
+let windows={};
+let processes={};
+
+/* =========================
+   WINDOWS
+========================= */
+
+function openWindow(name,type){
+
+    beep();
+
+    if(windows[name]){
+        restore(name);
+        return;
+    }
+
+    let win=document.createElement("div");
+    win.className="window";
+    win.style.zIndex=++z;
+
+    processes[name]=true;
+
+    win.innerHTML=`
         <div class="titlebar">
-            <span>${title}</span>
-            <button onclick="this.parentElement.parentElement.remove()">X</button>
+            <span>${name}</span>
+            <div>
+                <button onclick="minimize('${name}')">_</button>
+                <button onclick="closeW('${name}')">X</button>
+            </div>
         </div>
         <div class="content">
-            <p>${url}</p>
-            <button onclick="window.open('${url}','_blank')">Open</button>
+            ${render(type,name)}
         </div>
     `;
 
     document.getElementById("desktop").appendChild(win);
+    windows[name]=win;
 
+    addTask(name);
     drag(win);
 }
 
-/* DRAG SYSTEM */
-function drag(el){
-    let offsetX, offsetY, isDown = false;
+/* =========================
+   RENDER APPS
+========================= */
 
-    el.querySelector(".titlebar").addEventListener("mousedown", e=>{
-        isDown = true;
-        offsetX = e.clientX - el.offsetLeft;
-        offsetY = e.clientY - el.offsetTop;
-        el.style.zIndex = ++z;
+function render(type,name){
+
+    if(type==="start"){
+        return `
+            <h3>Start Menu</h3>
+            <button onclick="openWindow('Task Manager','tm')">Task Manager</button>
+            <button onclick="openWindow('Explorer','explorer')">File Explorer</button>
+        `;
+    }
+
+    if(type==="tm"){
+        return Object.keys(processes).map(p=>
+            `<div class="proc" onclick="kill('${p}')">${p}</div>`
+        ).join("");
+    }
+
+    if(type==="explorer"){
+        return `
+            <div class="file" draggable="true" ondragstart="dragFile(event,'Steam')">Steam</div>
+            <div class="file" ondragover="allow(event)" ondrop="drop(event,'FiveM')">📁 Drop area (FiveM folder)</div>
+        `;
+    }
+
+    return `<button onclick="window.open('https://fivem.net')">Open</button>`;
+}
+
+/* =========================
+   TASKBAR
+========================= */
+
+function addTask(name){
+    let d=document.createElement("div");
+    d.className="task";
+    d.innerText=name;
+    d.onclick=()=>restore(name);
+    document.getElementById("tasks").appendChild(d);
+}
+
+/* =========================
+   WINDOW ACTIONS
+========================= */
+
+function minimize(n){
+    windows[n].style.display="none";
+}
+
+function restore(n){
+    windows[n].style.display="block";
+    windows[n].style.zIndex=++z;
+}
+
+function closeW(n){
+    beep();
+    windows[n].remove();
+    delete windows[n];
+    delete processes[n];
+}
+
+/* =========================
+   TASK KILLER
+========================= */
+
+function kill(name){
+    closeW(name);
+}
+
+/* =========================
+   DRAG WINDOW
+========================= */
+
+function drag(el){
+    let down=false,ox,oy;
+
+    el.querySelector(".titlebar").addEventListener("mousedown",e=>{
+        down=true;
+        ox=e.clientX-el.offsetLeft;
+        oy=e.clientY-el.offsetTop;
+        el.style.zIndex=++z;
     });
 
-    document.addEventListener("mousemove", e=>{
-        if(isDown){
-            el.style.left = (e.clientX - offsetX) + "px";
-            el.style.top = (e.clientY - offsetY) + "px";
+    document.addEventListener("mousemove",e=>{
+        if(down){
+            el.style.left=(e.clientX-ox)+"px";
+            el.style.top=(e.clientY-oy)+"px";
         }
     });
 
-    document.addEventListener("mouseup", ()=>{
-        isDown = false;
-    });
+    document.addEventListener("mouseup",()=>down=false);
+}
+
+/* =========================
+   FILE DRAG DROP (simple)
+========================= */
+
+function allow(e){ e.preventDefault(); }
+
+function dragFile(e,name){
+    e.dataTransfer.setData("text",name);
+}
+
+function drop(e,target){
+    let file=e.dataTransfer.getData("text");
+    alert(file+" moved to "+target);
+}
+
+/* =========================
+   INIT DESKTOP ICONS
+========================= */
+
+function init(){
+    openWindow("Explorer","explorer");
 }
 
 </script>
