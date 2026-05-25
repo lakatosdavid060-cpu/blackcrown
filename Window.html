@@ -2,10 +2,10 @@
 <html lang="hu">
 <head>
 <meta charset="UTF-8">
-<title>FM 10.0 ULTRA WORLD</title>
+<title>FM FIX</title>
 <style>
-body{font-family:Arial;background:#050505;color:#fff;}
-.container{max-width:1200px;margin:auto;padding:20px;}
+body{font-family:Arial;background:#0b0b0b;color:#fff;}
+.container{max-width:1000px;margin:auto;padding:20px;}
 .card{background:#1e1e1e;padding:15px;margin:10px 0;border-radius:10px;}
 button{padding:10px;margin:5px;cursor:pointer;}
 table{width:100%;border-collapse:collapse;}
@@ -16,15 +16,15 @@ td,th{border:1px solid #444;padding:5px;}
 
 <div class="container">
 
-<h1>⚽ FM 10.0 – ULTRA WORLD MANAGER</h1>
+<h1>⚽ FM FIX – WORKING VERSION</h1>
 
 <div class="card">
-<h2>📅 Szezon: <span id="season">1</span></h2>
-<h3>💰 Pénz: €<span id="money">600</span>M</h3>
+<h2>📅 Szezon: <span id="season"></span></h2>
+<h3>💰 Pénz: €<span id="money"></span>M</h3>
 </div>
 
 <div class="card">
-<h2>🏆 Liga Tabella (24 CSAPAT!)</h2>
+<h2>🏆 Tabella</h2>
 <table>
 <thead><tr><th>Csapat</th><th>Pont</th></tr></thead>
 <tbody id="table"></tbody>
@@ -32,30 +32,21 @@ td,th{border:1px solid #444;padding:5px;}
 </div>
 
 <div class="card">
-<h2>⭐ Keret (15 játékos!)</h2>
+<h2>⭐ Keret</h2>
 <ul id="squad"></ul>
 </div>
 
 <div class="card">
 <h2>⚽ Meccs</h2>
-<button onclick="match()">Következő meccs</button>
+<button onclick="match()">Meccs lejátszása</button>
 <h3 id="result"></h3>
 </div>
 
 <div class="card">
-<h2>🛒 Átigazolás</h2>
+<h2>🛒 Igazolás</h2>
 <button onclick="buy('Mbappé',200,97)">Mbappé</button>
 <button onclick="buy('Haaland',180,95)">Haaland</button>
 <button onclick="buy('Bellingham',140,90)">Bellingham</button>
-<button onclick="buy('De Bruyne',100,92)">De Bruyne</button>
-<button onclick="buy('Vinícius',120,91)">Vinícius</button>
-<button onclick="buy('Wirtz',120,90)">Wirtz</button>
-<button onclick="buy('Musiala',110,89)">Musiala</button>
-<button onclick="buy('Pedri',110,88)">Pedri</button>
-</div>
-
-<div class="card">
-<button onclick="nextSeason()">➡️ Szezon váltás</button>
 </div>
 
 </div>
@@ -64,62 +55,58 @@ td,th{border:1px solid #444;padding:5px;}
 
 // ===== USER =====
 let season=1;
-let money=600;
-let matchIndex=0;
+let money=500;
 
 let user={
 name:"Real Madrid",
 points:0,
 squad:[
-{name:"Ronaldo",ovr:95,form:1,inj:0},
-{name:"Messi",ovr:96,form:1,inj:0},
-{name:"Neymar",ovr:90,form:1,inj:0},
-{name:"Modrić",ovr:89,form:1,inj:0},
-{name:"Courtois",ovr:90,form:1,inj:0},
-{name:"Bellingham",ovr:90,form:1,inj:0},
-{name:"Vinícius",ovr:91,form:1,inj:0},
-{name:"Valverde",ovr:88,form:1,inj:0},
-{name:"Rüdiger",ovr:88,form:1,inj:0},
-{name:"Carvajal",ovr:86,form:1,inj:0},
-{name:"Camavinga",ovr:87,form:1,inj:0},
-{name:"Tchouaméni",ovr:87,form:1,inj:0},
-{name:"Rodrygo",ovr:88,form:1,inj:0},
-{name:"Alaba",ovr:86,form:1,inj:0},
-{name:"Endrick",ovr:84,form:1,inj:0}
+{name:"Ronaldo",ovr:95,form:1},
+{name:"Messi",ovr:96,form:1},
+{name:"Vinícius",ovr:91,form:1},
+{name:"Bellingham",ovr:90,form:1},
+{name:"Modrić",ovr:89,form:1}
 ]
 };
 
-// ===== 24 CSAPAT =====
-function team(name,players){
-return {name,points:0,squad:players};
+// ===== TEAMS (FIXED SAFE STRUCTURE) =====
+function genTeam(name){
+let squad=[];
+for(let i=0;i<10;i++){
+squad.push({name:name+"_"+i,ovr:82+Math.random()*8,form:1});
+}
+return {name,points:0,squad};
 }
 
 let teams=[
-
-team("Barcelona",Array(10).fill().map((_,i)=>({name:"Barca"+i,ovr:85+Math.random()*5})))),
-team("Bayern",Array(10).fill().map((_,i)=>({name:"Bayern"+i,ovr:85+Math.random()*5})))),
-team("City",Array(10).fill().map((_,i)=>({name:"City"+i,ovr:86+Math.random()*6})))),
-team("PSG",Array(10).fill().map((_,i)=>({name:"PSG"+i,ovr:86+Math.random()*6})))),
-team("Arsenal",Array(10).fill().map((_,i)=>({name:"Arsenal"+i,ovr:84+Math.random()*6})))),
-team("Liverpool",Array(10).fill().map((_,i)=>({name:"Liv"+i,ovr:85+Math.random()*6})))),
-team("Inter",Array(10).fill().map((_,i)=>({name:"Inter"+i,ovr:84+Math.random()*6})))),
-team("Chelsea",Array(10).fill().map((_,i)=>({name:"Chelsea"+i,ovr:83+Math.random()*6})))),
-team("Dortmund",Array(10).fill().map((_,i)=>({name:"BVB"+i,ovr:83+Math.random()*6})))),
-team("Atletico",Array(10).fill().map((_,i)=>({name:"ATM"+i,ovr:83+Math.random()*6})))),
-team("Napoli",Array(10).fill().map((_,i)=>({name:"Napoli"+i,ovr:84+Math.random()*6})))),
-team("Milan",Array(10).fill().map((_,i)=>({name:"Milan"+i,ovr:83+Math.random()*6})))),
-team("Sevilla",Array(10).fill().map((_,i)=>({name:"Sevilla"+i,ovr:82+Math.random()*6})))),
-team("Leverkusen",Array(10).fill().map((_,i)=>({name:"B04_"+i,ovr:84+Math.random()*6})))),
-team("Tottenham",Array(10).fill().map((_,i)=>({name:"TOT"+i,ovr:83+Math.random()*6})))),
-team("Newcastle",Array(10).fill().map((_,i)=>({name:"NEW"+i,ovr:84+Math.random()*6})))),
-team("Ajax",Array(10).fill().map((_,i)=>({name:"AJX"+i,ovr:83+Math.random()*6})))),
-team("Benfica",Array(10).fill().map((_,i)=>({name:"BEN"+i,ovr:83+Math.random()*6})))),
-team("Porto",Array(10).fill().map((_,i)=>({name:"POR"+i,ovr:83+Math.random()*6})))),
-team("Lazio",Array(10).fill().map((_,i)=>({name:"LAZ"+i,ovr:83+Math.random()*6})))),
-team("Roma",Array(10).fill().map((_,i)=>({name:"ROMA"+i,ovr:83+Math.random()*6})))),
-team("Real Sociedad",Array(10).fill().map((_,i)=>({name:"RSO"+i,ovr:83+Math.random()*6})))),
-team("RB Leipzig",Array(10).fill().map((_,i)=>({name:"RBL"+i,ovr:84+Math.random()*6}))))
+genTeam("Barcelona"),
+genTeam("Bayern"),
+genTeam("City"),
+genTeam("PSG"),
+genTeam("Arsenal"),
+genTeam("Liverpool"),
+genTeam("Inter"),
+genTeam("Chelsea"),
+genTeam("Dortmund"),
+genTeam("Atletico"),
+genTeam("Napoli"),
+genTeam("Milan"),
+genTeam("Leverkusen"),
+genTeam("Tottenham"),
+genTeam("Newcastle"),
+genTeam("Ajax"),
+genTeam("Benfica"),
+genTeam("Porto"),
+genTeam("Lazio"),
+genTeam("Roma"),
+genTeam("Sevilla"),
+genTeam("RB Leipzig"),
+genTeam("Real Sociedad"),
+genTeam("Feyenoord")
 ];
+
+// ===== INIT =====
+update();
 
 // ===== UPDATE =====
 function update(){
@@ -131,22 +118,15 @@ document.getElementById("money").innerText=money;
 let ul=document.getElementById("squad");
 ul.innerHTML="";
 user.squad.forEach(p=>{
-let eff=(p.ovr+p.form)-(p.inj*10);
-let li=document.createElement("li");
-li.innerText=p.name+" OVR:"+p.ovr+" Eff:"+eff.toFixed(1);
-ul.appendChild(li);
+ul.innerHTML+=`<li>${p.name} OVR:${p.ovr}</li>`;
 });
 
 // table
-let all=[user,...teams];
-all.sort((a,b)=>b.points-a.points);
-
+let all=[user,...teams].sort((a,b)=>b.points-a.points);
 let tb=document.getElementById("table");
 tb.innerHTML="";
 all.forEach(t=>{
-let tr=document.createElement("tr");
-tr.innerHTML="<td>"+t.name+"</td><td>"+t.points+"</td>";
-tb.appendChild(tr);
+tb.innerHTML+=`<tr><td>${t.name}</td><td>${t.points}</td></tr>`;
 });
 }
 
@@ -154,22 +134,15 @@ tb.appendChild(tr);
 function power(team){
 let sum=0;
 team.squad.forEach(p=>{
-sum+=(p.ovr+(p.form||1)-(p.inj||0)*10);
+sum+=p.ovr+(p.form||1);
 });
-return (sum/team.squad.length)+Math.random()*10;
+return sum/team.squad.length + Math.random()*5;
 }
 
 // ===== MATCH =====
 function match(){
 
-let opp=teams[matchIndex%teams.length];
-
-user.squad.forEach(p=>{
-p.inj=Math.random()<0.05?1:0;
-p.form+=Math.random()*0.2-0.1;
-if(p.form<0.5)p.form=0.5;
-if(p.form>2)p.form=2;
-});
+let opp=teams[Math.floor(Math.random()*teams.length)];
 
 let u=power(user);
 let o=power(opp);
@@ -178,13 +151,12 @@ let g1=Math.round(u/25);
 let g2=Math.round(o/25);
 
 if(g1>g2) user.points+=3;
-else if(g1<g2) opp.points+=3;
-else{user.points+=1;opp.points+=1;}
+else if(g2>g1) opp.points+=3;
+else {user.points++;opp.points++;}
 
 document.getElementById("result").innerText=
-"⚽ "+user.name+" "+g1+" - "+g2+" "+opp.name;
+`⚽ ${user.name} ${g1}-${g2} ${opp.name}`;
 
-matchIndex++;
 update();
 }
 
@@ -192,33 +164,10 @@ update();
 function buy(name,price,ovr){
 if(money>=price){
 money-=price;
-user.squad.push({name,ovr,form:1,inj:0});
-alert(name+" leigazolva!");
-}
+user.squad.push({name,ovr,form:1});
 update();
 }
-
-// ===== SEASON =====
-function nextSeason(){
-
-season++;
-money+=300;
-
-user.points=0;
-teams.forEach(t=>t.points=0);
-
-// AI growth
-teams.forEach(t=>{
-t.squad.forEach(p=>{
-if(Math.random()>0.7)p.ovr+=1;
-});
-});
-
-alert("Új szezon – ULTRA WORLD!");
-update();
 }
-
-update();
 
 </script>
 
