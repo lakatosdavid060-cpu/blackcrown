@@ -20,9 +20,10 @@
 body{
     background:black;
     color:white;
+    overflow-x:hidden;
 }
 
-/* ===== BACKGROUND ===== */
+/* ===== HÁTTÉR ===== */
 .bg{
     position:fixed;
     inset:0;
@@ -57,10 +58,11 @@ h1{
 }
 
 .subtitle{
-    color:#ccc;
+    margin-top:15px;
+    color:#ddd;
 }
 
-/* ===== BUTTON ===== */
+/* ===== GOMB ===== */
 .btn{
     display:inline-block;
     margin-top:20px;
@@ -69,8 +71,8 @@ h1{
     color:black;
     font-weight:bold;
     border-radius:12px;
-    cursor:pointer;
     text-decoration:none;
+    cursor:pointer;
     transition:.3s;
 }
 
@@ -78,40 +80,63 @@ h1{
     transform:scale(1.1);
 }
 
-/* ===== SECTIONS ===== */
+/* ===== RANGOK ===== */
 .section{
     padding:60px 20px;
     text-align:center;
 }
 
-input,textarea{
+.grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+    gap:20px;
+    margin-top:30px;
+}
+
+.card{
+    background:rgba(0,0,0,0.6);
+    border:1px solid rgba(255,215,0,0.3);
+    padding:20px;
+    border-radius:15px;
+}
+
+.card h3{
+    color:gold;
+}
+
+/* ===== FORM ===== */
+form{
+    max-width:500px;
+    margin:auto;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+}
+
+input, textarea{
     padding:12px;
-    border-radius:10px;
     border:none;
-    margin:5px;
-    width:250px;
+    border-radius:10px;
+    background:rgba(255,255,255,0.1);
+    color:white;
 }
 
 /* ===== ADMIN ===== */
 #admin{
     display:none;
     padding:20px;
+    background:#0b0b0b;
 }
 
 .cardAdmin{
     background:#111;
-    padding:10px;
-    margin:10px;
+    padding:15px;
+    margin:10px 0;
     border-left:4px solid gold;
 }
 
-.ok{background:green;color:white;border:none;padding:5px;cursor:pointer;}
-.del{background:red;color:white;border:none;padding:5px;cursor:pointer;}
-
-/* ===== STATUS COLORS ===== */
-.pending{color:orange;}
-.accepted{color:lime;}
-.rejected{color:red;}
+.ok{background:green;color:white;padding:5px 10px;border:none;cursor:pointer;}
+.del{background:red;color:white;padding:5px 10px;border:none;cursor:pointer;}
 
 </style>
 </head>
@@ -127,6 +152,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebas
 import { getDatabase, ref, push, onValue, update, remove }
 from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
+/* ===== FIREBASE ===== */
 const firebaseConfig = {
   apiKey: "AIzaSyBgbixws2rf6VdqjQATVwZsKg0lgiqy1xI",
   authDomain: "ordog-fizetes.firebaseapp.com",
@@ -140,15 +166,18 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-const WEBHOOK = "https://discord.com/api/webhooks/1510453541574279299/naiH2nbj8eVxWGAKQhzAOXvx45pir4Zq9Lbh8h3tdz83x8KLJOILaMNTDjUg_WvmHS4n";
+/* ===== DISCORD WEBHOOK ===== */
+const WEBHOOK_URL = "https://discord.com/api/webhooks/1510453541574279299/naiH2nbj8eVxWGAKQhzAOXvx45pir4Zq9Lbh8h3tdz83x8KLJOILaMNTDjUg_WvmHS4n";
 
-/* ===================== JELENTKEZÉS ===================== */
+/* =========================
+   JELENTKEZÉS
+========================= */
 window.sendForm = function(e){
     e.preventDefault();
 
-    const name = nameInput.value;
-    const age = ageInput.value;
-    const reason = reasonInput.value;
+    const name = document.getElementById("name").value;
+    const age = document.getElementById("age").value;
+    const reason = document.getElementById("reason").value;
 
     push(ref(db,"applications"),{
         name,
@@ -157,7 +186,7 @@ window.sendForm = function(e){
         status:"pending"
     });
 
-    fetch(WEBHOOK,{
+    fetch(WEBHOOK_URL,{
         method:"POST",
         headers:{"Content-Type":"application/json"},
         body:JSON.stringify({
@@ -165,47 +194,42 @@ window.sendForm = function(e){
         })
     });
 
-    alert("Elküldve!");
+    alert("Jelentkezés elküldve!");
+    window.open("https://discord.gg/9SjXeJg7vu","_blank");
 }
 
-/* ===================== STATUS CHECK ===================== */
-window.checkStatus = function(){
-
-    const name = document.getElementById("checkName").value.toLowerCase();
+/* =========================
+   DISCORD UNLOCK
+========================= */
+function checkAccess(){
 
     onValue(ref(db,"applications"),snap=>{
 
-        let found = null;
+        let ok = false;
 
         snap.forEach(c=>{
-            if(c.val().name.toLowerCase() === name){
-                found = c.val().status;
-            }
+            if(c.val().status === "accepted") ok = true;
         });
 
-        const out = document.getElementById("statusResult");
-
-        if(!found){
-            out.innerHTML = "❌ Nincs jelentkezés";
-        }
-        else if(found === "pending"){
-            out.innerHTML = "<span class='pending'>⏳ FÜGGŐBEN</span>";
-        }
-        else if(found === "accepted"){
-            out.innerHTML = "<span class='accepted'>✅ ELFOGADVA</span>";
-        }
-        else{
-            out.innerHTML = "<span class='rejected'>❌ ELUTASÍTVA</span>";
-        }
+        const btn = document.getElementById("discordBtn");
+        if(btn) btn.style.display = ok ? "inline-block" : "none";
     });
 }
 
-/* ===================== ADMIN ===================== */
+/* =========================
+   ADMIN LOGIN
+========================= */
 window.login = function(){
-    if(pass.value==="1234"){
-        admin.style.display="block";
-    }
+
+    if(document.getElementById("pass").value === "1234"){
+        document.getElementById("admin").style.display="block";
+    } else alert("Hibás jelszó!");
 }
+
+/* =========================
+   LOAD ADMIN
+========================= */
+const list = document.getElementById("list");
 
 function load(){
 
@@ -213,22 +237,23 @@ onValue(ref(db,"applications"),snap=>{
 
     list.innerHTML="";
 
-    snap.forEach(c=>{
+    snap.forEach(child=>{
 
-        const d=c.val();
-        const id=c.key;
+        const d = child.val();
+        const id = child.key;
 
-        let div=document.createElement("div");
+        const div = document.createElement("div");
         div.className="cardAdmin";
 
         div.innerHTML=`
-        <b>${d.name}</b> (${d.age})<br>
-        ${d.reason}<br>
-        <b>${d.status}</b><br><br>
+            <b>${d.name}</b><br>
+            ${d.age}<br>
+            ${d.reason}<br>
+            <b>${d.status}</b><br><br>
 
-        <button class="ok" onclick="accept('${id}')">Elfogadás</button>
-        <button class="del" onclick="reject('${id}')">Elutasítás</button>
-        <button class="del" onclick="del('${id}')">Törlés</button>
+            <button class="ok" onclick="accept('${id}')">Elfogadás</button>
+            <button class="del" onclick="reject('${id}')">Elutasítás</button>
+            <button class="del" onclick="del('${id}')">Törlés</button>
         `;
 
         list.appendChild(div);
@@ -238,19 +263,42 @@ onValue(ref(db,"applications"),snap=>{
 
 }
 
-window.accept=function(id){
+/* =========================
+   ADMIN ACTIONS + WEBHOOK
+========================= */
+window.accept = function(id){
+
     update(ref(db,"applications/"+id),{status:"accepted"});
+
+    fetch(WEBHOOK_URL,{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({
+            content:`✅ ELFOGADVA\n🆔 ${id}`
+        })
+    });
 }
 
-window.reject=function(id){
+window.reject = function(id){
+
     update(ref(db,"applications/"+id),{status:"rejected"});
+
+    fetch(WEBHOOK_URL,{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({
+            content:`❌ ELUTASÍTVA\n🆔 ${id}`
+        })
+    });
 }
 
-window.del=function(id){
+window.del = function(id){
     remove(ref(db,"applications/"+id));
 }
 
+/* INIT */
 load();
+checkAccess();
 
 </script>
 
@@ -259,54 +307,59 @@ load();
 <div class="hero">
 
 <div class="crown">👑</div>
-<h1>BLACK CROWN ORGANIZATION</h1>
-<div class="subtitle">A korona nem jár mindenkinek</div>
 
-<a class="btn" href="https://discord.gg/9SjXeJg7vu" target="_blank">
-DISCORD
+<h1>BLACK CROWN ORGANIZATION</h1>
+
+<div class="subtitle">
+A korona nem jár mindenkinek — ki kell érdemelni.
+</div>
+
+<a id="discordBtn" class="btn" href="https://discord.gg/9SjXeJg7vu" target="_blank" style="display:none;">
+CSATLAKOZÁS DISCORDHOZ
 </a>
+
+</div>
+
+<!-- RANGOK -->
+<div class="section">
+<h2 style="color:gold;">🏆 Rangok</h2>
+
+<div class="grid">
+<div class="card"><h3>Boss</h3></div>
+<div class="card"><h3>Underboss</h3></div>
+<div class="card"><h3>Consigliere</h3></div>
+<div class="card"><h3>Capo</h3></div>
+<div class="card"><h3>Soldier</h3></div>
+</div>
 
 </div>
 
 <!-- JELENTKEZÉS -->
 <div class="section">
 
-<h2>📜 Jelentkezés</h2>
+<h2 style="color:gold;">⚔ Jelentkezés</h2>
 
 <form onsubmit="sendForm(event)">
-<input id="nameInput" placeholder="Név">
-<input id="ageInput" placeholder="Kor">
-<textarea id="reasonInput" placeholder="Indok"></textarea>
-<br>
-<button class="btn">Küldés</button>
+<input id="name" placeholder="Név" required>
+<input id="age" placeholder="Kor" required>
+<textarea id="reason" placeholder="Miért csatlakoznál?" required></textarea>
+
+<button class="btn" type="submit">KÜLDÉS</button>
 </form>
-
-</div>
-
-<!-- STATUS -->
-<div class="section">
-
-<h2>📊 Státusz ellenőrzés</h2>
-
-<input id="checkName" placeholder="Név">
-<br><br>
-<button class="btn" onclick="checkStatus()">Ellenőrzés</button>
-
-<p id="statusResult"></p>
 
 </div>
 
 <!-- ADMIN -->
 <div class="section">
 
-<h2>🔐 Admin</h2>
+<h2 style="color:gold;">🔐 Admin</h2>
 
-<input id="pass" type="password" placeholder="Jelszó">
+<input type="password" id="pass" placeholder="Jelszó">
 <br><br>
 <button class="btn" onclick="login()">Belépés</button>
 
 <div id="admin">
-<h3>Jelentkezések</h3>
+<h3 style="color:gold;margin-top:20px;">📜 Jelentkezések</h3>
 <div id="list"></div>
 </div>
 
