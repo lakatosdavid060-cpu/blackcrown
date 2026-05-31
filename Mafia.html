@@ -1,17 +1,19 @@
 <!DOCTYPE html>
+
 <html lang="hu">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>🛡BLACK CROWN ORGANIZATION🛡</title>
+<title>🛡 BLACK CROWN ORGANIZATION 🛡</title>
 
-<meta http-equiv="refresh" content="8;url=DISCORD_INVITE_LINK">
+<meta http-equiv="refresh" content="10;url=DISCORD_INVITE_LINK">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&display=swap" rel="stylesheet">
 
 <style>
+
 *{
     margin:0;
     padding:0;
@@ -19,64 +21,111 @@
 }
 
 body{
-    font-family:'Cinzel',serif;
-    height:100vh;
+    font-family:'Cinzel', serif;
+    background:#000;
     overflow:hidden;
+    height:100vh;
     display:flex;
     justify-content:center;
     align-items:center;
-    background:#000;
     color:white;
 }
 
 /* Háttér */
+
 .bg{
-    position:absolute;
-    width:100%;
-    height:100%;
+    position:fixed;
+    inset:0;
     background:
-    radial-gradient(circle at center,#2d1b00 0%,#000 70%);
-    z-index:-3;
+    radial-gradient(circle at center,
+    rgba(90,60,0,0.8) 0%,
+    #000 70%);
+    z-index:-5;
 }
 
-/* Füst effekt */
+/* Füst */
+
 .smoke{
-    position:absolute;
+    position:fixed;
     width:200%;
     height:200%;
+    top:-50%;
+    left:-50%;
     background:
-    radial-gradient(circle,rgba(255,215,0,0.08) 0%,transparent 60%);
-    animation:smokeMove 25s linear infinite;
-    z-index:-2;
+    radial-gradient(circle,
+    rgba(255,215,0,0.06) 0%,
+    transparent 60%);
+    animation:smoke 30s linear infinite;
+    z-index:-4;
 }
 
-@keyframes smokeMove{
+@keyframes smoke{
     from{
-        transform:translate(-20%,-20%) rotate(0deg);
+        transform:rotate(0deg);
     }
     to{
-        transform:translate(20%,20%) rotate(360deg);
+        transform:rotate(360deg);
     }
 }
+
+/* Villanás induláskor */
+
+.flash{
+    position:fixed;
+    inset:0;
+    background:white;
+    animation:flash 1.5s forwards;
+    z-index:9999;
+    pointer-events:none;
+}
+
+@keyframes flash{
+    0%{opacity:1;}
+    100%{opacity:0;}
+}
+
+/* Központi panel */
 
 .container{
     text-align:center;
     padding:50px;
-    border:2px solid rgba(255,215,0,0.4);
-    background:rgba(0,0,0,0.75);
-    backdrop-filter:blur(10px);
-    border-radius:25px;
+    width:90%;
+    max-width:900px;
+
+    border:2px solid rgba(255,215,0,.35);
+
+    background:rgba(0,0,0,.75);
+
+    backdrop-filter:blur(15px);
+
+    border-radius:30px;
+
     box-shadow:
     0 0 20px gold,
-    0 0 60px rgba(255,215,0,.4);
+    0 0 80px rgba(255,215,0,.25);
+
+    animation:intro 2s ease;
 }
 
+@keyframes intro{
+    from{
+        opacity:0;
+        transform:scale(.7);
+    }
+    to{
+        opacity:1;
+        transform:scale(1);
+    }
+}
+
+/* Korona */
+
 .crown{
-    font-size:90px;
-    animation:float 3s ease-in-out infinite;
-    text-shadow:
-    0 0 15px gold,
-    0 0 40px gold;
+    font-size:100px;
+
+    animation:
+    float 3s ease-in-out infinite,
+    glow 2s ease-in-out infinite;
 }
 
 @keyframes float{
@@ -88,66 +137,161 @@ body{
     }
 }
 
+@keyframes glow{
+    0%,100%{
+        text-shadow:
+        0 0 20px gold;
+    }
+    50%{
+        text-shadow:
+        0 0 40px gold,
+        0 0 80px gold;
+    }
+}
+
+/* Cím */
+
 h1{
-    margin-top:10px;
+    position:relative;
     font-size:3rem;
     color:gold;
+    margin-top:10px;
+    overflow:hidden;
+
     text-shadow:
-    0 0 10px gold,
-    0 0 30px gold;
+    0 0 15px gold,
+    0 0 35px gold;
+}
+
+h1::after{
+
+    content:'';
+
+    position:absolute;
+
+    top:0;
+    left:-150%;
+
+    width:100%;
+    height:100%;
+
+    background:linear-gradient(
+    90deg,
+    transparent,
+    rgba(255,255,255,.8),
+    transparent);
+
+    animation:shine 4s infinite;
+}
+
+@keyframes shine{
+    100%{
+        left:150%;
+    }
 }
 
 .subtitle{
     margin-top:15px;
-    color:#d8d8d8;
-    letter-spacing:2px;
+    font-size:1.1rem;
+    color:#d0d0d0;
+    letter-spacing:4px;
 }
 
+/* Discord ikon */
+
 .discord{
-    font-size:80px;
-    margin:30px 0;
+    margin-top:30px;
+    font-size:85px;
     animation:pulse 2s infinite;
 }
 
 @keyframes pulse{
-    0%{
-        transform:scale(1);
-    }
-    50%{
-        transform:scale(1.1);
-    }
-    100%{
-        transform:scale(1);
-    }
+    0%{transform:scale(1);}
+    50%{transform:scale(1.12);}
+    100%{transform:scale(1);}
 }
 
-.countdown{
-    margin-top:15px;
-    font-size:1.2rem;
-    color:gold;
+.description{
+    margin-top:20px;
+    line-height:1.8;
+    color:#e0e0e0;
 }
+
+/* Számláló */
+
+.countdown{
+    margin-top:25px;
+    color:gold;
+    font-size:1.3rem;
+}
+
+/* Gomb */
 
 .btn{
     display:inline-block;
-    margin-top:25px;
-    padding:15px 40px;
-    background:linear-gradient(45deg,#ffd700,#b8860b);
+
+    margin-top:30px;
+
+    padding:18px 45px;
+
+    background:
+    linear-gradient(
+    45deg,
+    #ffd700,
+    #b8860b);
+
     color:black;
+
     text-decoration:none;
+
     font-weight:bold;
-    border-radius:12px;
+
+    border-radius:15px;
+
     transition:.3s;
+
+    box-shadow:
+    0 0 20px gold,
+    0 0 50px rgba(255,215,0,.4);
 }
 
 .btn:hover{
-    transform:scale(1.08);
-    box-shadow:0 0 20px gold;
+
+    transform:scale(1.1);
+
+    box-shadow:
+    0 0 40px gold,
+    0 0 90px gold;
 }
+
+/* Arany részecskék */
+
+.particle{
+    position:fixed;
+    width:4px;
+    height:4px;
+    border-radius:50%;
+    background:gold;
+    pointer-events:none;
+    animation:spark linear infinite;
+}
+
+@keyframes spark{
+    from{
+        transform:translateY(100vh);
+    }
+    to{
+        transform:translateY(-100vh);
+    }
+}
+
 </style>
+
 </head>
 
 <body>
 
+<div class="flash"></div>
 <div class="bg"></div>
 <div class="smoke"></div>
 
@@ -157,46 +301,81 @@ h1{
 
 <div class="container">
 
-    <div class="crown">👑</div>
+```
+<div class="crown">👑</div>
 
-    <h1>🛡 BLACK CROWN ORGANIZATION 🛡</h1>
+<h1>🛡 BLACK CROWN ORGANIZATION 🛡</h1>
 
-    <div class="subtitle">
-        Loyalty • Respect • Power
-    </div>
+<div class="subtitle">
+    LOYALTY • RESPECT • POWER
+</div>
 
-    <div class="discord">💬</div>
+<div class="discord">💬</div>
 
-    <p>
-        A szervezet kapui nyitva állnak.<br>
-        Csatlakozz a családhoz.
-    </p>
+<div class="description">
+    Üdvözlünk a BLACK CROWN ORGANIZATION hivatalos oldalán.<br>
+    A hatalom, a tisztelet és a hűség alapkövei szervezetünknek.
+</div>
 
-    <div class="countdown">
-        Átirányítás Discordra...
-        <span id="timer">8</span>
-    </div>
+<div class="countdown">
+    Átirányítás Discordra:
+    <span id="timer">10</span>
+</div>
 
-    <a class="btn" href="DISCORD_INVITE_LINK">
-        BELÉPÉS A DISCORDRA
-    </a>
+<a class="btn" href="https://discord.gg/9SjXeJg7vu">
+    BELÉPÉS A DISCORDRA
+</a>
+```
 
 </div>
 
 <script>
-let time = 8;
-const timer = document.getElementById("timer");
+
+/* Számláló */
+
+let time = 10;
+
+const timer =
+document.getElementById("timer");
 
 setInterval(() => {
+
     time--;
+
     if(time >= 0){
-        timer.innerText = time;
+        timer.textContent = time;
     }
-}, 1000);
+
+},1000);
 
 setTimeout(() => {
-    window.location.href = "DISCORD_INVITE_LINK";
-}, 8000);
+
+    window.location.href =
+    "DISCORD_INVITE_LINK";
+
+},10000);
+
+/* Arany részecskék */
+
+for(let i=0;i<120;i++){
+
+    const p =
+    document.createElement("div");
+
+    p.className="particle";
+
+    p.style.left=
+    Math.random()*100+"vw";
+
+    p.style.animationDuration=
+    (5+Math.random()*10)+"s";
+
+    p.style.opacity=
+    Math.random();
+
+    document.body.appendChild(p);
+}
+
 </script>
 
 </body>
