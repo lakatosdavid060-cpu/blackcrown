@@ -80,15 +80,14 @@ h1{
 
 /* ===== SECTIONS ===== */
 .section{
-    padding:50px 20px;
+    padding:60px 20px;
     text-align:center;
 }
 
-/* ===== INPUT ===== */
 input,textarea{
-    padding:10px;
+    padding:12px;
+    border-radius:10px;
     border:none;
-    border-radius:8px;
     margin:5px;
     width:250px;
 }
@@ -96,6 +95,7 @@ input,textarea{
 /* ===== ADMIN ===== */
 #admin{
     display:none;
+    padding:20px;
 }
 
 .cardAdmin{
@@ -105,21 +105,13 @@ input,textarea{
     border-left:4px solid gold;
 }
 
-.ok{background:green;color:white;padding:5px;border:none;}
-.del{background:red;color:white;padding:5px;border:none;}
+.ok{background:green;color:white;border:none;padding:5px;cursor:pointer;}
+.del{background:red;color:white;border:none;padding:5px;cursor:pointer;}
 
-/* ===== STATUS ===== */
+/* ===== STATUS COLORS ===== */
 .pending{color:orange;}
 .accepted{color:lime;}
 .rejected{color:red;}
-
-/* ===== ONLINE ===== */
-#onlineList div{
-    background:rgba(0,0,0,0.5);
-    padding:8px;
-    margin:5px;
-    border-left:3px solid gold;
-}
 
 </style>
 </head>
@@ -132,10 +124,9 @@ input,textarea{
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getDatabase, ref, push, onValue, update, remove, set, onDisconnect }
+import { getDatabase, ref, push, onValue, update, remove }
 from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-/* ===== FIREBASE CONFIG ===== */
 const firebaseConfig = {
   apiKey: "AIzaSyBgbixws2rf6VdqjQATVwZsKg0lgiqy1xI",
   authDomain: "ordog-fizetes.firebaseapp.com",
@@ -150,46 +141,6 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
 const WEBHOOK = "https://discord.com/api/webhooks/1510453541574279299/naiH2nbj8eVxWGAKQhzAOXvx45pir4Zq9Lbh8h3tdz83x8KLJOILaMNTDjUg_WvmHS4n";
-
-/* ===================== ONLINE SYSTEM ===================== */
-const myId = crypto.randomUUID();
-const myName = prompt("Add meg a neved:");
-
-set(ref(db,"onlineUsers/"+myId),{
-    name: myName || "Unknown",
-    time: Date.now()
-});
-
-onDisconnect(ref(db,"onlineUsers/"+myId)).remove();
-
-/* ===================== ONLINE LIST ===================== */
-const onlineList = document.getElementById("onlineList");
-const onlineCount = document.getElementById("onlineCount");
-
-function trackOnline(){
-
-onValue(ref(db,"onlineUsers"),snap=>{
-
-    onlineList.innerHTML="";
-
-    let count = 0;
-
-    snap.forEach(c=>{
-        count++;
-
-        const div = document.createElement("div");
-        div.innerHTML = "🟢 " + c.val().name;
-
-        onlineList.appendChild(div);
-    });
-
-    onlineCount.innerText = count;
-
-});
-
-}
-
-trackOnline();
 
 /* ===================== JELENTKEZÉS ===================== */
 window.sendForm = function(e){
@@ -220,31 +171,37 @@ window.sendForm = function(e){
 /* ===================== STATUS CHECK ===================== */
 window.checkStatus = function(){
 
-const name = checkName.value.toLowerCase();
+    const name = document.getElementById("checkName").value.toLowerCase();
 
-onValue(ref(db,"applications"),snap=>{
+    onValue(ref(db,"applications"),snap=>{
 
-    let found=null;
+        let found = null;
 
-    snap.forEach(c=>{
-        if(c.val().name.toLowerCase() === name){
-            found=c.val().status;
+        snap.forEach(c=>{
+            if(c.val().name.toLowerCase() === name){
+                found = c.val().status;
+            }
+        });
+
+        const out = document.getElementById("statusResult");
+
+        if(!found){
+            out.innerHTML = "❌ Nincs jelentkezés";
+        }
+        else if(found === "pending"){
+            out.innerHTML = "<span class='pending'>⏳ FÜGGŐBEN</span>";
+        }
+        else if(found === "accepted"){
+            out.innerHTML = "<span class='accepted'>✅ ELFOGADVA</span>";
+        }
+        else{
+            out.innerHTML = "<span class='rejected'>❌ ELUTASÍTVA</span>";
         }
     });
-
-    const out = statusResult;
-
-    if(!found) out.innerHTML="❌ nincs jelentkezés";
-    else if(found==="pending") out.innerHTML="<span class='pending'>⏳ pending</span>";
-    else if(found==="accepted") out.innerHTML="<span class='accepted'>✅ accepted</span>";
-    else out.innerHTML="<span class='rejected'>❌ rejected</span>";
-
-});
-
 }
 
 /* ===================== ADMIN ===================== */
-window.login=function(){
+window.login = function(){
     if(pass.value==="1234"){
         admin.style.display="block";
     }
@@ -261,7 +218,7 @@ onValue(ref(db,"applications"),snap=>{
         const d=c.val();
         const id=c.key;
 
-        const div=document.createElement("div");
+        let div=document.createElement("div");
         div.className="cardAdmin";
 
         div.innerHTML=`
@@ -269,9 +226,9 @@ onValue(ref(db,"applications"),snap=>{
         ${d.reason}<br>
         <b>${d.status}</b><br><br>
 
-        <button class="ok" onclick="accept('${id}')">OK</button>
-        <button class="del" onclick="reject('${id}')">NO</button>
-        <button class="del" onclick="del('${id}')">DEL</button>
+        <button class="ok" onclick="accept('${id}')">Elfogadás</button>
+        <button class="del" onclick="reject('${id}')">Elutasítás</button>
+        <button class="del" onclick="del('${id}')">Törlés</button>
         `;
 
         list.appendChild(div);
@@ -305,12 +262,10 @@ load();
 <h1>BLACK CROWN ORGANIZATION</h1>
 <div class="subtitle">A korona nem jár mindenkinek</div>
 
-</div>
+<a class="btn" href="https://discord.gg/9SjXeJg7vu" target="_blank">
+DISCORD
+</a>
 
-<!-- ONLINE -->
-<div class="section">
-<h2>👥 Online tagok: <span id="onlineCount">0</span></h2>
-<div id="onlineList"></div>
 </div>
 
 <!-- JELENTKEZÉS -->
@@ -331,7 +286,7 @@ load();
 <!-- STATUS -->
 <div class="section">
 
-<h2>📊 Státusz</h2>
+<h2>📊 Státusz ellenőrzés</h2>
 
 <input id="checkName" placeholder="Név">
 <br><br>
@@ -346,7 +301,7 @@ load();
 
 <h2>🔐 Admin</h2>
 
-<input id="pass" type="password">
+<input id="pass" type="password" placeholder="Jelszó">
 <br><br>
 <button class="btn" onclick="login()">Belépés</button>
 
