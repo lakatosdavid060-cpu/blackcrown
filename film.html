@@ -1,223 +1,30 @@
 <!DOCTYPE html>
 <html lang="hu">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>StreamPlay</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Videó betöltése...</title>
 
-<style>
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-    font-family:Arial, sans-serif;
-}
+    <script>
+        // IDE írd a saját Videa linkedet
+        const videoLink = "https://videa.hu/videok/PELDA_VIDEO";
 
-body{
-    background:#141414;
-    color:white;
-}
+        window.location.replace(videoLink);
+    </script>
 
-header{
-    position:fixed;
-    top:0;
-    width:100%;
-    padding:20px 50px;
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    background:linear-gradient(to bottom, rgba(0,0,0,.9), transparent);
-    z-index:100;
-}
-
-.logo{
-    color:#e50914;
-    font-size:32px;
-    font-weight:bold;
-}
-
-nav a{
-    color:white;
-    text-decoration:none;
-    margin-left:20px;
-    transition:.3s;
-}
-
-nav a:hover{
-    color:#e50914;
-}
-
-.hero{
-    height:100vh;
-    background:
-    linear-gradient(to top, #141414 5%, transparent 40%),
-    url('https://videa.hu/videok/film-animacio/isztambuli-arvak-1.-evad-27.-Z6arQ2$yfbQV0HAxv')
-    center/cover;
-    display:flex;
-    align-items:center;
-    padding:0 80px;
-}
-
-.hero-content{
-    max-width:600px;
-}
-
-.hero h1{
-    font-size:64px;
-    margin-bottom:15px;
-}
-
-.hero p{
-    font-size:18px;
-    line-height:1.6;
-    margin-bottom:25px;
-}
-
-.buttons{
-    display:flex;
-    gap:15px;
-}
-
-.btn{
-    padding:14px 28px;
-    border:none;
-    border-radius:6px;
-    cursor:pointer;
-    font-size:18px;
-    font-weight:bold;
-}
-
-.play{
-    background:white;
-    color:black;
-}
-
-.info{
-    background:rgba(109,109,110,.7);
-    color:white;
-}
-
-.section{
-    padding:30px 50px;
-}
-
-.section h2{
-    margin-bottom:15px;
-}
-
-.row{
-    display:flex;
-    gap:15px;
-    overflow-x:auto;
-}
-
-.card{
-    min-width:250px;
-    height:140px;
-    border-radius:8px;
-    overflow:hidden;
-    cursor:pointer;
-    transition:.3s;
-}
-
-.card:hover{
-    transform:scale(1.08);
-}
-
-.card img{
-    width:100%;
-    height:100%;
-    object-fit:cover;
-}
-
-.player-modal{
-    position:fixed;
-    inset:0;
-    background:rgba(0,0,0,.95);
-    display:none;
-    justify-content:center;
-    align-items:center;
-    z-index:999;
-}
-
-.player-modal video{
-    width:90%;
-    max-width:1100px;
-    border-radius:12px;
-}
-
-.close{
-    position:absolute;
-    top:20px;
-    right:30px;
-    font-size:40px;
-    cursor:pointer;
-}
-</style>
+    <noscript>
+        <meta http-equiv="refresh" content="0; url=https://videa.hu/videok/PELDA_VIDEO">
+    </noscript>
 </head>
-
-<body>
-
-<header>
-    <div class="logo">STREAMPLAY</div>
-    <nav>
-        <a href="#">Kezdőlap</a>
-        <a href="#">Filmek</a>
-        <a href="#">Sorozatok</a>
-        <a href="#">Saját lista</a>
-    </nav>
-</header>
-
-<section class="hero">
-    <div class="hero-content">
-        <h1>Az Éjszaka Árnyai</h1>
+<body style="background:#141414;color:white;font-family:Arial,sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;">
+    <div>
+        <h1>Átirányítás a videóra...</h1>
+        <p>Ha nem történik semmi, kattints az alábbi linkre:</p>
         <p>
-            Egy látványos thriller tele rejtélyekkel,
-            akcióval és váratlan fordulatokkal.
+            <a href="https://videa.hu/videok/film-animacio/isztambuli-arvak-1.-evad-27.-Z6arQ2$yfbQV0HAxv" style="color:#e50914;">
+                Videó megnyitása
+            </a>
         </p>
-
-        <div class="buttons">
-            <button class="btn play" onclick="playVideo()">
-                ▶ Lejátszás
-            </button>
-            <button class="btn info">
-                ℹ További információ
-            </button>
-        </div>
     </div>
-</section>
-
-<section class="section">
-    <h2>Népszerű most</h2>
-
-    <div class="row">
-        <div class="card"><img src="https://videa.hu/videok/film-animacio/isztambuli-arvak-1.-evad-27.-Z6arQ2$yfbQV0HAxv"></div>
-        <div class="card"><img src="https://picsum.photos/500/300?2"></div>
-        <div class="card"><img src="https://picsum.photos/500/300?3"></div>
-        <div class="card"><img src="https://picsum.photos/500/300?4"></div>
-        <div class="card"><img src="https://picsum.photos/500/300?5"></div>
-    </div>
-</section>
-
-<div class="player-modal" id="player">
-    <span class="close" onclick="closeVideo()">✕</span>
-
-    <video controls autoplay id="videoPlayer">
-        <source src="video.mp4" type="video/mp4">
-    </video>
-</div>
-
-<script>
-function playVideo() {
-    document.getElementById("player").style.display = "flex";
-}
-
-function closeVideo() {
-    const video = document.getElementById("videoPlayer");
-    video.pause();
-    document.getElementById("player").style.display = "none";
-}
-</script>
-
 </body>
 </html>
