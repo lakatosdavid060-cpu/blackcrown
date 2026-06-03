@@ -47,10 +47,6 @@ button{
   border:2px solid gold;
   background:#2b2400;
 }
-
-.deleteBtn{
-  background:#b30000;
-}
 </style>
 </head>
 
@@ -58,11 +54,23 @@ button{
 
 <h1>RP Munka Portál</h1>
 
-<!-- ADMIN LOGIN -->
+<!-- ADMIN -->
 <div class="card">
   <h2>Admin belépés</h2>
   <input type="password" id="adminPass" placeholder="Admin jelszó">
   <button onclick="loginAdmin()">Belépés</button>
+</div>
+
+<!-- DASHBOARD -->
+<div class="card">
+  <h2>📊 Admin Dashboard</h2>
+  <p id="stats"></p>
+</div>
+
+<!-- JELENTKEZŐK -->
+<div class="card">
+  <h2>🧑‍💼 Jelentkezők</h2>
+  <div id="applications"></div>
 </div>
 
 <div class="card">
@@ -96,8 +104,11 @@ button{
 </div>
 
 <div class="card">
-<h2>Dark oldal (Maffia / Banda)</h2>
-<div id="darkAds"></div>
+<h2>💬 Chat</h2>
+<input id="chatAdId" placeholder="Hirdetés ID">
+<input id="chatMsg" placeholder="Üzenet">
+<button onclick="sendChat()">Küldés</button>
+<div id="chatBox"></div>
 </div>
 
 <script type="module">
@@ -111,10 +122,11 @@ import {
   orderBy,
   deleteDoc,
   doc,
-  updateDoc
+  updateDoc,
+  getDocs
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-/* FIREBASE CONFIG */
+/* FIREBASE */
 const firebaseConfig = {
   apiKey: "AIzaSyBgbixws2rf6VdqjQATVwZsKg0lgiqy1xI",
   authDomain: "ordog-fizetes.firebaseapp.com",
@@ -132,18 +144,18 @@ const db = getFirestore(app);
 let isAdmin = false;
 const ADMIN_PASSWORD = "1234567";
 
-/* ADMIN LOGIN */
+/* LOGIN */
 window.loginAdmin = function(){
   const pass = document.getElementById("adminPass").value;
 
   if(pass === ADMIN_PASSWORD){
     isAdmin = true;
-    alert("Admin belépés sikeres!");
+    alert("Admin ON");
+    loadDashboard();
+    loadApplications();
   } else {
-    alert("Hibás jelszó!");
+    alert("Hibás jelszó");
   }
-
-  document.getElementById("adminPass").value = "";
 }
 
 /* ADD AD */
@@ -152,84 +164,145 @@ window.addAd = async function(){
   const title = document.getElementById("title").value;
   const desc = document.getElementById("desc").value;
 
-  if(!title || !desc) return alert("Tölts ki minden mezőt!");
-
-  const daysToLive = 7;
-  const expiresAt = Date.now() + daysToLive * 24 * 60 * 60 * 1000;
+  const expiresAt = Date.now() + 7*24*60*60*1000;
 
   await addDoc(collection(db,"ads"),{
-    category,
-    title,
-    desc,
+    category,title,desc,
     featured:false,
-    createdAt: Date.now(),
+    status:"active",
+    createdAt:Date.now(),
     expiresAt
   });
-
-  document.getElementById("title").value="";
-  document.getElementById("desc").value="";
 }
 
 /* DELETE */
 window.deleteAd = async function(id){
-  if(!isAdmin) return alert("Nincs jogosultság!");
-  if(!confirm("Biztos törlöd?")) return;
+  if(!isAdmin) return;
   await deleteDoc(doc(db,"ads",id));
 }
 
 /* FEATURED */
 window.toggleFeatured = async function(id,current){
-  if(!isAdmin) return alert("Nincs jogosultság!");
+  if(!isAdmin) return;
   await updateDoc(doc(db,"ads",id),{
-    featured: !current
+    featured:!current
   });
 }
 
-/* LIST */
-const q = query(collection(db,"ads"), orderBy("createdAt","desc"));
+/* STATUS */
+window.setStatus = async function(id,status){
+  if(!isAdmin) return;
+  await updateDoc(doc(db,"ads",id),{status});
+}
 
-onSnapshot(q,(snapshot)=>{
-  const featuredAds = document.getElementById("featuredAds");
+/* APPLY */
+window.applyAd = async function(id){
+  const name = prompt("Neved:");
+  const msg = prompt("Üzenet:");
+  if(!name||!msg) return;
+
+  await addDoc(collection(db,"applications"),{
+    adId:id,name,msg,createdAt:Date.now()
+  });
+  alert("Jelentkezés elküldve");
+}
+
+/* CHAT SEND */
+window.sendChat = async function(){
+  const adId = document.getElementById("chatAdId").value;
+  const msg = document.getElementById("chatMsg").value;
+
+  await addDoc(collection(db,"comments"),{
+    adId,text:msg,createdAt:Date.now()
+  });
+
+  document.getElementById("chatMsg").value="";
+}
+
+/* DASHBOARD */
+window.loadDashboard = async function(){
+  const ads = await getDocs(collection(db,"ads"));
+  const apps = await getDocs(collection(db,"applications"));
+  const coms = await getDocs(collection(db,"comments"));
+
+  document.getElementById("stats").innerHTML =
+    `📌 Hirdetés: ${ads.size}<br>
+     🧑‍💼 Jelentkezés: ${apps.size}<br>
+     💬 Chat: ${coms.size}`;
+}
+
+/* APPLICATIONS */
+window.loadApplications = function(){
+  onSnapshot(collection(db,"applications"),(snap)=>{
+    const box = document.getElementById("applications");
+    box.innerHTML="";
+
+    snap.forEach(d=>{
+      const x = d.data();
+
+      box.innerHTML += `
+        <div class="ad">
+          <b>${x.adId}</b><br>
+          ${x.name}<br>
+          ${x.msg}
+        </div>
+      `;
+    });
+  });
+}
+
+/* CHAT LOAD */
+onSnapshot(collection(db,"comments"),(snap)=>{
+  const box = document.getElementById("chatBox");
+  box.innerHTML="";
+
+  snap.forEach(d=>{
+    const x = d.data();
+    box.innerHTML += `
+      <div class="ad">
+        <b>${x.adId}</b><br>
+        ${x.text}
+      </div>
+    `;
+  });
+});
+
+/* ADS LIST */
+const q = query(collection(db,"ads"),orderBy("createdAt","desc"));
+
+onSnapshot(q,(snap)=>{
+  const featured = document.getElementById("featuredAds");
   const ads = document.getElementById("ads");
-  const dark = document.getElementById("darkAds");
 
-  featuredAds.innerHTML="";
+  featured.innerHTML="";
   ads.innerHTML="";
-  dark.innerHTML="";
 
-  snapshot.forEach(async (docSnap)=>{
-    const data = docSnap.data();
-    const id = docSnap.id;
+  snap.forEach(async d=>{
+    const x = d.data();
 
-    /* AUTO DELETE EXPIRED */
-    if(data.expiresAt && data.expiresAt < Date.now()){
-      await deleteDoc(doc(db,"ads",id));
+    if(x.expiresAt < Date.now()){
+      await deleteDoc(doc(db,"ads",d.id));
       return;
     }
 
     const el = `
-      <div class="ad ${data.featured ? 'featured' : ''}">
-        ${data.featured ? "⭐ <b>KIEMELT</b><br>" : ""}
-        <b>${data.title}</b><br>
-        <small>${data.category}</small>
-        <p>${data.desc}</p>
+      <div class="ad ${x.featured?'featured':''}">
+        <b>${x.title}</b><br>
+        ${x.category} | ${x.status}
+        <p>${x.desc}</p>
 
-        ${isAdmin ? `
-          <button onclick="deleteAd('${id}')">Törlés</button>
-          <button onclick="toggleFeatured('${id}',${data.featured})">
-            ${data.featured ? "Kiemelés OFF" : "Kiemelés ON"}
-          </button>
-        ` : ""}
+        <button onclick="applyAd('${d.id}')">Jelentkezem</button>
+        <button onclick="sendChat()">Chat</button>
+
+        ${isAdmin?`
+          <button onclick="deleteAd('${d.id}')">Törlés</button>
+          <button onclick="toggleFeatured('${d.id}',${x.featured})">⭐</button>
+          <button onclick="setStatus('${d.id}','closed')">Lezár</button>
+        `:""}
       </div>
     `;
 
-    if(data.featured){
-      featuredAds.innerHTML += el;
-    } else if(data.category === "mafia" || data.category === "banda"){
-      dark.innerHTML += el;
-    } else {
-      ads.innerHTML += el;
-    }
+    ads.innerHTML += el;
   });
 });
 </script>
