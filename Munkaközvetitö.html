@@ -51,10 +51,6 @@ button{
 .deleteBtn{
   background:#b30000;
 }
-
-.adminToggle{
-  background:#444;
-}
 </style>
 </head>
 
@@ -62,7 +58,12 @@ button{
 
 <h1>RP Munka Portál</h1>
 
-<button class="adminToggle" onclick="toggleAdmin()">Admin mód: OFF</button>
+<!-- ADMIN LOGIN -->
+<div class="card">
+  <h2>Admin belépés</h2>
+  <input type="password" id="adminPass" placeholder="Admin jelszó">
+  <button onclick="loginAdmin()">Belépés</button>
+</div>
 
 <div class="card">
 <h2>Új hirdetés</h2>
@@ -115,24 +116,34 @@ import {
 
 /* FIREBASE CONFIG */
 const firebaseConfig = {
-  apiKey: "YOUR_KEY",
-  authDomain: "YOUR_DOMAIN",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_BUCKET",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyBgbixws2rf6VdqjQATVwZsKg0lgiqy1xI",
+  authDomain: "ordog-fizetes.firebaseapp.com",
+  databaseURL: "https://ordog-fizetes-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "ordog-fizetes",
+  storageBucket: "ordog-fizetes.firebasestorage.app",
+  messagingSenderId: "672089263660",
+  appId: "1:672089263660:web:3797a2fc935c63a0464b89",
+  measurementId: "G-V9Z9LYT0KL"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 let isAdmin = false;
+const ADMIN_PASSWORD = "1234567";
 
-/* ADMIN TOGGLE */
-window.toggleAdmin = function(){
-  isAdmin = !isAdmin;
-  document.querySelector(".adminToggle").innerText =
-    "Admin mód: " + (isAdmin ? "ON" : "OFF");
+/* ADMIN LOGIN */
+window.loginAdmin = function(){
+  const pass = document.getElementById("adminPass").value;
+
+  if(pass === ADMIN_PASSWORD){
+    isAdmin = true;
+    alert("Admin belépés sikeres!");
+  } else {
+    alert("Hibás jelszó!");
+  }
+
+  document.getElementById("adminPass").value = "";
 }
 
 /* ADD AD */
@@ -161,12 +172,14 @@ window.addAd = async function(){
 
 /* DELETE */
 window.deleteAd = async function(id){
+  if(!isAdmin) return alert("Nincs jogosultság!");
   if(!confirm("Biztos törlöd?")) return;
   await deleteDoc(doc(db,"ads",id));
 }
 
-/* TOGGLE FEATURED */
+/* FEATURED */
 window.toggleFeatured = async function(id,current){
+  if(!isAdmin) return alert("Nincs jogosultság!");
   await updateDoc(doc(db,"ads",id),{
     featured: !current
   });
@@ -202,7 +215,7 @@ onSnapshot(q,(snapshot)=>{
         <p>${data.desc}</p>
 
         ${isAdmin ? `
-          <button class="deleteBtn" onclick="deleteAd('${id}')">Törlés</button>
+          <button onclick="deleteAd('${id}')">Törlés</button>
           <button onclick="toggleFeatured('${id}',${data.featured})">
             ${data.featured ? "Kiemelés OFF" : "Kiemelés ON"}
           </button>
