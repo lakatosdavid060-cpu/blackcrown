@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RP Munka Portál</title>
+<style>
+body{font-family:Arial,sans-serif;background:#121212;color:#fff;max-width:1100px;margin:auto;padding:20px}
+.card{background:#1f1f1f;padding:15px;border-radius:10px;margin:10px 0}
+input,select,textarea,button{width:100%;padding:10px;margin:6px 0}
+.dark-board{border:1px solid #7a0000}
+</style>
+</head>
+<body>
+<h1>RP Munka Portál</h1>
+
+<p>Firebase konfigurációt illeszd be a script részben.</p>
+
+<div class="card">
+<h2>Új hirdetés</h2>
+<select id="category">
+<option>Mentős</option>
+<option>Rendőr</option>
+<option>Szerelő</option>
+<option>Telepi munka</option>
+<option>Étterem</option>
+<option>Civil</option>
+<option>Maffia</option>
+<option>Banda</option>
+</select>
+<input id="title" placeholder="Cím">
+<textarea id="desc" placeholder="Leírás"></textarea>
+<button>Közzététel</button>
+</div>
+
+<div class="card">
+<h2>Normál hirdetések</h2>
+<p>Jelentkezés gomb • Törlés gomb • Értékelések</p>
+</div>
+
+<div class="card dark-board">
+<h2>Dark oldal (Maffia/Banda)</h2>
+<p>Külön lista a szervezett bűnözői hirdetéseknek.</p>
+</div>
+
+<!-- Firebase SDK-k és Firestore logika ide -->
+</body>
+</html>
