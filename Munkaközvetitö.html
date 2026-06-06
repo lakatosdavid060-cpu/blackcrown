@@ -2,133 +2,127 @@
 <html lang="hu">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>RP Munka Portál</title>
+<title>MMO Város 3.0</title>
 
 <style>
 body{
-  font-family:Arial,sans-serif;
-  background:#121212;
-  color:#fff;
-  max-width:1100px;
-  margin:auto;
-  padding:20px;
+    background:#111;
+    color:white;
+    font-family:Arial;
+    text-align:center;
 }
 
-.card{
-  background:#1f1f1f;
-  padding:15px;
-  border-radius:10px;
-  margin:10px 0;
+.container{
+    display:flex;
+    justify-content:center;
+    gap:20px;
+    margin-top:15px;
 }
 
-input,select,textarea,button{
-  width:100%;
-  padding:10px;
-  margin:6px 0;
-  border:none;
-  border-radius:6px;
+.grid{
+    display:grid;
+    grid-template-columns:repeat(10,45px);
+    gap:4px;
 }
 
-button{
-  background:#7a0000;
-  color:white;
-  cursor:pointer;
+.cell{
+    width:45px;
+    height:45px;
+    background:#333;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    border-radius:6px;
 }
 
-.ad{
-  background:#2a2a2a;
-  padding:10px;
-  border-radius:8px;
-  margin-top:10px;
+.panel button{
+    margin:5px;
+    padding:8px;
+    border:none;
+    background:#5865F2;
+    color:white;
+    border-radius:8px;
+    cursor:pointer;
 }
 
-.featured{
-  border:2px solid gold;
-  background:#2b2400;
+.chat{
+    width:250px;
+    height:420px;
+    background:#222;
+    display:flex;
+    flex-direction:column;
+    border-radius:10px;
+    overflow:hidden;
+}
+
+.messages{
+    flex:1;
+    overflow:auto;
+    padding:10px;
+    font-size:12px;
+}
+
+input{
+    padding:8px;
+    border:none;
+    outline:none;
 }
 </style>
 </head>
 
 <body>
 
-<h1>RP Munka Portál</h1>
+<h1>🏙️ MMO Város 3.0</h1>
 
-<!-- ADMIN -->
-<div class="card">
-  <h2>Admin belépés</h2>
-  <input type="password" id="adminPass" placeholder="Admin jelszó">
-  <button onclick="loginAdmin()">Belépés</button>
+<div id="info"></div>
+
+<div class="container">
+
+<div>
+<div class="panel">
+<button onclick="setBuild('🌳')">🌳</button>
+<button onclick="setBuild('🏠')">🏠</button>
+<button onclick="setBuild('🏢')">🏢</button>
+<button onclick="setBuild('🏰')">🏰</button>
 </div>
 
-<!-- DASHBOARD -->
-<div class="card">
-  <h2>📊 Admin Dashboard</h2>
-  <p id="stats"></p>
+<div class="grid" id="grid"></div>
 </div>
 
-<!-- JELENTKEZŐK -->
-<div class="card">
-  <h2>🧑‍💼 Jelentkezők</h2>
-  <div id="applications"></div>
+<div class="chat">
+<div class="messages" id="messages"></div>
+<input id="msg" placeholder="Chat...">
+<button onclick="sendMsg()">Küldés</button>
 </div>
 
-<div class="card">
-<h2>Új hirdetés</h2>
-
-<select id="category">
-<option value="mentos">Mentős</option>
-<option value="rendor">Rendőr</option>
-<option value="szerelo">Szerelő</option>
-<option value="telepi">Telepi munka</option>
-<option value="etterem">Étterem</option>
-<option value="civil">Civil</option>
-<option value="mafia">Maffia</option>
-<option value="banda">Banda</option>
-</select>
-
-<input id="title" placeholder="Cím">
-<textarea id="desc" placeholder="Leírás"></textarea>
-
-<button onclick="addAd()">Közzététel</button>
-</div>
-
-<div class="card">
-<h2>⭐ Kiemelt hirdetések</h2>
-<div id="featuredAds"></div>
-</div>
-
-<div class="card">
-<h2>Normál hirdetések</h2>
-<div id="ads"></div>
-</div>
-
-<div class="card">
-<h2>💬 Chat</h2>
-<input id="chatAdId" placeholder="Hirdetés ID">
-<input id="chatMsg" placeholder="Üzenet">
-<button onclick="sendChat()">Küldés</button>
-<div id="chatBox"></div>
 </div>
 
 <script type="module">
+
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import {
-  getFirestore,
-  collection,
-  addDoc,
-  onSnapshot,
-  query,
-  orderBy,
-  deleteDoc,
-  doc,
-  updateDoc,
-  getDocs
+getFirestore,
+doc,
+setDoc,
+getDoc,
+onSnapshot,
+collection,
+addDoc,
+serverTimestamp,
+query,
+where,
+getDocs
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-/* FIREBASE */
+import {
+getAuth,
+signInAnonymously,
+onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
 const firebaseConfig = {
-  apiKey: "AIzaSyBgbixws2rf6VdqjQATVwZsKg0lgiqy1xI",
+  apiKey: "AIzaSyBgbixws2rf6VdqjQATVwZsKg0lgiqy0xI",
   authDomain: "ordog-fizetes.firebaseapp.com",
   databaseURL: "https://ordog-fizetes-default-rtdb.europe-west1.firebasedatabase.app",
   projectId: "ordog-fizetes",
@@ -140,171 +134,199 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const auth = getAuth(app);
 
-let isAdmin = false;
-const ADMIN_PASSWORD = "1234567";
+let user;
+let selected = "🏠";
 
-/* LOGIN */
-window.loginAdmin = function(){
-  const pass = document.getElementById("adminPass").value;
+// 💰 árak + XP
+const data = {
+"🌳": {price:1, xp:1, income:1},
+"🏠": {price:10, xp:5, income:3},
+"🏢": {price:30, xp:15, income:8},
+"🏰": {price:80, xp:40, income:20}
+};
 
-  if(pass === ADMIN_PASSWORD){
-    isAdmin = true;
-    alert("Admin ON");
-    loadDashboard();
-    loadApplications();
-  } else {
-    alert("Hibás jelszó");
-  }
+// 🏆 rangok
+function getRank(xp){
+if(xp < 50) return "citizen";
+if(xp < 150) return "builder";
+if(xp < 400) return "architect";
+return "mayor";
 }
 
-/* ADD AD */
-window.addAd = async function(){
-  const category = document.getElementById("category").value;
-  const title = document.getElementById("title").value;
-  const desc = document.getElementById("desc").value;
+// 🔐 login
+signInAnonymously(auth);
 
-  const expiresAt = Date.now() + 7*24*60*60*1000;
+onAuthStateChanged(auth, async (u)=>{
 
-  await addDoc(collection(db,"ads"),{
-    category,title,desc,
-    featured:false,
-    status:"active",
-    createdAt:Date.now(),
-    expiresAt
-  });
-}
+user = u;
 
-/* DELETE */
-window.deleteAd = async function(id){
-  if(!isAdmin) return;
-  await deleteDoc(doc(db,"ads",id));
-}
+await ensureUser();
+loadUser();
+loadWorld();
+loadChat();
+startIncome();
 
-/* FEATURED */
-window.toggleFeatured = async function(id,current){
-  if(!isAdmin) return;
-  await updateDoc(doc(db,"ads",id),{
-    featured:!current
-  });
-}
-
-/* STATUS */
-window.setStatus = async function(id,status){
-  if(!isAdmin) return;
-  await updateDoc(doc(db,"ads",id),{status});
-}
-
-/* APPLY */
-window.applyAd = async function(id){
-  const name = prompt("Neved:");
-  const msg = prompt("Üzenet:");
-  if(!name||!msg) return;
-
-  await addDoc(collection(db,"applications"),{
-    adId:id,name,msg,createdAt:Date.now()
-  });
-  alert("Jelentkezés elküldve");
-}
-
-/* CHAT SEND */
-window.sendChat = async function(){
-  const adId = document.getElementById("chatAdId").value;
-  const msg = document.getElementById("chatMsg").value;
-
-  await addDoc(collection(db,"comments"),{
-    adId,text:msg,createdAt:Date.now()
-  });
-
-  document.getElementById("chatMsg").value="";
-}
-
-/* DASHBOARD */
-window.loadDashboard = async function(){
-  const ads = await getDocs(collection(db,"ads"));
-  const apps = await getDocs(collection(db,"applications"));
-  const coms = await getDocs(collection(db,"comments"));
-
-  document.getElementById("stats").innerHTML =
-    `📌 Hirdetés: ${ads.size}<br>
-     🧑‍💼 Jelentkezés: ${apps.size}<br>
-     💬 Chat: ${coms.size}`;
-}
-
-/* APPLICATIONS */
-window.loadApplications = function(){
-  onSnapshot(collection(db,"applications"),(snap)=>{
-    const box = document.getElementById("applications");
-    box.innerHTML="";
-
-    snap.forEach(d=>{
-      const x = d.data();
-
-      box.innerHTML += `
-        <div class="ad">
-          <b>${x.adId}</b><br>
-          ${x.name}<br>
-          ${x.msg}
-        </div>
-      `;
-    });
-  });
-}
-
-/* CHAT LOAD */
-onSnapshot(collection(db,"comments"),(snap)=>{
-  const box = document.getElementById("chatBox");
-  box.innerHTML="";
-
-  snap.forEach(d=>{
-    const x = d.data();
-    box.innerHTML += `
-      <div class="ad">
-        <b>${x.adId}</b><br>
-        ${x.text}
-      </div>
-    `;
-  });
 });
 
-/* ADS LIST */
-const q = query(collection(db,"ads"),orderBy("createdAt","desc"));
+// 👤 user init
+async function ensureUser(){
 
-onSnapshot(q,(snap)=>{
-  const featured = document.getElementById("featuredAds");
-  const ads = document.getElementById("ads");
+const ref = doc(db,"users",user.uid);
+const snap = await getDoc(ref);
 
-  featured.innerHTML="";
-  ads.innerHTML="";
-
-  snap.forEach(async d=>{
-    const x = d.data();
-
-    if(x.expiresAt < Date.now()){
-      await deleteDoc(doc(db,"ads",d.id));
-      return;
-    }
-
-    const el = `
-      <div class="ad ${x.featured?'featured':''}">
-        <b>${x.title}</b><br>
-        ${x.category} | ${x.status}
-        <p>${x.desc}</p>
-
-        <button onclick="applyAd('${d.id}')">Jelentkezem</button>
-        <button onclick="sendChat()">Chat</button>
-
-        ${isAdmin?`
-          <button onclick="deleteAd('${d.id}')">Törlés</button>
-          <button onclick="toggleFeatured('${d.id}',${x.featured})">⭐</button>
-          <button onclick="setStatus('${d.id}','closed')">Lezár</button>
-        `:""}
-      </div>
-    `;
-
-    ads.innerHTML += el;
-  });
+if(!snap.exists()){
+await setDoc(ref,{
+name:"Player_"+user.uid.slice(0,5),
+money:100,
+xp:0
 });
+}
+
+}
+
+// 📊 user UI
+function loadUser(){
+
+const ref = doc(db,"users",user.uid);
+
+onSnapshot(ref,(snap)=>{
+
+const d = snap.data();
+
+document.getElementById("info").innerHTML =
+`👤 ${d.name} | 💰 ${d.money}$ | ⭐ XP: ${d.xp} | 🧑‍⚖️ ${getRank(d.xp)}`;
+
+});
+
+}
+
+// 🧱 map
+const grid = document.getElementById("grid");
+
+for(let y=0;y<10;y++){
+for(let x=0;x<10;x++){
+
+const c = document.createElement("div");
+c.className = "cell";
+c.id = x+"_"+y;
+
+c.onclick = async ()=>{
+
+const tileRef = doc(db,"tiles",c.id);
+const userRef = doc(db,"users",user.uid);
+
+const uSnap = await getDoc(userRef);
+const price = data[selected].price;
+
+if(uSnap.data().money < price){
+alert("Nincs pénz!");
+return;
+}
+
+await setDoc(tileRef,{
+type:selected,
+owner:user.uid
+},{merge:true});
+
+await setDoc(userRef,{
+...uSnap.data(),
+money: uSnap.data().money - price,
+xp: uSnap.data().xp + data[selected].xp
+});
+
+};
+
+grid.appendChild(c);
+
+}
+}
+
+// 🌍 world render
+function loadWorld(){
+
+onSnapshot(collection(db,"tiles"),(snap)=>{
+
+snap.forEach(d=>{
+
+const el = document.getElementById(d.id);
+if(el) el.innerText = d.data().type;
+
+});
+
+});
+
+}
+
+// 💬 chat
+window.sendMsg = async ()=>{
+
+const text = document.getElementById("msg").value;
+if(!text) return;
+
+await addDoc(collection(db,"chat"),{
+user:user.uid.slice(0,5),
+text,
+time:serverTimestamp()
+});
+
+document.getElementById("msg").value="";
+
+};
+
+function loadChat(){
+
+onSnapshot(collection(db,"chat"),(snap)=>{
+
+const box = document.getElementById("messages");
+box.innerHTML="";
+
+snap.forEach(m=>{
+
+const d = m.data();
+
+const div = document.createElement("div");
+div.innerText = `${d.user}: ${d.text}`;
+
+box.appendChild(div);
+
+});
+
+});
+
+}
+
+// 💰 income system
+function startIncome(){
+
+setInterval(async ()=>{
+
+const q = query(
+collection(db,"tiles"),
+where("owner","==",user.uid)
+);
+
+const tiles = await getDocs(q);
+
+let income = 0;
+
+tiles.forEach(t=>{
+income += data[t.data().type]?.income || 0;
+});
+
+const ref = doc(db,"users",user.uid);
+const uSnap = await getDoc(ref);
+
+await setDoc(ref,{
+...uSnap.data(),
+money: uSnap.data().money + income
+});
+
+}, 8000);
+
+}
+
 </script>
 
 </body>
